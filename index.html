@@ -7,7 +7,7 @@
 <!-- Fuentes para ambos estilos -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* =========================================
      1. TEMA: TERMINAL OSCURO (Original)
@@ -19,14 +19,15 @@
     --primary: #FFB300;
     --primary-hover: #FFC940;
     --text-main: #E8ECF1;
-    --text-sub: #5B6472;
+    --text-sub: #8B94A5;
+    --text-header: #5B6472;
     --divider: #1D2330;
     --accent: #5EC8FF;
     
-    --green: #00E5A0; --green-soft: rgba(0,229,160,.12);
-    --red: #FF4D4D; --red-soft: rgba(255,77,77,.13);
-    --amber: #FFB300; --amber-soft: rgba(255,179,0,.12);
-    --blue: #5EC8FF; --blue-soft: rgba(94,200,255,.12);
+    --green: #00E5A0; --green-soft: rgba(0,229,160,.15);
+    --red: #FF4D4D; --red-soft: rgba(255,77,77,.15);
+    --amber: #FFB300; --amber-soft: rgba(255,179,0,.15);
+    --blue: #5EC8FF; --blue-soft: rgba(94,200,255,.15);
     
     --shadow: 0 40px 80px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03);
     --bg-image: radial-gradient(ellipse at top, #0A0D14 0%, var(--bg) 60%);
@@ -39,17 +40,18 @@
     --bg: #F3F4F6;
     --panel: #FFFFFF;
     --panel-alt: #F9FAFB;
-    --primary: #D97706; /* Ámbar oscuro para contraste */
+    --primary: #D97706;
     --primary-hover: #F59E0B;
     --text-main: #111827;
-    --text-sub: #6B7280;
+    --text-sub: #4B5563; /* Más oscuro para mejor contraste */
+    --text-header: #6B7280;
     --divider: #E5E7EB;
     --accent: #3B82F6;
     
-    --green: #10B981; --green-soft: #D1FAE5;
-    --red: #EF4444; --red-soft: #FEE2E2;
-    --amber: #F59E0B; --amber-soft: #FEF3C7;
-    --blue: #3B82F6; --blue-soft: #DBEAFE;
+    --green: #059669; --green-soft: #D1FAE5;
+    --red: #DC2626; --red-soft: #FEE2E2;
+    --amber: #D97706; --amber-soft: #FEF3C7;
+    --blue: #2563EB; --blue-soft: #DBEAFE;
     
     --shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
     --bg-image: none;
@@ -65,7 +67,7 @@
     --radius-tab: 0px;
     --text-transform: uppercase;
     --logo-bg: var(--primary);
-    --logo-color: var(--bg);
+    --logo-color: var(--panel);
     --tab-bg-active: transparent;
     --tab-border-active: var(--primary);
     --tab-color-active: var(--primary);
@@ -82,14 +84,15 @@
     --primary: #FF69B4;
     --primary-hover: #FF1493;
     --text-main: #4A4A4A;
-    --text-sub: #888888;
+    --text-sub: #666666;
+    --text-header: #888888;
     --divider: #FFE4E1;
     --accent: #B19CD9;
     
-    --green: #20C997; --green-soft: #E6F9F3;
-    --red: #FF6B6B; --red-soft: #FFEEEE;
-    --amber: #FFB347; --amber-soft: #FFF5E6;
-    --blue: #77DD77; --blue-soft: #F0FFF0;
+    --green: #10B981; --green-soft: #D1FAE5;
+    --red: #EF4444; --red-soft: #FEE2E2;
+    --amber: #F59E0B; --amber-soft: #FEF3C7;
+    --blue: #3B82F6; --blue-soft: #E0E7FF;
     
     --shadow: 0 10px 30px -10px rgba(255, 105, 180, 0.15);
     --bg-image: radial-gradient(circle at 10% 20%, rgba(255, 105, 180, 0.05) 0%, transparent 20%), 
@@ -106,11 +109,12 @@
     --primary: #FF85C0;
     --primary-hover: #FF9ADA;
     --text-main: #F8E8F2;
-    --text-sub: #B48EAD;
+    --text-sub: #D7BCE8;
+    --text-header: #B48EAD;
     --divider: #4A2B58;
     --accent: #D7BCE8;
     
-    --green: #00E5A0; --green-soft: rgba(0,229,160,.12);
+    --green: #00E5A0; --green-soft: rgba(0,229,160,.15);
     --red: #FF6B6B; --red-soft: rgba(255,107,107,.15);
     --amber: #FFC074; --amber-soft: rgba(255,192,116,.15);
     --blue: #A2E4B8; --blue-soft: rgba(162,228,184,.15);
@@ -144,7 +148,7 @@
   /* =========================================
      ESTILOS GLOBALES
      ========================================= */
-  * { box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+  * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
   
   body {
     margin: 0;
@@ -174,8 +178,10 @@
     padding: 20px 30px;
     background: var(--panel-alt);
     border-bottom: var(--header-border);
+    gap: 15px;
+    flex-wrap: wrap;
   }
-  .logo-block { display: flex; align-items: center; gap: 15px; }
+  .logo-block { display: flex; align-items: center; gap: 15px; flex: 1; }
   .logo-badge {
     font-family: var(--font-heading);
     font-weight: 800;
@@ -193,13 +199,20 @@
     color: var(--text-main);
     text-transform: var(--text-transform);
     letter-spacing: 1px;
+    font-weight: 800;
   }
   .logo-text span {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-sub);
     letter-spacing: 1px;
   }
   
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
   /* SELECTOR DE TEMAS */
   .theme-selector {
     background: var(--panel);
@@ -209,10 +222,29 @@
     border-radius: var(--radius-btn);
     font-family: var(--font-main);
     font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     outline: none;
   }
   .theme-selector:focus { border-color: var(--primary); }
+
+  /* BOTÓN NUEVO PENDIENTE EN HEADER */
+  .btn-add {
+    background: var(--primary);
+    color: #FFF;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: var(--text-transform);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  .btn-add:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  [data-theme*="girly"] .btn-add { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
 
   /* FILTER TABS */
   .tabs {
@@ -227,7 +259,7 @@
     padding: 10px 16px;
     font-family: var(--font-heading);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-sub);
     cursor: pointer;
     border-radius: var(--radius-tab);
@@ -235,6 +267,8 @@
     text-transform: var(--text-transform);
     letter-spacing: 1px;
     user-select: none;
+    display: flex;
+    align-items: center;
   }
   .tab:hover { color: var(--text-main); }
   .tab.active {
@@ -242,40 +276,51 @@
     border-bottom-color: var(--tab-border-active);
     color: var(--tab-color-active);
   }
+  
+  /* CONTADORES DINÁMICOS */
   .tab .count {
-    display: inline-block;
-    margin-left: 6px;
-    background: rgba(128,128,128,0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    background: rgba(128,128,128,0.15);
+    color: var(--text-sub);
     padding: 2px 8px;
     border-radius: 12px;
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 800;
   }
+  .tab .count.has-items {
+    background: var(--amber-soft);
+    color: var(--amber);
+  }
+  [data-theme*="girly"] .tab .count.has-items { background: var(--primary); color: white; }
 
   /* COLUMNS & ROWS */
   .col-header {
     display: grid;
-    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 90px;
+    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 100px;
     gap: 10px;
     padding: 15px 30px;
     background: var(--panel-alt);
     border-bottom: 1px solid var(--divider);
     font-family: var(--font-heading);
     font-size: 11px;
-    font-weight: 700;
-    color: var(--text-sub);
+    font-weight: 800;
+    color: var(--text-header);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
   }
 
   .rows { min-height: 100px; }
   .row {
     display: grid;
-    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 90px;
+    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 100px;
     gap: 10px;
     align-items: center;
-    padding: 16px 30px;
+    padding: 18px 30px;
     border-bottom: 1px solid var(--divider);
-    animation: fadeIn 0.4s ease;
+    animation: fadeIn 0.3s ease;
   }
   .row:hover { background: var(--panel-alt); }
   @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
@@ -285,40 +330,47 @@
   .prio-media { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
   .prio-baja { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
 
-  .cell-main { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-main); }
-  .cell-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
-  .cell { font-family: var(--font-mono); font-size: 13px; color: var(--text-main); }
+  .cell-main { font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-main); }
+  .cell-sub { font-size: 11px; font-weight: 500; color: var(--text-sub); margin-top: 4px; }
+  .cell { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-main); }
   .cell.small { font-size: 12px; color: var(--text-sub); }
 
   .badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800; /* Mayor grosor para contraste */
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
   .badge-pendiente { background: var(--amber-soft); color: var(--amber); }
   .badge-proceso { background: var(--blue-soft); color: var(--blue); }
-  .badge-revision { background: rgba(180,140,255,.15); color: #C09BFF; }
+  .badge-revision { background: rgba(180,140,255,.15); color: #9B6BFF; }
+  [data-theme*="dark"] .badge-revision { color: #D7BCE8; }
   .badge-completado { background: var(--green-soft); color: var(--green); }
   .badge-retrasado { background: var(--red-soft); color: var(--red); }
 
-  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  /* BOTONES DE ACCIÓN MODERNIZADOS (Sin bordes) */
+  .row-actions { display: flex; gap: 8px; justify-content: flex-end; }
   .icon-btn {
-    background: transparent; border: 1px solid var(--divider);
+    background: transparent; 
+    border: none;
     color: var(--text-sub);
-    width: 30px; height: 30px;
-    border-radius: var(--radius-btn);
+    width: 32px; height: 32px;
+    border-radius: 50%; /* Redondos */
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
-  .icon-btn.done:hover { border-color: var(--green); color: var(--green); }
-  .icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+  .icon-btn:hover { background: var(--divider); color: var(--text-main); }
+  .icon-btn.done:hover { background: var(--green-soft); color: var(--green); }
+  .icon-btn.del:hover { background: var(--red-soft); color: var(--red); }
 
   .empty-state {
     padding: 60px 20px;
@@ -326,35 +378,14 @@
     color: var(--text-sub);
     font-family: var(--font-heading);
     letter-spacing: 1px;
+    font-weight: 600;
   }
-
-  /* ADD BUTTON BAR */
-  .add-bar {
-    padding: 15px 30px;
-    background: var(--panel-alt);
-    border-top: 1px solid var(--divider);
-  }
-  .btn-add {
-    background: var(--primary);
-    color: #FFF;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--radius-btn);
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    text-transform: var(--text-transform);
-  }
-  .btn-add:hover { background: var(--primary-hover); }
-  [data-theme*="girly"] .btn-add { background: linear-gradient(135deg, var(--primary), var(--accent)); }
 
   /* MODAL */
   .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center;
     z-index: 50; padding: 20px;
   }
@@ -364,46 +395,49 @@
     border: 1px solid var(--divider);
     border-radius: var(--radius-board);
     width: 100%; max-width: 500px;
-    padding: 25px;
+    padding: 30px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   }
   .modal h2 {
-    margin: 0 0 15px;
+    margin: 0 0 20px;
     font-family: var(--font-heading);
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 800;
     color: var(--primary);
     text-transform: var(--text-transform);
     border-bottom: 1px solid var(--divider);
-    padding-bottom: 10px;
+    padding-bottom: 15px;
   }
-  .field { margin-bottom: 14px; }
+  .field { margin-bottom: 16px; }
   .field label {
-    display: block; font-size: 11px; font-weight: 600;
-    color: var(--text-sub); margin-bottom: 6px;
+    display: block; font-size: 11px; font-weight: 700;
+    color: var(--text-header); margin-bottom: 8px;
     text-transform: uppercase; letter-spacing: 1px;
   }
   .field input, .field select {
     width: 100%; background: var(--bg); border: 1px solid var(--divider);
-    color: var(--text-main); padding: 10px 12px; border-radius: var(--radius-btn);
-    font-family: var(--font-main); font-size: 13px;
+    color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-btn);
+    font-family: var(--font-main); font-size: 13px; font-weight: 500;
   }
   .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
   .field-row { display: flex; gap: 15px; }
   .field-row .field { flex: 1; }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; }
   
   .btn-secondary {
     background: transparent; border: 1px solid var(--divider); color: var(--text-main);
-    padding: 9px 16px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px;
-    font-family: var(--font-heading); letter-spacing: 1px;
+    padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px;
+    font-family: var(--font-heading); font-weight: 700; letter-spacing: 1px;
   }
   .btn-secondary:hover { background: var(--divider); }
 
   @media (max-width:900px){
+    .board-header { flex-direction: column; align-items: flex-start; }
+    .header-actions { width: 100%; justify-content: space-between; }
     .col-header { display: none; }
     .row { grid-template-columns: 1fr; gap: 8px; padding: 15px 20px 15px 40px; position: relative; }
     .prio-dot { position: absolute; left: 16px; top: 22px; margin: 0; }
-    .cell.small::before { content: attr(data-label) ": "; color: var(--text-sub); font-weight: 600; }
+    .cell.small::before { content: attr(data-label) ": "; color: var(--text-header); font-weight: 700; }
     .row-actions { justify-content: flex-start; margin-top: 8px; }
   }
 </style>
@@ -419,13 +453,19 @@
         <span>Comercio Exterior</span>
       </div>
     </div>
-    <!-- SELECTOR DE TEMAS -->
-    <select id="themeSelector" class="theme-selector">
-      <option value="terminal-dark">💻 Terminal Oscuro</option>
-      <option value="terminal-light">🖨️ Terminal Claro</option>
-      <option value="girly-light">🌸 Girly Pop Claro</option>
-      <option value="girly-dark">🌙 Girly Pop Oscuro</option>
-    </select>
+    
+    <div class="header-actions">
+      <!-- SELECTOR DE TEMAS -->
+      <select id="themeSelector" class="theme-selector">
+        <option value="terminal-dark">💻 Terminal Oscuro</option>
+        <option value="terminal-light">🖨️ Terminal Claro</option>
+        <option value="girly-light">🌸 Girly Pop Claro</option>
+        <option value="girly-dark">🌙 Girly Pop Oscuro</option>
+      </select>
+      
+      <!-- BOTÓN REUBICADO AL HEADER -->
+      <button class="btn-add" id="openModalBtn">Nuevo Pendiente</button>
+    </div>
   </div>
 
   <div class="tabs" id="tabs"></div>
@@ -443,10 +483,6 @@
 
   <div class="rows" id="rows">
     <div class="empty-state">CARGANDO TABLERO...</div>
-  </div>
-
-  <div class="add-bar">
-    <button class="btn-add" id="openModalBtn">Nuevo Pendiente</button>
   </div>
 </div>
 
@@ -545,6 +581,8 @@
   // Inicializar Firebase y la Base de Datos
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  
+  // Apunta a tus datos reales para que puedas verlos con el diseño nuevo
   const dbRef = ref(db, 'pendientes_ayc');
 
   // Lógica de Temas
@@ -606,11 +644,16 @@
     DEPTOS.forEach(d => counts[d] = tasks.filter(t => t.depto === d).length);
     const labels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
     
-    document.getElementById('tabs').innerHTML = labels.map(([key, label]) => `
-      <div class="tab ${currentFilter === key ? 'active' : ''}" data-key="${key}">
-        ${label} <span class="count">${counts[key] || 0}</span>
-      </div>
-    `).join('');
+    document.getElementById('tabs').innerHTML = labels.map(([key, label]) => {
+      const c = counts[key] || 0;
+      // Estilo dinámico si el contador es mayor a 0
+      const countClass = c > 0 ? 'count has-items' : 'count';
+      return `
+        <div class="tab ${currentFilter === key ? 'active' : ''}" data-key="${key}">
+          ${label} <span class="${countClass}">${c}</span>
+        </div>
+      `;
+    }).join('');
     
     document.querySelectorAll('.tab').forEach(el => {
       el.addEventListener('click', () => {
