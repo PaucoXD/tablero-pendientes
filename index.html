@@ -381,6 +381,113 @@
     font-weight: 600;
   }
 
+  /* CHIP DE CUENTA REGRESIVA */
+  .due-chip {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: var(--font-heading);
+  }
+  .due-chip.ok { background: var(--green-soft); color: var(--green); }
+  .due-chip.soon { background: var(--amber-soft); color: var(--amber); }
+  .due-chip.late { background: var(--red-soft); color: var(--red); }
+
+  /* INDICADOR DE SINCRONIZACIÓN */
+  .sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .sync-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    transition: background .2s, box-shadow .2s;
+  }
+
+  /* TOGGLE OCULTAR COMPLETADOS */
+  .toggle-done {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--font-heading);
+    font-size: 11px; font-weight: 700;
+    color: var(--text-sub);
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 0.5px;
+  }
+  .toggle-done input { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+
+  /* BOTÓN SILENCIAR (solo visible en Girly Pop) */
+  .sound-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--divider);
+    color: var(--text-sub);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    align-items: center;
+    justify-content: center;
+  }
+  .sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
+  [data-theme*="girly"] .sound-toggle { display: flex; }
+
+  /* PARTÍCULAS DE CHISPITAS */
+  .sparkle-particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 16px;
+    z-index: 999;
+    animation: sparkleFloat 0.9s ease-out forwards;
+  }
+  @keyframes sparkleFloat {
+    0% { opacity: 0; transform: translate(0,0) scale(0.5) rotate(0deg); }
+    15% { opacity: 1; transform: translate(var(--sx,0), calc(var(--sy,0) * 0.3)) scale(1.1) rotate(45deg); }
+    100% { opacity: 0; transform: translate(calc(var(--sx,0) * 2), calc(var(--sy,0) - 40px)) scale(0.4) rotate(180deg); }
+  }
+
+  /* TICKER DE AVISOS */
+  .ticker-wrap {
+    background: var(--panel-alt);
+    border-bottom: 1px solid var(--divider);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 9px 0;
+  }
+  .ticker {
+    display: inline-block;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--red);
+    animation: scrollTicker 24s linear infinite;
+    padding-left: 100%;
+  }
+  .ticker.ok { color: var(--green); }
+  @keyframes scrollTicker { 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  /* MODAL DE CONFIRMACIÓN */
+  .confirm-modal { max-width: 360px; text-align: center; }
+  .confirm-modal p { color: var(--text-sub); font-size: 13px; margin: 0 0 20px; }
+  .confirm-modal .modal-actions { justify-content: center; }
+  .btn-danger {
+    background: var(--red); color: #FFF; border: none;
+    padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer;
+    font-size: 12px; font-family: var(--font-heading); font-weight: 700; letter-spacing: 1px;
+  }
+  .btn-danger:hover { filter: brightness(1.1); }
+
   /* MODAL */
   .modal-overlay {
     position: fixed; inset: 0;
@@ -455,6 +562,21 @@
     </div>
     
     <div class="header-actions">
+      <!-- INDICADOR DE CONEXIÓN -->
+      <div class="sync-indicator">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncLabel">Conectando...</span>
+      </div>
+
+      <!-- OCULTAR COMPLETADOS -->
+      <label class="toggle-done">
+        <input type="checkbox" id="hideDoneToggle">
+        Ocultar completados
+      </label>
+
+      <!-- SILENCIAR SONIDOS (solo Girly Pop) -->
+      <button class="sound-toggle" id="soundToggle" title="Silenciar sonidos">🔊</button>
+
       <!-- SELECTOR DE TEMAS -->
       <select id="themeSelector" class="theme-selector">
         <option value="terminal-dark">💻 Terminal Oscuro</option>
@@ -466,6 +588,10 @@
       <!-- BOTÓN REUBICADO AL HEADER -->
       <button class="btn-add" id="openModalBtn">Nuevo Pendiente</button>
     </div>
+  </div>
+
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker">CARGANDO AVISOS...</div>
   </div>
 
   <div class="tabs" id="tabs"></div>
@@ -562,6 +688,18 @@
   </div>
 </div>
 
+<!-- Modal de confirmación para eliminar -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal confirm-modal">
+    <h2>Eliminar pendiente</h2>
+    <p id="confirmText">¿Seguro que quieres eliminar este pendiente? Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="confirmCancelBtn">Cancelar</button>
+      <button class="btn-danger" id="confirmDeleteBtn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
 <!-- SDK de Firebase Modular -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -592,16 +730,121 @@
   document.documentElement.setAttribute('data-theme', savedTheme);
   themeSelector.value = savedTheme;
 
+  // ---------- Sonido de "brillitos" (solo temas Girly Pop) ----------
+  let sparkleCtx = null;
+  let soundMuted = localStorage.getItem('ayc-sound-muted') === '1';
+  const soundToggle = document.getElementById('soundToggle');
+  soundToggle.textContent = soundMuted ? '🔇' : '🔊';
+  soundToggle.addEventListener('click', () => {
+    soundMuted = !soundMuted;
+    localStorage.setItem('ayc-sound-muted', soundMuted ? '1' : '0');
+    soundToggle.textContent = soundMuted ? '🔇' : '🔊';
+  });
+
+  function isGirlyTheme() {
+    return (document.documentElement.getAttribute('data-theme') || '').includes('girly');
+  }
+
+  // Semitonos aleatorios para que el arpegio no suene siempre igual
+  function shiftFreq(freq, semitones) {
+    return freq * Math.pow(2, semitones / 12);
+  }
+
+  function playSparkle(anchorEl) {
+    if (!isGirlyTheme() || soundMuted) return;
+    try {
+      sparkleCtx = sparkleCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (sparkleCtx.state === 'suspended') sparkleCtx.resume();
+      const now = sparkleCtx.currentTime;
+      const baseNotes = [1568, 1976, 2349, 2793]; // G6, B6, D7, F7
+      const wobble = (Math.random() * 2) - 1; // pequeño desafine global entre -1 y 1 semitono
+      baseNotes.forEach((freq, i) => {
+        const t0 = now + i * (0.05 + Math.random() * 0.015);
+        const osc = sparkleCtx.createOscillator();
+        const gain = sparkleCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(shiftFreq(freq, wobble), t0);
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(0.09, t0 + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+        osc.connect(gain).connect(sparkleCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.4);
+      });
+      const shimmer = sparkleCtx.createOscillator();
+      const shimmerGain = sparkleCtx.createGain();
+      shimmer.type = 'triangle';
+      shimmer.frequency.setValueAtTime(shiftFreq(3200, wobble), now);
+      shimmer.frequency.exponentialRampToValueAtTime(shiftFreq(5200, wobble), now + 0.25);
+      shimmerGain.gain.setValueAtTime(0.05, now);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+      shimmer.connect(shimmerGain).connect(sparkleCtx.destination);
+      shimmer.start(now);
+      shimmer.stop(now + 0.3);
+    } catch (e) { /* audio no disponible, se ignora */ }
+    spawnSparkleParticles(anchorEl);
+  }
+
+  // Sonido de "swoosh" descendente para eliminar (distinto al de brillitos)
+  function playSwoosh() {
+    if (!isGirlyTheme() || soundMuted) return;
+    try {
+      sparkleCtx = sparkleCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (sparkleCtx.state === 'suspended') sparkleCtx.resume();
+      const now = sparkleCtx.currentTime;
+      const osc = sparkleCtx.createOscillator();
+      const gain = sparkleCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.3);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+      osc.connect(gain).connect(sparkleCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.33);
+    } catch (e) { /* audio no disponible, se ignora */ }
+  }
+
+  // Partículas visuales ✨ flotando cerca del elemento que disparó el sonido
+  function spawnSparkleParticles(anchorEl) {
+    if (!isGirlyTheme()) return;
+    const rect = anchorEl && anchorEl.getBoundingClientRect
+      ? anchorEl.getBoundingClientRect()
+      : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+    const glyphs = ['✨', '💖', '⭐'];
+    const count = 5;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('span');
+      el.className = 'sparkle-particle';
+      el.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      const sx = (Math.random() - 0.5) * 80;
+      const sy = (Math.random() - 0.5) * 40 - 20;
+      el.style.left = originX + 'px';
+      el.style.top = originY + 'px';
+      el.style.setProperty('--sx', sx + 'px');
+      el.style.setProperty('--sy', sy + 'px');
+      el.style.animationDelay = (i * 0.03) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+  }
+
   themeSelector.addEventListener('change', (e) => {
     const newTheme = e.target.value;
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('ayc-theme', newTheme);
+    if (newTheme.includes('girly')) playSparkle(themeSelector);
   });
 
   // Lógica de la UI del Tablero
   let tasks = [];
   let editingId = null;
+  let deleteTargetId = null;
   let currentFilter = 'todos';
+  let hideDone = false;
   const DEPTOS = ['Aéreo', 'Corresponsalías', 'Marítimo', 'Virtual'];
 
   // Leer en tiempo real desde tu Firebase
@@ -610,6 +853,31 @@
     snapshot.forEach((childSnapshot) => {
       tasks.push({ id: childSnapshot.key, ...childSnapshot.val() });
     });
+    render();
+  });
+
+  // Indicador de conexión en tiempo real
+  onValue(ref(db, '.info/connected'), (snap) => {
+    const dot = document.getElementById('syncDot');
+    const label = document.getElementById('syncLabel');
+    if (snap.val() === true) {
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow = '0 0 6px var(--green)';
+      label.textContent = 'Sincronizado';
+    } else {
+      dot.style.background = 'var(--red)';
+      dot.style.boxShadow = '0 0 6px var(--red)';
+      label.textContent = 'Sin conexión';
+    }
+  });
+
+  // Ocultar completados (se recuerda en este dispositivo)
+  const hideDoneToggle = document.getElementById('hideDoneToggle');
+  hideDone = localStorage.getItem('ayc-hide-done') === '1';
+  hideDoneToggle.checked = hideDone;
+  hideDoneToggle.addEventListener('change', () => {
+    hideDone = hideDoneToggle.checked;
+    localStorage.setItem('ayc-hide-done', hideDone ? '1' : '0');
     render();
   });
 
@@ -639,6 +907,43 @@
     return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
+  // Chip de cuenta regresiva junto a la fecha límite
+  function dueChip(t) {
+    if (!t.limite || t.status === 'Completado') return '';
+    const diffMs = new Date(t.limite).getTime() - Date.now();
+    const diffH = diffMs / 3600000;
+    let cls, txt;
+    if (diffMs < 0) {
+      const h = Math.abs(diffH);
+      txt = h < 24 ? `Venció hace ${Math.round(h)}h` : `Venció hace ${Math.round(h/24)}d`;
+      cls = 'late';
+    } else if (diffH <= 6) {
+      txt = `Vence en ${Math.round(diffH)}h`;
+      cls = 'soon';
+    } else if (diffH <= 24) {
+      txt = `Vence hoy`;
+      cls = 'soon';
+    } else {
+      txt = `Vence en ${Math.round(diffH/24)}d`;
+      cls = 'ok';
+    }
+    return `<span class="due-chip ${cls}">${txt}</span>`;
+  }
+
+  // Ticker de avisos: operaciones retrasadas
+  function renderTicker() {
+    const overdue = tasks.filter(t => isOverdue(t));
+    const el = document.getElementById('ticker');
+    if (overdue.length === 0) {
+      el.className = 'ticker ok';
+      el.textContent = '>>> SIN OPERACIONES RETRASADAS · TODO EN TIEMPO >>>';
+    } else {
+      el.className = 'ticker';
+      const items = overdue.map(t => `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`).join('   ·   ');
+      el.textContent = `>>> ATENCIÓN — ${overdue.length} OPERACIÓN(ES) RETRASADA(S): ${items} >>>`;
+    }
+  }
+
   function renderTabs() {
     const counts = { todos: tasks.length };
     DEPTOS.forEach(d => counts[d] = tasks.filter(t => t.depto === d).length);
@@ -665,8 +970,10 @@
 
   function render() {
     renderTabs();
+    renderTicker();
     const rowsEl = document.getElementById('rows');
     let filtered = currentFilter === 'todos' ? tasks : tasks.filter(t => t.depto === currentFilter);
+    if (hideDone) filtered = filtered.filter(t => t.status !== 'Completado');
 
     filtered = [...filtered].sort((a, b) => {
       const aOverdue = isOverdue(a) ? 0 : 1;
@@ -693,7 +1000,7 @@
           <div class="cell small" data-label="Aduana">${t.aduana}</div>
           <div class="cell small" data-label="Depto">${t.depto}</div>
           <div data-label="Status"><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
-          <div class="cell small" data-label="Límite">${formatLimite(t.limite)}</div>
+          <div class="cell small" data-label="Límite">${formatLimite(t.limite)}<br>${dueChip(t)}</div>
           <div class="row-actions">
             <button class="icon-btn done" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
             <button class="icon-btn" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
@@ -712,17 +1019,45 @@
         const action = btn.getAttribute('data-action');
         
         if (action === 'del') {
-          if(confirm("¿Estás seguro de eliminar este pendiente?")) {
-            remove(ref(db, 'pendientes_ayc/' + id));
-          }
+          openConfirmDelete(id);
         } else if (action === 'done') {
           update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado' });
+          playSparkle(btn);
         } else if (action === 'edit') {
           openModal(id);
         }
       });
     });
   }
+
+  // Modal de confirmación de eliminado
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  function openConfirmDelete(id) {
+    deleteTargetId = id;
+    const t = tasks.find(t => t.id === id);
+    document.getElementById('confirmText').textContent =
+      `¿Seguro que quieres eliminar "${t ? (t.ref || 'S/REF') : 'este pendiente'}"? Esta acción no se puede deshacer.`;
+    confirmOverlay.classList.add('open');
+  }
+  function closeConfirmDelete() {
+    confirmOverlay.classList.remove('open');
+    deleteTargetId = null;
+  }
+  document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmDelete);
+  confirmOverlay.addEventListener('click', (e) => { if (e.target === confirmOverlay) closeConfirmDelete(); });
+  document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+    if (deleteTargetId) remove(ref(db, 'pendientes_ayc/' + deleteTargetId));
+    playSwoosh();
+    closeConfirmDelete();
+  });
+
+  // Cerrar modales con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (confirmOverlay.classList.contains('open')) closeConfirmDelete();
+      else if (overlay.classList.contains('open')) closeModal();
+    }
+  });
 
   // Lógica del Modal
   const overlay = document.getElementById('modalOverlay');
@@ -757,7 +1092,10 @@
     editingId = null;
   }
 
-  document.getElementById('openModalBtn').addEventListener('click', () => openModal(null));
+  document.getElementById('openModalBtn').addEventListener('click', function () {
+    playSparkle(this);
+    openModal(null);
+  });
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
@@ -782,6 +1120,7 @@
     } else {
       const newTaskRef = push(ref(db, 'pendientes_ayc'));
       set(newTaskRef, data);
+      playSparkle(document.getElementById('saveBtn'));
     }
     closeModal();
   });
