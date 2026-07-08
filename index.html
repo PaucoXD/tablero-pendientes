@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="terminal-dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A&C - Tablero de Pendientes</title>
+<!-- Fuentes para ambos estilos -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* =========================================
+     1. TEMA: TERMINAL OSCURO (Original)
+     ========================================= */
+  [data-theme="terminal-dark"] {
+    --bg: #05070B;
+    --panel: #0D1117;
+    --panel-alt: #11151D;
+    --primary: #FFB300;
+    --primary-hover: #FFC940;
+    --text-main: #E8ECF1;
+    --text-sub: #5B6472;
+    --divider: #1D2330;
+    --accent: #5EC8FF;
+    
+    --green: #00E5A0; --green-soft: rgba(0,229,160,.12);
+    --red: #FF4D4D; --red-soft: rgba(255,77,77,.13);
+    --amber: #FFB300; --amber-soft: rgba(255,179,0,.12);
+    --blue: #5EC8FF; --blue-soft: rgba(94,200,255,.12);
+    
+    --shadow: 0 40px 80px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03);
+    --bg-image: radial-gradient(ellipse at top, #0A0D14 0%, var(--bg) 60%);
+  }
+
+  /* =========================================
+     2. TEMA: TERMINAL CLARO
+     ========================================= */
+  [data-theme="terminal-light"] {
+    --bg: #F3F4F6;
+    --panel: #FFFFFF;
+    --panel-alt: #F9FAFB;
+    --primary: #D97706; /* Ámbar oscuro para contraste */
+    --primary-hover: #F59E0B;
+    --text-main: #111827;
+    --text-sub: #6B7280;
+    --divider: #E5E7EB;
+    --accent: #3B82F6;
+    
+    --green: #10B981; --green-soft: #D1FAE5;
+    --red: #EF4444; --red-soft: #FEE2E2;
+    --amber: #F59E0B; --amber-soft: #FEF3C7;
+    --blue: #3B82F6; --blue-soft: #DBEAFE;
+    
+    --shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    --bg-image: none;
+  }
+
+  /* VARIABLES ESTRUCTURALES PARA LA TERMINAL */
+  [data-theme*="terminal"] {
+    --font-main: 'Inter', sans-serif;
+    --font-heading: 'JetBrains Mono', monospace;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius-board: 6px;
+    --radius-btn: 4px;
+    --radius-tab: 0px;
+    --text-transform: uppercase;
+    --logo-bg: var(--primary);
+    --logo-color: var(--bg);
+    --tab-bg-active: transparent;
+    --tab-border-active: var(--primary);
+    --tab-color-active: var(--primary);
+    --header-border: 2px solid var(--primary);
+  }
+
+  /* =========================================
+     3. TEMA: GIRLY POP CLARO
+     ========================================= */
+  [data-theme="girly-light"] {
+    --bg: #FFF0F5;
+    --panel: #FFFFFF;
+    --panel-alt: #FFF6FA;
+    --primary: #FF69B4;
+    --primary-hover: #FF1493;
+    --text-main: #4A4A4A;
+    --text-sub: #888888;
+    --divider: #FFE4E1;
+    --accent: #B19CD9;
+    
+    --green: #20C997; --green-soft: #E6F9F3;
+    --red: #FF6B6B; --red-soft: #FFEEEE;
+    --amber: #FFB347; --amber-soft: #FFF5E6;
+    --blue: #77DD77; --blue-soft: #F0FFF0;
+    
+    --shadow: 0 10px 30px -10px rgba(255, 105, 180, 0.15);
+    --bg-image: radial-gradient(circle at 10% 20%, rgba(255, 105, 180, 0.05) 0%, transparent 20%), 
+                radial-gradient(circle at 90% 80%, rgba(177, 156, 217, 0.05) 0%, transparent 20%);
+  }
+
+  /* =========================================
+     4. TEMA: GIRLY POP OSCURO
+     ========================================= */
+  [data-theme="girly-dark"] {
+    --bg: #1A0B1C;
+    --panel: #2D1B36;
+    --panel-alt: #382243;
+    --primary: #FF85C0;
+    --primary-hover: #FF9ADA;
+    --text-main: #F8E8F2;
+    --text-sub: #B48EAD;
+    --divider: #4A2B58;
+    --accent: #D7BCE8;
+    
+    --green: #00E5A0; --green-soft: rgba(0,229,160,.12);
+    --red: #FF6B6B; --red-soft: rgba(255,107,107,.15);
+    --amber: #FFC074; --amber-soft: rgba(255,192,116,.15);
+    --blue: #A2E4B8; --blue-soft: rgba(162,228,184,.15);
+    
+    --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --bg-image: none;
+  }
+
+  /* VARIABLES ESTRUCTURALES PARA GIRLY POP */
+  [data-theme*="girly"] {
+    --font-main: 'Poppins', sans-serif;
+    --font-heading: 'Quicksand', sans-serif;
+    --font-mono: 'Poppins', sans-serif;
+    --radius-board: 20px;
+    --radius-btn: 20px;
+    --radius-tab: 20px;
+    --text-transform: none;
+    --logo-bg: linear-gradient(135deg, var(--primary), var(--accent));
+    --logo-color: white;
+    --tab-bg-active: var(--primary);
+    --tab-border-active: transparent;
+    --tab-color-active: #FFF;
+    --header-border: 1px solid var(--divider);
+  }
+
+  /* EMOJIS DINÁMICOS SOLO PARA GIRLY POP */
+  [data-theme*="girly"] .logo-badge::before { content: "✨ "; }
+  [data-theme*="girly"] .btn-add::before { content: "✨ "; }
+  [data-theme*="girly"] .modal h2::after { content: " 🎀"; }
+
+  /* =========================================
+     ESTILOS GLOBALES
+     ========================================= */
+  * { box-sizing: border-box; transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+  
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image: var(--bg-image);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .board {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--divider);
+    border-radius: var(--radius-board);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    background: var(--panel-alt);
+    border-bottom: var(--header-border);
+  }
+  .logo-block { display: flex; align-items: center; gap: 15px; }
+  .logo-badge {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--logo-color);
+    background: var(--logo-bg);
+    padding: 6px 12px;
+    border-radius: var(--radius-btn);
+    letter-spacing: 1px;
+  }
+  .logo-text h1 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    color: var(--text-main);
+    text-transform: var(--text-transform);
+    letter-spacing: 1px;
+  }
+  .logo-text span {
+    font-size: 11px;
+    color: var(--text-sub);
+    letter-spacing: 1px;
+  }
+  
+  /* SELECTOR DE TEMAS */
+  .theme-selector {
+    background: var(--panel);
+    border: 1px solid var(--divider);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-main);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+  }
+  .theme-selector:focus { border-color: var(--primary); }
+
+  /* FILTER TABS */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--divider);
+  }
+  .tab {
+    padding: 10px 16px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    cursor: pointer;
+    border-radius: var(--radius-tab);
+    border-bottom: 3px solid transparent;
+    text-transform: var(--text-transform);
+    letter-spacing: 1px;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text-main); }
+  .tab.active {
+    background: var(--tab-bg-active);
+    border-bottom-color: var(--tab-border-active);
+    color: var(--tab-color-active);
+  }
+  .tab .count {
+    display: inline-block;
+    margin-left: 6px;
+    background: rgba(128,128,128,0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+  }
+
+  /* COLUMNS & ROWS */
+  .col-header {
+    display: grid;
+    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 90px;
+    gap: 10px;
+    padding: 15px 30px;
+    background: var(--panel-alt);
+    border-bottom: 1px solid var(--divider);
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .rows { min-height: 100px; }
+  .row {
+    display: grid;
+    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 90px;
+    gap: 10px;
+    align-items: center;
+    padding: 16px 30px;
+    border-bottom: 1px solid var(--divider);
+    animation: fadeIn 0.4s ease;
+  }
+  .row:hover { background: var(--panel-alt); }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
+  
+  .prio-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; }
+  .prio-alta { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .prio-media { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .prio-baja { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+
+  .cell-main { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-main); }
+  .cell-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+  .cell { font-family: var(--font-mono); font-size: 13px; color: var(--text-main); }
+  .cell.small { font-size: 12px; color: var(--text-sub); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-pendiente { background: var(--amber-soft); color: var(--amber); }
+  .badge-proceso { background: var(--blue-soft); color: var(--blue); }
+  .badge-revision { background: rgba(180,140,255,.15); color: #C09BFF; }
+  .badge-completado { background: var(--green-soft); color: var(--green); }
+  .badge-retrasado { background: var(--red-soft); color: var(--red); }
+
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .icon-btn {
+    background: transparent; border: 1px solid var(--divider);
+    color: var(--text-sub);
+    width: 30px; height: 30px;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .icon-btn.done:hover { border-color: var(--green); color: var(--green); }
+  .icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-sub);
+    font-family: var(--font-heading);
+    letter-spacing: 1px;
+  }
+
+  /* ADD BUTTON BAR */
+  .add-bar {
+    padding: 15px 30px;
+    background: var(--panel-alt);
+    border-top: 1px solid var(--divider);
+  }
+  .btn-add {
+    background: var(--primary);
+    color: #FFF;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: var(--text-transform);
+  }
+  .btn-add:hover { background: var(--primary-hover); }
+  [data-theme*="girly"] .btn-add { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--divider);
+    border-radius: var(--radius-board);
+    width: 100%; max-width: 500px;
+    padding: 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+  .modal h2 {
+    margin: 0 0 15px;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    color: var(--primary);
+    text-transform: var(--text-transform);
+    border-bottom: 1px solid var(--divider);
+    padding-bottom: 10px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text-sub); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .field input, .field select {
+    width: 100%; background: var(--bg); border: 1px solid var(--divider);
+    color: var(--text-main); padding: 10px 12px; border-radius: var(--radius-btn);
+    font-family: var(--font-main); font-size: 13px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
+  .field-row { display: flex; gap: 15px; }
+  .field-row .field { flex: 1; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+  
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--divider); color: var(--text-main);
+    padding: 9px 16px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px;
+    font-family: var(--font-heading); letter-spacing: 1px;
+  }
+  .btn-secondary:hover { background: var(--divider); }
+
+  @media (max-width:900px){
+    .col-header { display: none; }
+    .row { grid-template-columns: 1fr; gap: 8px; padding: 15px 20px 15px 40px; position: relative; }
+    .prio-dot { position: absolute; left: 16px; top: 22px; margin: 0; }
+    .cell.small::before { content: attr(data-label) ": "; color: var(--text-sub); font-weight: 600; }
+    .row-actions { justify-content: flex-start; margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="board-header">
+    <div class="logo-block">
+      <div class="logo-badge">A&C</div>
+      <div class="logo-text">
+        <h1>Pendientes Monterrey</h1>
+        <span>Comercio Exterior</span>
+      </div>
+    </div>
+    <!-- SELECTOR DE TEMAS -->
+    <select id="themeSelector" class="theme-selector">
+      <option value="terminal-dark">💻 Terminal Oscuro</option>
+      <option value="terminal-light">🖨️ Terminal Claro</option>
+      <option value="girly-light">🌸 Girly Pop Claro</option>
+      <option value="girly-dark">🌙 Girly Pop Oscuro</option>
+    </select>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="col-header">
+    <div style="text-align:center">PR</div>
+    <div>PEDIMENTO / REF</div>
+    <div>CLIENTE</div>
+    <div>ADUANA</div>
+    <div>DEPARTAMENTO</div>
+    <div>STATUS</div>
+    <div>LÍMITE</div>
+    <div style="text-align:right;">ACCIONES</div>
+  </div>
+
+  <div class="rows" id="rows">
+    <div class="empty-state">CARGANDO TABLERO...</div>
+  </div>
+
+  <div class="add-bar">
+    <button class="btn-add" id="openModalBtn">Nuevo Pendiente</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Nuevo Pendiente</h2>
+    <div class="field">
+      <label>Pedimento / Referencia</label>
+      <input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123">
+    </div>
+    <div class="field">
+      <label>Cliente / Empresa</label>
+      <input type="text" id="f-cliente" placeholder="Nombre del cliente">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Aduana</label>
+        <select id="f-aduana">
+          <option value="Monterrey" selected>Monterrey</option>
+          <option value="Laredo">Laredo</option>
+          <option value="Altamira">Altamira</option>
+          <option value="Manzanillo">Manzanillo</option>
+          <option value="Otra">Otra</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Departamento</label>
+        <select id="f-depto">
+          <option value="Aéreo" selected>Aéreo</option>
+          <option value="Corresponsalías">Corresponsalías</option>
+          <option value="Marítimo">Marítimo</option>
+          <option value="Virtual">Virtual</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Tipo de operación</label>
+        <select id="f-tipo">
+          <option>Importación</option>
+          <option>Exportación</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Prioridad</label>
+        <select id="f-prioridad">
+          <option value="Alta">Alta</option>
+          <option value="Media" selected>Media</option>
+          <option value="Baja">Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Status</label>
+        <select id="f-status">
+          <option>Pendiente</option>
+          <option>En proceso</option>
+          <option>Revisión</option>
+          <option>Completado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Fecha límite</label>
+        <input type="datetime-local" id="f-limite">
+      </div>
+    </div>
+    <div class="field">
+      <label>Notas (opcional)</label>
+      <input type="text" id="f-notas" placeholder="Detalles adicionales">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelBtn">Cancelar</button>
+      <button class="btn-add" id="saveBtn">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SDK de Firebase Modular -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // Tu configuración de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiBnMqEli5YXRqZmYXLJ2SK1a93Tvkoag",
+    authDomain: "pendientes-ayc.firebaseapp.com",
+    projectId: "pendientes-ayc",
+    storageBucket: "pendientes-ayc.firebasestorage.app",
+    messagingSenderId: "139916620764",
+    appId: "1:139916620764:web:a386fc3c35a15d89675519",
+    measurementId: "G-32VY2DE244"
+  };
+
+  // Inicializar Firebase y la Base de Datos
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dbRef = ref(db, 'pendientes_ayc');
+
+  // Lógica de Temas
+  const themeSelector = document.getElementById('themeSelector');
+  const savedTheme = localStorage.getItem('ayc-theme') || 'terminal-dark';
+  
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  themeSelector.value = savedTheme;
+
+  themeSelector.addEventListener('change', (e) => {
+    const newTheme = e.target.value;
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('ayc-theme', newTheme);
+  });
+
+  // Lógica de la UI del Tablero
+  let tasks = [];
+  let editingId = null;
+  let currentFilter = 'todos';
+  const DEPTOS = ['Aéreo', 'Corresponsalías', 'Marítimo', 'Virtual'];
+
+  // Leer en tiempo real desde tu Firebase
+  onValue(dbRef, (snapshot) => {
+    tasks = [];
+    snapshot.forEach((childSnapshot) => {
+      tasks.push({ id: childSnapshot.key, ...childSnapshot.val() });
+    });
+    render();
+  });
+
+  function isOverdue(t) {
+    if (t.status === 'Completado') return false;
+    if (!t.limite) return false;
+    return new Date(t.limite).getTime() < Date.now();
+  }
+
+  function effectiveStatus(t) { return isOverdue(t) ? 'Retrasado' : t.status; }
+  
+  function statusBadgeClass(s) {
+    return {
+      'Pendiente': 'badge-pendiente',
+      'En proceso': 'badge-proceso',
+      'Revisión': 'badge-revision',
+      'Completado': 'badge-completado',
+      'Retrasado': 'badge-retrasado'
+    }[s] || 'badge-pendiente';
+  }
+  
+  function prioClass(p) { return { 'Alta': 'prio-alta', 'Media': 'prio-media', 'Baja': 'prio-baja' }[p] || 'prio-media'; }
+  
+  function formatLimite(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  function renderTabs() {
+    const counts = { todos: tasks.length };
+    DEPTOS.forEach(d => counts[d] = tasks.filter(t => t.depto === d).length);
+    const labels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
+    
+    document.getElementById('tabs').innerHTML = labels.map(([key, label]) => `
+      <div class="tab ${currentFilter === key ? 'active' : ''}" data-key="${key}">
+        ${label} <span class="count">${counts[key] || 0}</span>
+      </div>
+    `).join('');
+    
+    document.querySelectorAll('.tab').forEach(el => {
+      el.addEventListener('click', () => {
+        currentFilter = el.getAttribute('data-key');
+        render();
+      });
+    });
+  }
+
+  function render() {
+    renderTabs();
+    const rowsEl = document.getElementById('rows');
+    let filtered = currentFilter === 'todos' ? tasks : tasks.filter(t => t.depto === currentFilter);
+
+    filtered = [...filtered].sort((a, b) => {
+      const aOverdue = isOverdue(a) ? 0 : 1;
+      const bOverdue = isOverdue(b) ? 0 : 1;
+      if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+      if (a.status === 'Completado' && b.status !== 'Completado') return 1;
+      if (b.status === 'Completado' && a.status !== 'Completado') return -1;
+      return new Date(a.limite || 0) - new Date(b.limite || 0);
+    });
+
+    if (filtered.length === 0) {
+      rowsEl.innerHTML = '<div class="empty-state">No hay operaciones pendientes en esta vista.</div>';
+    } else {
+      rowsEl.innerHTML = filtered.map(t => {
+        const st = effectiveStatus(t);
+        return `
+        <div class="row" data-id="${t.id}">
+          <div class="prio-dot ${prioClass(t.prioridad)}" title="Prioridad ${t.prioridad}"></div>
+          <div>
+            <div class="cell-main">${t.ref || 'S/REF'}</div>
+            <div class="cell-sub">${t.tipo}</div>
+          </div>
+          <div class="cell small" data-label="Cliente">${t.cliente || '—'}</div>
+          <div class="cell small" data-label="Aduana">${t.aduana}</div>
+          <div class="cell small" data-label="Depto">${t.depto}</div>
+          <div data-label="Status"><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
+          <div class="cell small" data-label="Límite">${formatLimite(t.limite)}</div>
+          <div class="row-actions">
+            <button class="icon-btn done" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
+            <button class="icon-btn" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
+            <button class="icon-btn del" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    attachRowEvents();
+  }
+
+  function attachRowEvents() {
+    document.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        
+        if (action === 'del') {
+          if(confirm("¿Estás seguro de eliminar este pendiente?")) {
+            remove(ref(db, 'pendientes_ayc/' + id));
+          }
+        } else if (action === 'done') {
+          update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado' });
+        } else if (action === 'edit') {
+          openModal(id);
+        }
+      });
+    });
+  }
+
+  // Lógica del Modal
+  const overlay = document.getElementById('modalOverlay');
+  function openModal(id) {
+    editingId = id || null;
+    document.getElementById('modalTitle').textContent = id ? 'Editar Pendiente' : 'Nuevo Pendiente';
+    
+    if (id) {
+      const t = tasks.find(t => t.id === id);
+      document.getElementById('f-ref').value = t.ref || '';
+      document.getElementById('f-cliente').value = t.cliente || '';
+      document.getElementById('f-aduana').value = t.aduana;
+      document.getElementById('f-depto').value = t.depto;
+      document.getElementById('f-tipo').value = t.tipo;
+      document.getElementById('f-prioridad').value = t.prioridad;
+      document.getElementById('f-status').value = t.status;
+      document.getElementById('f-limite').value = t.limite ? t.limite.slice(0, 16) : '';
+      document.getElementById('f-notas').value = t.notas || '';
+    } else {
+      ['f-ref', 'f-cliente', 'f-notas'].forEach(fieldId => document.getElementById(fieldId).value = '');
+      document.getElementById('f-limite').value = '';
+      document.getElementById('f-aduana').value = 'Monterrey';
+      document.getElementById('f-depto').value = 'Aéreo';
+      document.getElementById('f-prioridad').value = 'Media';
+      document.getElementById('f-status').value = 'Pendiente';
+    }
+    overlay.classList.add('open');
+  }
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    editingId = null;
+  }
+
+  document.getElementById('openModalBtn').addEventListener('click', () => openModal(null));
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const refText = document.getElementById('f-ref').value.trim();
+    if (!refText) { document.getElementById('f-ref').focus(); return; }
+    
+    const data = {
+      ref: refText,
+      cliente: document.getElementById('f-cliente').value.trim(),
+      aduana: document.getElementById('f-aduana').value,
+      depto: document.getElementById('f-depto').value,
+      tipo: document.getElementById('f-tipo').value,
+      prioridad: document.getElementById('f-prioridad').value,
+      status: document.getElementById('f-status').value,
+      limite: document.getElementById('f-limite').value || null,
+      notas: document.getElementById('f-notas').value.trim()
+    };
+
+    if (editingId) {
+      update(ref(db, 'pendientes_ayc/' + editingId), data);
+    } else {
+      const newTaskRef = push(ref(db, 'pendientes_ayc'));
+      set(newTaskRef, data);
+    }
+    closeModal();
+  });
+</script>
+</body>
+</html>
