@@ -442,6 +442,90 @@
   .sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
   [data-theme*="girly"] .sound-toggle { display: flex; }
 
+  /* ===== TOOLBAR: BUSQUEDA, FILTROS Y ACCIONES DE DATOS ===== */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--divider);
+  }
+  .toolbar input[type="text"], .toolbar select {
+    background: var(--bg); border: 1px solid var(--divider); color: var(--text-main);
+    padding: 8px 12px; border-radius: var(--radius-btn);
+    font-family: var(--font-main); font-size: 12.5px;
+  }
+  .toolbar input[type="text"] { flex: 1; min-width: 160px; }
+  .toolbar .btn-mini {
+    background: transparent; border: 1px solid var(--divider); color: var(--text-sub);
+    padding: 8px 12px; border-radius: var(--radius-btn); cursor: pointer;
+    font-family: var(--font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .toolbar .btn-mini:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* RESUMEN DEL DIA */
+  .summary-bar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px 20px;
+    background: var(--panel-alt);
+    border-bottom: 1px solid var(--divider);
+    font-family: var(--font-heading);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .summary-chip { padding: 5px 10px; border-radius: 6px; }
+  .summary-chip.total { background: rgba(128,128,128,.12); color: var(--text-sub); }
+  .summary-chip.late { background: var(--red-soft); color: var(--red); }
+  .summary-chip.proceso { background: var(--blue-soft); color: var(--blue); }
+  .summary-chip.done { background: var(--green-soft); color: var(--green); }
+
+  /* MODO COMPACTO */
+  body.compact-mode .row { padding: 8px 30px; }
+  body.compact-mode .col-header { padding: 8px 30px; }
+  body.compact-mode .cell-sub, body.compact-mode .due-chip { display: none; }
+
+  /* MODO KIOSCO: oculta controles de edicion, solo lectura */
+  body.kiosk-mode .row-actions,
+  body.kiosk-mode .toolbar .btn-mini.edit-only,
+  body.kiosk-mode #openModalBtn,
+  body.kiosk-mode .toggle-done,
+  body.kiosk-mode .sound-toggle {
+    display: none !important;
+  }
+
+  /* HISTORIAL / ULTIMA ACTUALIZACION */
+  .last-update {
+    font-size: 9.5px;
+    color: var(--text-header);
+    margin-top: 2px;
+    font-family: var(--font-heading);
+  }
+
+  /* ENLACE ADJUNTO */
+  .link-chip {
+    font-size: 10.5px;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 3px;
+  }
+  .link-chip:hover { text-decoration: underline; }
+
+  /* MODAL DE EJECUTIVOS */
+  .exec-list { max-height: 220px; overflow-y: auto; margin-bottom: 14px; }
+  .exec-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-bottom: 1px solid var(--divider);
+    font-size: 13px;
+  }
+  .exec-item .icon-btn { width: 26px; height: 26px; font-size: 12px; }
+  .exec-add-row { display: flex; gap: 8px; }
+  .exec-add-row input { flex: 1; }
+
   /* PARTÍCULAS DE CHISPITAS */
   .sparkle-particle {
     position: fixed;
@@ -594,6 +678,23 @@
     <div class="ticker" id="ticker">CARGANDO AVISOS...</div>
   </div>
 
+  <div class="summary-bar" id="summaryBar"></div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔎 Buscar por pedimento o cliente...">
+    <select id="ejecutivoFilter">
+      <option value="todos">Todos los ejecutivos</option>
+    </select>
+    <button class="btn-mini edit-only" id="manageExecBtn">👤 Ejecutivos</button>
+    <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla</button>
+    <button class="btn-mini edit-only" id="uploadLayoutBtn">⬆ Subir layout</button>
+    <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+    <button class="btn-mini" id="exportCsvBtn">📄 Exportar CSV</button>
+    <button class="btn-mini" id="compactToggleBtn">▤ Vista compacta</button>
+    <button class="btn-mini" id="kioskToggleBtn">🖥 Modo kiosco</button>
+    <button class="btn-mini" id="notifyToggleBtn">🔔 Avisos del navegador</button>
+  </div>
+
   <div class="tabs" id="tabs"></div>
 
   <div class="col-header">
@@ -677,6 +778,18 @@
         <input type="datetime-local" id="f-limite">
       </div>
     </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Ejecutivo asignado</label>
+        <select id="f-ejecutivo">
+          <option value="">Sin asignar</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Enlace (Drive, PDF, etc.)</label>
+        <input type="text" id="f-enlace" placeholder="https://...">
+      </div>
+    </div>
     <div class="field">
       <label>Notas (opcional)</label>
       <input type="text" id="f-notas" placeholder="Detalles adicionales">
@@ -684,6 +797,21 @@
     <div class="modal-actions">
       <button class="btn-secondary" id="cancelBtn">Cancelar</button>
       <button class="btn-add" id="saveBtn">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de gestión de ejecutivos -->
+<div class="modal-overlay" id="execOverlay">
+  <div class="modal">
+    <h2>Ejecutivos de cuenta</h2>
+    <div class="exec-list" id="execList"></div>
+    <div class="exec-add-row">
+      <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo">
+      <button class="btn-add" id="addExecBtn">Agregar</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeExecBtn">Cerrar</button>
     </div>
   </div>
 </div>
@@ -699,6 +827,9 @@
     </div>
   </div>
 </div>
+
+<!-- Librería para leer archivos Excel/CSV (carga masiva por layout) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 
 <!-- SDK de Firebase Modular -->
 <script type="module">
@@ -722,6 +853,7 @@
   
   // Apunta a tus datos reales para que puedas verlos con el diseño nuevo
   const dbRef = ref(db, 'pendientes_ayc');
+  const execRef = ref(db, 'ejecutivos_ayc');
 
   // Lógica de Temas
   const themeSelector = document.getElementById('themeSelector');
@@ -841,9 +973,12 @@
 
   // Lógica de la UI del Tablero
   let tasks = [];
+  let executives = [];
   let editingId = null;
   let deleteTargetId = null;
   let currentFilter = 'todos';
+  let currentExecFilter = 'todos';
+  let searchTerm = '';
   let hideDone = false;
   const DEPTOS = ['Aéreo', 'Corresponsalías', 'Marítimo', 'Virtual'];
 
@@ -853,6 +988,74 @@
     snapshot.forEach((childSnapshot) => {
       tasks.push({ id: childSnapshot.key, ...childSnapshot.val() });
     });
+    render();
+    checkOverdueNotifications();
+  });
+
+  // Catálogo de ejecutivos en tiempo real
+  onValue(execRef, (snapshot) => {
+    executives = [];
+    snapshot.forEach((childSnapshot) => {
+      executives.push({ id: childSnapshot.key, nombre: childSnapshot.val() });
+    });
+    executives.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    renderExecutiveOptions();
+  });
+
+  function renderExecutiveOptions() {
+    // Select del formulario
+    const formSelect = document.getElementById('f-ejecutivo');
+    const currentFormVal = formSelect.value;
+    formSelect.innerHTML = '<option value="">Sin asignar</option>' +
+      executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
+    formSelect.value = currentFormVal;
+
+    // Filtro del toolbar
+    const filterSelect = document.getElementById('ejecutivoFilter');
+    const currentFilterVal = filterSelect.value;
+    filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar</option>' +
+      executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
+    filterSelect.value = currentFilterVal || 'todos';
+
+    // Lista dentro del modal de gestión
+    document.getElementById('execList').innerHTML = executives.length
+      ? executives.map(e => `
+        <div class="exec-item">
+          <span>${e.nombre}</span>
+          <button class="icon-btn del" data-exec-id="${e.id}" title="Eliminar ejecutivo">✖</button>
+        </div>`).join('')
+      : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos registrados.</div>';
+
+    document.querySelectorAll('[data-exec-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id')));
+      });
+    });
+  }
+
+  // Modal de gestión de ejecutivos
+  const execOverlay = document.getElementById('execOverlay');
+  document.getElementById('manageExecBtn').addEventListener('click', () => execOverlay.classList.add('open'));
+  document.getElementById('closeExecBtn').addEventListener('click', () => execOverlay.classList.remove('open'));
+  execOverlay.addEventListener('click', (e) => { if (e.target === execOverlay) execOverlay.classList.remove('open'); });
+  document.getElementById('addExecBtn').addEventListener('click', () => {
+    const input = document.getElementById('newExecInput');
+    const name = input.value.trim();
+    if (!name) return;
+    push(execRef, name);
+    input.value = '';
+  });
+  document.getElementById('newExecInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addExecBtn').click();
+  });
+
+  // Búsqueda y filtro por ejecutivo
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    render();
+  });
+  document.getElementById('ejecutivoFilter').addEventListener('change', (e) => {
+    currentExecFilter = e.target.value;
     render();
   });
 
@@ -880,6 +1083,61 @@
     localStorage.setItem('ayc-hide-done', hideDone ? '1' : '0');
     render();
   });
+
+  // Vista compacta (se recuerda en este dispositivo)
+  const compactBtn = document.getElementById('compactToggleBtn');
+  if (localStorage.getItem('ayc-compact') === '1') document.body.classList.add('compact-mode');
+  compactBtn.addEventListener('click', () => {
+    document.body.classList.toggle('compact-mode');
+    localStorage.setItem('ayc-compact', document.body.classList.contains('compact-mode') ? '1' : '0');
+  });
+
+  // Modo kiosco (solo lectura, ideal para pantalla/monitor)
+  const kioskBtn = document.getElementById('kioskToggleBtn');
+  kioskBtn.addEventListener('click', () => {
+    document.body.classList.toggle('kiosk-mode');
+  });
+  // Salir del modo kiosco con doble-click en el logo (para no quedar atrapado en el monitor)
+  document.querySelector('.logo-block').addEventListener('dblclick', () => {
+    document.body.classList.remove('kiosk-mode');
+  });
+
+  // Notificaciones del navegador para operaciones retrasadas
+  const notifyBtn = document.getElementById('notifyToggleBtn');
+  let notifyEnabled = localStorage.getItem('ayc-notify') === '1';
+  const notifiedIds = new Set();
+  function updateNotifyBtnLabel() {
+    notifyBtn.textContent = notifyEnabled ? '🔔 Avisos activados' : '🔔 Avisos del navegador';
+  }
+  updateNotifyBtnLabel();
+  notifyBtn.addEventListener('click', async () => {
+    if (!('Notification' in window)) { alert('Tu navegador no soporta notificaciones.'); return; }
+    if (!notifyEnabled) {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        notifyEnabled = true;
+        localStorage.setItem('ayc-notify', '1');
+      }
+    } else {
+      notifyEnabled = false;
+      localStorage.setItem('ayc-notify', '0');
+    }
+    updateNotifyBtnLabel();
+  });
+  function checkOverdueNotifications() {
+    if (!notifyEnabled || Notification.permission !== 'granted') return;
+    tasks.forEach(t => {
+      if (isOverdue(t) && !notifiedIds.has(t.id)) {
+        notifiedIds.add(t.id);
+        new Notification('Pendiente retrasado — A&C', {
+          body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`,
+          icon: undefined
+        });
+      }
+    });
+  }
+  setInterval(checkOverdueNotifications, 60000);
+
 
   function isOverdue(t) {
     if (t.status === 'Completado') return false;
@@ -930,6 +1188,23 @@
     return `<span class="due-chip ${cls}">${txt}</span>`;
   }
 
+  // Historial de cambios de status
+  function logHistory(id, from, to) {
+    if (from === to) return;
+    push(ref(db, 'pendientes_ayc/' + id + '/historial'), {
+      from: from || '—', to, at: new Date().toISOString()
+    });
+  }
+  function lastHistoryText(t) {
+    if (!t.historial) return '';
+    const entries = Object.values(t.historial);
+    if (!entries.length) return '';
+    const last = entries.sort((a, b) => new Date(a.at) - new Date(b.at)).pop();
+    const d = new Date(last.at);
+    const fecha = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${last.from} → ${last.to} · ${fecha}`;
+  }
+
   // Ticker de avisos: operaciones retrasadas
   function renderTicker() {
     const overdue = tasks.filter(t => isOverdue(t));
@@ -968,12 +1243,34 @@
     });
   }
 
+  function renderSummary() {
+    const total = tasks.length;
+    const late = tasks.filter(t => isOverdue(t)).length;
+    const proceso = tasks.filter(t => t.status === 'En proceso').length;
+    const done = tasks.filter(t => t.status === 'Completado').length;
+    document.getElementById('summaryBar').innerHTML = `
+      <span class="summary-chip total">Total: ${total}</span>
+      <span class="summary-chip late">Retrasados: ${late}</span>
+      <span class="summary-chip proceso">En proceso: ${proceso}</span>
+      <span class="summary-chip done">Completados: ${done}</span>
+    `;
+  }
+
   function render() {
     renderTabs();
     renderTicker();
+    renderSummary();
     const rowsEl = document.getElementById('rows');
     let filtered = currentFilter === 'todos' ? tasks : tasks.filter(t => t.depto === currentFilter);
     if (hideDone) filtered = filtered.filter(t => t.status !== 'Completado');
+    if (currentExecFilter === '__sin__') filtered = filtered.filter(t => !t.ejecutivo);
+    else if (currentExecFilter !== 'todos') filtered = filtered.filter(t => t.ejecutivo === currentExecFilter);
+    if (searchTerm) {
+      filtered = filtered.filter(t =>
+        (t.ref || '').toLowerCase().includes(searchTerm) ||
+        (t.cliente || '').toLowerCase().includes(searchTerm)
+      );
+    }
 
     filtered = [...filtered].sort((a, b) => {
       const aOverdue = isOverdue(a) ? 0 : 1;
@@ -989,6 +1286,7 @@
     } else {
       rowsEl.innerHTML = filtered.map(t => {
         const st = effectiveStatus(t);
+        const lastUpdate = lastHistoryText(t);
         return `
         <div class="row" data-id="${t.id}">
           <div class="prio-dot ${prioClass(t.prioridad)}" title="Prioridad ${t.prioridad}"></div>
@@ -996,13 +1294,21 @@
             <div class="cell-main">${t.ref || 'S/REF'}</div>
             <div class="cell-sub">${t.tipo}</div>
           </div>
-          <div class="cell small" data-label="Cliente">${t.cliente || '—'}</div>
+          <div class="cell small" data-label="Cliente">
+            ${t.cliente || '—'}
+            ${t.ejecutivo ? `<div class="cell-sub">👤 ${t.ejecutivo}</div>` : ''}
+            ${t.enlace ? `<a class="link-chip" href="${t.enlace}" target="_blank" rel="noopener">🔗 Ver enlace</a>` : ''}
+          </div>
           <div class="cell small" data-label="Aduana">${t.aduana}</div>
           <div class="cell small" data-label="Depto">${t.depto}</div>
-          <div data-label="Status"><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
+          <div data-label="Status">
+            <span class="badge ${statusBadgeClass(st)}">${st}</span>
+            ${lastUpdate ? `<div class="last-update">${lastUpdate}</div>` : ''}
+          </div>
           <div class="cell small" data-label="Límite">${formatLimite(t.limite)}<br>${dueChip(t)}</div>
           <div class="row-actions">
             <button class="icon-btn done" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
+            <button class="icon-btn" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button>
             <button class="icon-btn" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
             <button class="icon-btn del" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>
           </div>
@@ -1021,10 +1327,19 @@
         if (action === 'del') {
           openConfirmDelete(id);
         } else if (action === 'done') {
+          const t = tasks.find(t => t.id === id);
+          logHistory(id, t ? t.status : null, 'Completado');
           update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado' });
           playSparkle(btn);
         } else if (action === 'edit') {
           openModal(id);
+        } else if (action === 'dup') {
+          const t = tasks.find(t => t.id === id);
+          if (t) {
+            const { id: _oldId, historial, ...rest } = t;
+            const newTaskRef = push(ref(db, 'pendientes_ayc'));
+            set(newTaskRef, { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente' });
+          }
         }
       });
     });
@@ -1075,14 +1390,17 @@
       document.getElementById('f-prioridad').value = t.prioridad;
       document.getElementById('f-status').value = t.status;
       document.getElementById('f-limite').value = t.limite ? t.limite.slice(0, 16) : '';
+      document.getElementById('f-ejecutivo').value = t.ejecutivo || '';
+      document.getElementById('f-enlace').value = t.enlace || '';
       document.getElementById('f-notas').value = t.notas || '';
     } else {
-      ['f-ref', 'f-cliente', 'f-notas'].forEach(fieldId => document.getElementById(fieldId).value = '');
+      ['f-ref', 'f-cliente', 'f-notas', 'f-enlace'].forEach(fieldId => document.getElementById(fieldId).value = '');
       document.getElementById('f-limite').value = '';
       document.getElementById('f-aduana').value = 'Monterrey';
       document.getElementById('f-depto').value = 'Aéreo';
       document.getElementById('f-prioridad').value = 'Media';
       document.getElementById('f-status').value = 'Pendiente';
+      document.getElementById('f-ejecutivo').value = '';
     }
     overlay.classList.add('open');
   }
@@ -1099,10 +1417,10 @@
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
-  document.getElementById('saveBtn').addEventListener('click', () => {
+  function saveCurrentForm() {
     const refText = document.getElementById('f-ref').value.trim();
     if (!refText) { document.getElementById('f-ref').focus(); return; }
-    
+
     const data = {
       ref: refText,
       cliente: document.getElementById('f-cliente').value.trim(),
@@ -1112,10 +1430,14 @@
       prioridad: document.getElementById('f-prioridad').value,
       status: document.getElementById('f-status').value,
       limite: document.getElementById('f-limite').value || null,
+      ejecutivo: document.getElementById('f-ejecutivo').value,
+      enlace: document.getElementById('f-enlace').value.trim(),
       notas: document.getElementById('f-notas').value.trim()
     };
 
     if (editingId) {
+      const prev = tasks.find(t => t.id === editingId);
+      if (prev && prev.status !== data.status) logHistory(editingId, prev.status, data.status);
       update(ref(db, 'pendientes_ayc/' + editingId), data);
     } else {
       const newTaskRef = push(ref(db, 'pendientes_ayc'));
@@ -1123,6 +1445,89 @@
       playSparkle(document.getElementById('saveBtn'));
     }
     closeModal();
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', saveCurrentForm);
+
+  // Atajos de teclado: N = nuevo pendiente, Ctrl/Cmd+Enter = guardar
+  document.addEventListener('keydown', (e) => {
+    const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (e.key.toLowerCase() === 'n' && !typing && !overlay.classList.contains('open') && !execOverlay.classList.contains('open')) {
+      e.preventDefault();
+      document.getElementById('openModalBtn').click();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && overlay.classList.contains('open')) {
+      e.preventDefault();
+      saveCurrentForm();
+    }
+  });
+
+  // ---------- Exportar a CSV / respaldo ----------
+  function tasksToCsv(list) {
+    const headers = ['ref','cliente','aduana','depto','tipo','prioridad','status','limite','ejecutivo','enlace','notas'];
+    const rows = list.map(t => headers.map(h => `"${(t[h] ?? '').toString().replace(/"/g, '""')}"`).join(','));
+    return headers.join(',') + '\n' + rows.join('\n');
+  }
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    downloadFile('pendientes_ac_' + Date.now() + '.csv', tasksToCsv(tasks), 'text/csv;charset=utf-8;');
+  });
+  document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+    const headers = ['ref','cliente','aduana','depto','tipo','prioridad','status','limite','ejecutivo','enlace','notas'];
+    const example = ['26 43 1234 5000123','Cliente Ejemplo SA','Monterrey','Aéreo','Importación','Media','Pendiente','2026-07-15T14:00','','','Notas opcionales'];
+    downloadFile('plantilla_pendientes_ac.csv', headers.join(',') + '\n' + example.join(','), 'text/csv;charset=utf-8;');
+  });
+
+  // ---------- Carga masiva por layout (CSV o Excel) ----------
+  document.getElementById('uploadLayoutBtn').addEventListener('click', () => {
+    document.getElementById('layoutFileInput').click();
+  });
+  document.getElementById('layoutFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+        if (!rows.length) { alert('El archivo no tiene filas de datos.'); return; }
+        let count = 0;
+        rows.forEach(row => {
+          const refVal = (row.ref || row.Ref || row.REF || '').toString().trim();
+          if (!refVal) return;
+          const newTaskRef = push(ref(db, 'pendientes_ayc'));
+          set(newTaskRef, {
+            ref: refVal,
+            cliente: (row.cliente || row.Cliente || '').toString(),
+            aduana: (row.aduana || row.Aduana || 'Monterrey').toString(),
+            depto: (row.depto || row.Depto || 'Aéreo').toString(),
+            tipo: (row.tipo || row.Tipo || 'Importación').toString(),
+            prioridad: (row.prioridad || row.Prioridad || 'Media').toString(),
+            status: (row.status || row.Status || 'Pendiente').toString(),
+            limite: (row.limite || row.Limite || '') ? new Date(row.limite || row.Limite).toISOString() : null,
+            ejecutivo: (row.ejecutivo || row.Ejecutivo || '').toString(),
+            enlace: (row.enlace || row.Enlace || '').toString(),
+            notas: (row.notas || row.Notas || '').toString()
+          });
+          count++;
+        });
+        alert(`Se cargaron ${count} pendientes desde el layout.`);
+        playSparkle(document.getElementById('uploadLayoutBtn'));
+      } catch (err) {
+        alert('No se pudo leer el archivo. Revisa que use la misma plantilla (botón "Plantilla").');
+      }
+      e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
   });
 </script>
 </body>
