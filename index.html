@@ -4,143 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A&C - Tablero de Pendientes</title>
-<!-- Fuentes para ambos estilos -->
+<meta name="theme-color" content="#0D1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* =========================================
-     1. TEMA: TERMINAL OSCURO (Original)
+     TEMAS
      ========================================= */
-  [data-theme="terminal-dark"] {
-    --bg: #05070B;
-    --panel: #0D1117;
-    --panel-alt: #11151D;
-    --primary: #FFB300;
-    --primary-hover: #FFC940;
-    --text-main: #E8ECF1;
-    --text-sub: #8B94A5;
-    --text-header: #5B6472;
-    --divider: #1D2330;
-    --accent: #5EC8FF;
-    
-    --green: #00E5A0; --green-soft: rgba(0,229,160,.15);
-    --red: #FF4D4D; --red-soft: rgba(255,77,77,.15);
-    --amber: #FFB300; --amber-soft: rgba(255,179,0,.15);
-    --blue: #5EC8FF; --blue-soft: rgba(94,200,255,.15);
-    
-    --shadow: 0 40px 80px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03);
-    --bg-image: radial-gradient(ellipse at top, #0A0D14 0%, var(--bg) 60%);
-  }
-
-  /* =========================================
-     2. TEMA: TERMINAL CLARO
-     ========================================= */
-  [data-theme="terminal-light"] {
-    --bg: #F3F4F6;
-    --panel: #FFFFFF;
-    --panel-alt: #F9FAFB;
-    --primary: #D97706;
-    --primary-hover: #F59E0B;
-    --text-main: #111827;
-    --text-sub: #4B5563; /* Más oscuro para mejor contraste */
-    --text-header: #6B7280;
-    --divider: #E5E7EB;
-    --accent: #3B82F6;
-    
-    --green: #059669; --green-soft: #D1FAE5;
-    --red: #DC2626; --red-soft: #FEE2E2;
-    --amber: #D97706; --amber-soft: #FEF3C7;
-    --blue: #2563EB; --blue-soft: #DBEAFE;
-    
-    --shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-    --bg-image: none;
-  }
-
-  /* VARIABLES ESTRUCTURALES PARA LA TERMINAL */
-  [data-theme*="terminal"] {
-    --font-main: 'Inter', sans-serif;
-    --font-heading: 'JetBrains Mono', monospace;
-    --font-mono: 'JetBrains Mono', monospace;
-    --radius-board: 6px;
-    --radius-btn: 4px;
-    --radius-tab: 0px;
-    --text-transform: uppercase;
-    --logo-bg: var(--primary);
-    --logo-color: var(--panel);
-    --tab-bg-active: transparent;
-    --tab-border-active: var(--primary);
-    --tab-color-active: var(--primary);
-    --header-border: 2px solid var(--primary);
-  }
-
-  /* =========================================
-     3. TEMA: GIRLY POP CLARO
-     ========================================= */
-  [data-theme="girly-light"] {
-    --bg: #FFF0F5;
-    --panel: #FFFFFF;
-    --panel-alt: #FFF6FA;
-    --primary: #FF69B4;
-    --primary-hover: #FF1493;
-    --text-main: #4A4A4A;
-    --text-sub: #666666;
-    --text-header: #888888;
-    --divider: #FFE4E1;
-    --accent: #B19CD9;
-    
-    --green: #10B981; --green-soft: #D1FAE5;
-    --red: #EF4444; --red-soft: #FEE2E2;
-    --amber: #F59E0B; --amber-soft: #FEF3C7;
-    --blue: #3B82F6; --blue-soft: #E0E7FF;
-    
-    --shadow: 0 10px 30px -10px rgba(255, 105, 180, 0.15);
-    --bg-image: radial-gradient(circle at 10% 20%, rgba(255, 105, 180, 0.05) 0%, transparent 20%), 
-                radial-gradient(circle at 90% 80%, rgba(177, 156, 217, 0.05) 0%, transparent 20%);
-  }
-
-  /* =========================================
-     4. TEMA: GIRLY POP OSCURO
-     ========================================= */
-  [data-theme="girly-dark"] {
-    --bg: #1A0B1C;
-    --panel: #2D1B36;
-    --panel-alt: #382243;
-    --primary: #FF85C0;
-    --primary-hover: #FF9ADA;
-    --text-main: #F8E8F2;
-    --text-sub: #D7BCE8;
-    --text-header: #B48EAD;
-    --divider: #4A2B58;
-    --accent: #D7BCE8;
-    
-    --green: #00E5A0; --green-soft: rgba(0,229,160,.15);
-    --red: #FF6B6B; --red-soft: rgba(255,107,107,.15);
-    --amber: #FFC074; --amber-soft: rgba(255,192,116,.15);
-    --blue: #A2E4B8; --blue-soft: rgba(162,228,184,.15);
-    
-    --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-    --bg-image: none;
-  }
-
-  /* VARIABLES ESTRUCTURALES PARA GIRLY POP */
-  [data-theme*="girly"] {
-    --font-main: 'Poppins', sans-serif;
-    --font-heading: 'Quicksand', sans-serif;
-    --font-mono: 'Poppins', sans-serif;
-    --radius-board: 20px;
-    --radius-btn: 20px;
-    --radius-tab: 20px;
-    --text-transform: none;
-    --logo-bg: linear-gradient(135deg, var(--primary), var(--accent));
-    --logo-color: white;
-    --tab-bg-active: var(--primary);
-    --tab-border-active: transparent;
-    --tab-color-active: #FFF;
-    --header-border: 1px solid var(--divider);
-  }
-
-  /* EMOJIS DINÁMICOS SOLO PARA GIRLY POP */
+  [data-theme="terminal-dark"] { --bg: #05070B; --panel: #0D1117; --panel-alt: #11151D; --primary: #FFB300; --primary-hover: #FFC940; --text-main: #E8ECF1; --text-sub: #8B94A5; --text-header: #5B6472; --divider: #1D2330; --accent: #5EC8FF; --green: #00E5A0; --green-soft: rgba(0,229,160,.15); --red: #FF4D4D; --red-soft: rgba(255,77,77,.15); --amber: #FFB300; --amber-soft: rgba(255,179,0,.15); --blue: #5EC8FF; --blue-soft: rgba(94,200,255,.15); --shadow: 0 40px 80px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03); --bg-image: radial-gradient(ellipse at top, #0A0D14 0%, var(--bg) 60%); --details-bg: rgba(255,255,255,0.02); }
+  [data-theme="terminal-light"] { --bg: #F3F4F6; --panel: #FFFFFF; --panel-alt: #F9FAFB; --primary: #D97706; --primary-hover: #F59E0B; --text-main: #111827; --text-sub: #4B5563; --text-header: #6B7280; --divider: #E5E7EB; --accent: #3B82F6; --green: #059669; --green-soft: #D1FAE5; --red: #DC2626; --red-soft: #FEE2E2; --amber: #D97706; --amber-soft: #FEF3C7; --blue: #2563EB; --blue-soft: #DBEAFE; --shadow: 0 10px 25px -5px rgba(0,0,0,0.1); --bg-image: none; --details-bg: rgba(0,0,0,0.02); }
+  [data-theme*="terminal"] { --font-main: 'Inter', sans-serif; --font-heading: 'JetBrains Mono', monospace; --font-mono: 'JetBrains Mono', monospace; --radius-board: 6px; --radius-btn: 4px; --radius-tab: 0px; --text-transform: uppercase; --logo-bg: var(--primary); --logo-color: var(--panel); --tab-bg-active: transparent; --tab-border-active: var(--primary); --tab-color-active: var(--primary); --header-border: 2px solid var(--primary); }
+  [data-theme="girly-light"] { --bg: #FFF0F5; --panel: #FFFFFF; --panel-alt: #FFF6FA; --primary: #FF69B4; --primary-hover: #FF1493; --text-main: #4A4A4A; --text-sub: #666666; --text-header: #888888; --divider: #FFE4E1; --accent: #B19CD9; --green: #10B981; --green-soft: #D1FAE5; --red: #EF4444; --red-soft: #FEE2E2; --amber: #F59E0B; --amber-soft: #FEF3C7; --blue: #3B82F6; --blue-soft: #E0E7FF; --shadow: 0 10px 30px -10px rgba(255, 105, 180, 0.15); --bg-image: radial-gradient(circle at 10% 20%, rgba(255, 105, 180, 0.05) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(177, 156, 217, 0.05) 0%, transparent 20%); --details-bg: rgba(255,105,180,0.03); }
+  [data-theme="girly-dark"] { --bg: #1A0B1C; --panel: #2D1B36; --panel-alt: #382243; --primary: #FF85C0; --primary-hover: #FF9ADA; --text-main: #F8E8F2; --text-sub: #D7BCE8; --text-header: #B48EAD; --divider: #4A2B58; --accent: #D7BCE8; --green: #00E5A0; --green-soft: rgba(0,229,160,.15); --red: #FF6B6B; --red-soft: rgba(255,107,107,.15); --amber: #FFC074; --amber-soft: rgba(255,192,116,.15); --blue: #A2E4B8; --blue-soft: rgba(162,228,184,.15); --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); --bg-image: none; --details-bg: rgba(255,255,255,0.02); }
+  [data-theme*="girly"] { --font-main: 'Poppins', sans-serif; --font-heading: 'Quicksand', sans-serif; --font-mono: 'Poppins', sans-serif; --radius-board: 20px; --radius-btn: 20px; --radius-tab: 20px; --text-transform: none; --logo-bg: linear-gradient(135deg, var(--primary), var(--accent)); --logo-color: white; --tab-bg-active: var(--primary); --tab-border-active: transparent; --tab-color-active: #FFF; --header-border: 1px solid var(--divider); }
   [data-theme*="girly"] .logo-badge::before { content: "✨ "; }
   [data-theme*="girly"] .btn-add::before { content: "✨ "; }
   [data-theme*="girly"] .modal h2::after { content: " 🎀"; }
@@ -149,181 +30,105 @@
      ESTILOS GLOBALES
      ========================================= */
   * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
-  
-  body {
-    margin: 0;
-    background-color: var(--bg);
-    background-image: var(--bg-image);
-    color: var(--text-main);
-    font-family: var(--font-main);
-    min-height: 100vh;
-    padding: 20px;
-  }
+  body { margin: 0; background-color: var(--bg); background-image: var(--bg-image); color: var(--text-main); font-family: var(--font-main); min-height: 100vh; padding: 20px; }
+  .board { max-width: 1200px; margin: 0 auto; background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); overflow: hidden; }
 
-  .board {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--divider);
-    border-radius: var(--radius-board);
-    box-shadow: var(--shadow);
-    overflow: hidden;
+  /* PERMISOS Y ROLES */
+  body.view-only .row-actions, body.view-only #openModalBtn, body.view-only .edit-only { display: none !important; }
+  .admin-only { display: none !important; }
+  body.is-admin .admin-only { display: inline-flex !important; }
+  body.is-admin button.admin-only, body.is-admin select.admin-only { display: inline-block !important; }
+  
+  /* =========================================
+     MODO KIOSCO CORREGIDO
+     ========================================= */
+  body.kiosk-mode .header-actions, body.kiosk-mode .toolbar, body.kiosk-mode .tabs { display: none !important; }
+  body.kiosk-mode .board { max-width: 100%; border-radius: 0; border: none; box-shadow: none; }
+  body.kiosk-mode { padding: 0; }
+  
+  /* Ajuste de Grid para Kiosco (7 columnas en vez de 9) */
+  body.kiosk-mode .col-header, body.kiosk-mode .row-main {
+    grid-template-columns: 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr !important;
   }
+  body.kiosk-mode .expand-btn, body.kiosk-mode .row-actions { display: none !important; }
+  body.kiosk-mode .col-header > div:first-child, body.kiosk-mode .col-header > div:last-child { display: none !important; }
+
+  /* Botón de Salida de Kiosco */
+  .exit-kiosk-btn {
+    display: none; position: fixed; bottom: 30px; right: 30px;
+    background: var(--red); color: white; border: none; padding: 12px 24px;
+    border-radius: 30px; font-family: var(--font-heading); font-weight: 800; font-size: 14px;
+    cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(255,0,0,0.3);
+    opacity: 0.3; transition: opacity 0.3s, transform 0.2s;
+  }
+  body.kiosk-mode .exit-kiosk-btn { display: block; }
+  body.kiosk-mode .exit-kiosk-btn:hover { opacity: 1; transform: scale(1.05); }
+
+  /* Ocultar filtro de ejecutivos si no es admin */
+  body:not(.is-admin) #ejecutivoFilter { display: none !important; }
 
   /* HEADER */
-  .board-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 30px;
-    background: var(--panel-alt);
-    border-bottom: var(--header-border);
-    gap: 15px;
-    flex-wrap: wrap;
-  }
+  .board-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 30px; background: var(--panel-alt); border-bottom: var(--header-border); gap: 15px; flex-wrap: wrap; }
   .logo-block { display: flex; align-items: center; gap: 15px; flex: 1; }
-  .logo-badge {
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 20px;
-    color: var(--logo-color);
-    background: var(--logo-bg);
-    padding: 6px 12px;
-    border-radius: var(--radius-btn);
-    letter-spacing: 1px;
-  }
-  .logo-text h1 {
-    margin: 0;
-    font-family: var(--font-heading);
-    font-size: 16px;
-    color: var(--text-main);
-    text-transform: var(--text-transform);
-    letter-spacing: 1px;
-    font-weight: 800;
-  }
-  .logo-text span {
-    font-size: 12px;
-    color: var(--text-sub);
-    letter-spacing: 1px;
-  }
+  .logo-badge { font-family: var(--font-heading); font-weight: 800; font-size: 20px; color: var(--logo-color); background: var(--logo-bg); padding: 6px 12px; border-radius: var(--radius-btn); letter-spacing: 1px; }
+  .logo-text h1 { margin: 0; font-family: var(--font-heading); font-size: 16px; color: var(--text-main); text-transform: var(--text-transform); letter-spacing: 1px; font-weight: 800; }
+  .logo-text span { font-size: 12px; color: var(--text-sub); letter-spacing: 1px; }
   
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
+  .header-actions { display: flex; align-items: center; gap: 15px; }
+  .sync-indicator { display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); transition: background .2s, box-shadow .2s; }
+  
+  .sound-toggle { display: none; background: transparent; border: 1px solid var(--divider); color: var(--text-sub); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 15px; align-items: center; justify-content: center; }
+  .sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
+  [data-theme*="girly"] .sound-toggle { display: flex; }
 
-  /* SELECTOR DE TEMAS */
-  .theme-selector {
-    background: var(--panel);
-    border: 1px solid var(--divider);
-    color: var(--text-main);
-    padding: 8px 12px;
-    border-radius: var(--radius-btn);
-    font-family: var(--font-main);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    outline: none;
-  }
-  .theme-selector:focus { border-color: var(--primary); }
-
-  /* BOTÓN NUEVO PENDIENTE EN HEADER */
-  .btn-add {
-    background: var(--primary);
-    color: #FFF;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--radius-btn);
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 13px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    text-transform: var(--text-transform);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
+  .theme-selector { background: var(--panel); border: 1px solid var(--divider); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-btn); font-family: var(--font-main); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
+  .btn-add { background: var(--primary); color: #FFF; border: none; padding: 10px 20px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-weight: 800; font-size: 13px; letter-spacing: 1px; cursor: pointer; text-transform: var(--text-transform); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
   .btn-add:hover { transform: translateY(-1px); filter: brightness(1.1); }
   [data-theme*="girly"] .btn-add { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
 
-  /* FILTER TABS */
-  .tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 10px 20px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--divider);
-  }
-  .tab {
-    padding: 10px 16px;
-    font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-sub);
-    cursor: pointer;
-    border-radius: var(--radius-tab);
-    border-bottom: 3px solid transparent;
-    text-transform: var(--text-transform);
-    letter-spacing: 1px;
-    user-select: none;
-    display: flex;
-    align-items: center;
-  }
-  .tab:hover { color: var(--text-main); }
-  .tab.active {
-    background: var(--tab-bg-active);
-    border-bottom-color: var(--tab-border-active);
-    color: var(--tab-color-active);
-  }
+  /* TICKER AVISOS */
+  .ticker-wrap { background: var(--panel-alt); border-bottom: 1px solid var(--divider); overflow: hidden; white-space: nowrap; padding: 9px 0; }
+  .ticker { display: inline-block; font-family: var(--font-heading); font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--red); animation: scrollTicker 24s linear infinite; padding-left: 100%; }
+  .ticker.ok { color: var(--green); }
+  @keyframes scrollTicker { 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  /* TOOLBAR PLEGABLE */
+  .toolbar { padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); }
+  .toolbar-header { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px; }
+  .btn-toggle-tools { background: transparent; border: 1px solid var(--divider); color: var(--text-main); padding: 8px 15px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   
-  /* CONTADORES DINÁMICOS */
-  .tab .count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 8px;
-    background: rgba(128,128,128,0.15);
-    color: var(--text-sub);
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 800;
-  }
-  .tab .count.has-items {
-    background: var(--amber-soft);
-    color: var(--amber);
-  }
+  .toolbar-content { display: none; width: 100%; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider); gap: 10px; flex-wrap: wrap; align-items: center; }
+  .toolbar-content.open { display: flex; animation: fadeIn 0.3s ease; }
+  .toolbar-content input, .toolbar-content select { background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-btn); font-family: var(--font-main); font-size: 12.5px; }
+  .toggle-done { display: flex; align-items: center; gap: 7px; font-family: var(--font-heading); font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; user-select: none; }
+  .toggle-done input { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+
+  .btn-mini { background: transparent; border: 1px solid var(--divider); color: var(--text-sub); padding: 8px 12px; border-radius: var(--radius-btn); cursor: pointer; font-family: var(--font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap;}
+  .btn-mini:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* TABS */
+  .tabs { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 30px; background: var(--panel-alt); border-bottom: 1px solid var(--divider); }
+  .tab { padding: 10px 16px; font-family: var(--font-heading); font-size: 12px; font-weight: 700; color: var(--text-sub); cursor: pointer; border-radius: var(--radius-tab); border-bottom: 3px solid transparent; text-transform: var(--text-transform); letter-spacing: 1px; display: flex; align-items: center; }
+  .tab.active { background: var(--tab-bg-active); border-bottom-color: var(--tab-border-active); color: var(--tab-color-active); }
+  .tab .count { display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; background: rgba(128,128,128,0.15); color: var(--text-sub); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 800; }
+  .tab .count.has-items { background: var(--amber-soft); color: var(--amber); }
   [data-theme*="girly"] .tab .count.has-items { background: var(--primary); color: white; }
 
-  /* COLUMNS & ROWS */
-  .col-header {
-    display: grid;
-    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 100px;
-    gap: 10px;
-    padding: 15px 30px;
-    background: var(--panel-alt);
-    border-bottom: 1px solid var(--divider);
-    font-family: var(--font-heading);
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--text-header);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-  }
-
+  /* TABLA (GRID BASE 9 COLUMNAS) */
+  .col-header { display: grid; grid-template-columns: 30px 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 110px; gap: 10px; padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); font-family: var(--font-heading); font-size: 11px; font-weight: 800; color: var(--text-header); text-transform: uppercase; letter-spacing: 1.5px; }
   .rows { min-height: 100px; }
-  .row {
-    display: grid;
-    grid-template-columns: 50px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 100px;
-    gap: 10px;
-    align-items: center;
-    padding: 18px 30px;
-    border-bottom: 1px solid var(--divider);
-    animation: fadeIn 0.3s ease;
-  }
-  .row:hover { background: var(--panel-alt); }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
+  
+  .row-wrapper { border-bottom: 1px solid var(--divider); animation: fadeIn 0.3s ease; }
+  .row-main { display: grid; grid-template-columns: 30px 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 110px; gap: 10px; align-items: center; padding: 18px 30px; }
+  
+  /* FLECHA ANIMADA */
+  .expand-btn { font-size: 12px; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: transparent; border: 1px solid transparent; transition: transform 0.3s ease, background 0.2s; font-family: var(--font-main); font-weight: 800; }
+  .expand-btn:hover { background: var(--divider); }
+  .row-wrapper.expanded .expand-btn { transform: rotate(90deg); }
+  
+  .details-panel { display: none; padding: 15px 30px 20px 80px; background: var(--details-bg); font-size: 13px; color: var(--text-sub); border-top: 1px dashed var(--divider); line-height: 1.6; }
+  .row-wrapper.expanded .details-panel { display: block; animation: fadeIn 0.3s ease; }
   
   .prio-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; }
   .prio-alta { background: var(--red); box-shadow: 0 0 8px var(--red); }
@@ -334,306 +139,100 @@
   .cell-sub { font-size: 11px; font-weight: 500; color: var(--text-sub); margin-top: 4px; }
   .cell { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-main); }
   .cell.small { font-size: 12px; color: var(--text-sub); }
+  .link-chip { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .link-chip:hover { text-decoration: underline; }
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 800; /* Mayor grosor para contraste */
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+  .badge { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
   .badge-pendiente { background: var(--amber-soft); color: var(--amber); }
   .badge-proceso { background: var(--blue-soft); color: var(--blue); }
   .badge-revision { background: rgba(180,140,255,.15); color: #9B6BFF; }
-  [data-theme*="dark"] .badge-revision { color: #D7BCE8; }
   .badge-completado { background: var(--green-soft); color: var(--green); }
   .badge-retrasado { background: var(--red-soft); color: var(--red); }
+  .badge-eliminado { background: rgba(128,128,128,0.15); color: var(--text-sub); text-decoration: line-through; }
 
-  /* BOTONES DE ACCIÓN MODERNIZADOS (Sin bordes) */
-  .row-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .icon-btn {
-    background: transparent; 
-    border: none;
-    color: var(--text-sub);
-    width: 32px; height: 32px;
-    border-radius: 50%; /* Redondos */
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .icon-btn { background: transparent; border: none; color: var(--text-sub); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
   .icon-btn:hover { background: var(--divider); color: var(--text-main); }
   .icon-btn.done:hover { background: var(--green-soft); color: var(--green); }
   .icon-btn.del:hover { background: var(--red-soft); color: var(--red); }
 
-  .empty-state {
-    padding: 60px 20px;
-    text-align: center;
-    color: var(--text-sub);
-    font-family: var(--font-heading);
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-
-  /* CHIP DE CUENTA REGRESIVA */
-  .due-chip {
-    display: inline-block;
-    margin-top: 4px;
-    font-size: 10.5px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 10px;
-    font-family: var(--font-heading);
-  }
+  .empty-state { padding: 60px 20px; text-align: center; color: var(--text-sub); font-family: var(--font-heading); font-weight: 600; }
+  .due-chip { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 10px; font-family: var(--font-heading); }
   .due-chip.ok { background: var(--green-soft); color: var(--green); }
   .due-chip.soon { background: var(--amber-soft); color: var(--amber); }
   .due-chip.late { background: var(--red-soft); color: var(--red); }
 
-  /* INDICADOR DE SINCRONIZACIÓN */
-  .sync-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-heading);
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-sub);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-  .sync-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    transition: background .2s, box-shadow .2s;
-  }
+  /* MODALES Y UTILIDADES */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); width: 100%; max-width: 500px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;}
+  .modal h2 { margin: 0 0 20px; font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--divider); padding-bottom: 15px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-header); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .field input, .field select { width: 100%; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-btn); font-family: var(--font-main); font-size: 13px; }
+  .field-row { display: flex; gap: 15px; }
+  .field-row .field { flex: 1; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; }
+  .btn-secondary { background: transparent; border: 1px solid var(--divider); color: var(--text-main); padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px; font-family: var(--font-heading); font-weight: 700; }
+  .btn-secondary:hover { background: var(--divider); }
+  
+  /* GRÁFICA DE CARGA */
+  .chart-row { display: flex; align-items: center; margin-bottom: 12px; gap: 15px; }
+  .chart-label { width: 120px; font-size: 12px; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chart-bar-wrap { flex: 1; background: var(--bg); height: 12px; border-radius: 6px; overflow: hidden; }
+  .chart-bar { height: 100%; background: var(--primary); border-radius: 6px; transition: width 0.5s ease; }
+  .chart-count { width: 30px; font-size: 12px; font-weight: 800; color: var(--text-sub); }
 
-  /* TOGGLE OCULTAR COMPLETADOS */
-  .toggle-done {
-    display: flex; align-items: center; gap: 7px;
-    font-family: var(--font-heading);
-    font-size: 11px; font-weight: 700;
-    color: var(--text-sub);
-    cursor: pointer;
-    user-select: none;
-    letter-spacing: 0.5px;
-  }
-  .toggle-done input { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
-
-  /* BOTÓN SILENCIAR (solo visible en Girly Pop) */
-  .sound-toggle {
-    display: none;
-    background: transparent;
-    border: 1px solid var(--divider);
-    color: var(--text-sub);
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 15px;
-    align-items: center;
-    justify-content: center;
-  }
-  .sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
-  [data-theme*="girly"] .sound-toggle { display: flex; }
-
-  /* ===== TOOLBAR: BUSQUEDA, FILTROS Y ACCIONES DE DATOS ===== */
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--divider);
-  }
-  .toolbar input[type="text"], .toolbar select {
-    background: var(--bg); border: 1px solid var(--divider); color: var(--text-main);
-    padding: 8px 12px; border-radius: var(--radius-btn);
-    font-family: var(--font-main); font-size: 12.5px;
-  }
-  .toolbar input[type="text"] { flex: 1; min-width: 160px; }
-  .toolbar .btn-mini {
-    background: transparent; border: 1px solid var(--divider); color: var(--text-sub);
-    padding: 8px 12px; border-radius: var(--radius-btn); cursor: pointer;
-    font-family: var(--font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
-    white-space: nowrap;
-  }
-  .toolbar .btn-mini:hover { border-color: var(--primary); color: var(--primary); }
-
-  /* RESUMEN DEL DIA */
-  .summary-bar {
-    display: flex; flex-wrap: wrap; gap: 10px;
-    padding: 10px 20px;
-    background: var(--panel-alt);
-    border-bottom: 1px solid var(--divider);
-    font-family: var(--font-heading);
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-  .summary-chip { padding: 5px 10px; border-radius: 6px; }
-  .summary-chip.total { background: rgba(128,128,128,.12); color: var(--text-sub); }
-  .summary-chip.late { background: var(--red-soft); color: var(--red); }
-  .summary-chip.proceso { background: var(--blue-soft); color: var(--blue); }
-  .summary-chip.done { background: var(--green-soft); color: var(--green); }
-
-  /* MODO COMPACTO */
-  body.compact-mode .row { padding: 8px 30px; }
-  body.compact-mode .col-header { padding: 8px 30px; }
-  body.compact-mode .cell-sub, body.compact-mode .due-chip { display: none; }
-
-  /* MODO KIOSCO: oculta controles de edicion, solo lectura */
-  body.kiosk-mode .row-actions,
-  body.kiosk-mode .toolbar .btn-mini.edit-only,
-  body.kiosk-mode #openModalBtn,
-  body.kiosk-mode .toggle-done,
-  body.kiosk-mode .sound-toggle {
-    display: none !important;
-  }
-
-  /* HISTORIAL / ULTIMA ACTUALIZACION */
-  .last-update {
-    font-size: 9.5px;
-    color: var(--text-header);
-    margin-top: 2px;
-    font-family: var(--font-heading);
-  }
-
-  /* ENLACE ADJUNTO */
-  .link-chip {
-    font-size: 10.5px;
-    color: var(--accent);
-    text-decoration: none;
-    display: inline-block;
-    margin-top: 3px;
-  }
-  .link-chip:hover { text-decoration: underline; }
-
-  /* MODAL DE EJECUTIVOS */
   .exec-list { max-height: 220px; overflow-y: auto; margin-bottom: 14px; }
-  .exec-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 10px; border-bottom: 1px solid var(--divider);
-    font-size: 13px;
-  }
-  .exec-item .icon-btn { width: 26px; height: 26px; font-size: 12px; }
+  .exec-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--divider); font-size: 13px; }
   .exec-add-row { display: flex; gap: 8px; }
   .exec-add-row input { flex: 1; }
 
-  /* PARTÍCULAS DE CHISPITAS */
-  .sparkle-particle {
-    position: fixed;
-    pointer-events: none;
-    font-size: 16px;
-    z-index: 999;
-    animation: sparkleFloat 0.9s ease-out forwards;
-  }
+  .sparkle-particle { position: fixed; pointer-events: none; font-size: 16px; z-index: 999; animation: sparkleFloat 0.9s ease-out forwards; }
   @keyframes sparkleFloat {
     0% { opacity: 0; transform: translate(0,0) scale(0.5) rotate(0deg); }
     15% { opacity: 1; transform: translate(var(--sx,0), calc(var(--sy,0) * 0.3)) scale(1.1) rotate(45deg); }
     100% { opacity: 0; transform: translate(calc(var(--sx,0) * 2), calc(var(--sy,0) - 40px)) scale(0.4) rotate(180deg); }
   }
 
-  /* TICKER DE AVISOS */
-  .ticker-wrap {
-    background: var(--panel-alt);
-    border-bottom: 1px solid var(--divider);
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 9px 0;
-  }
-  .ticker {
-    display: inline-block;
-    font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: var(--red);
-    animation: scrollTicker 24s linear infinite;
-    padding-left: 100%;
-  }
-  .ticker.ok { color: var(--green); }
-  @keyframes scrollTicker { 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
-
-  /* MODAL DE CONFIRMACIÓN */
-  .confirm-modal { max-width: 360px; text-align: center; }
-  .confirm-modal p { color: var(--text-sub); font-size: 13px; margin: 0 0 20px; }
-  .confirm-modal .modal-actions { justify-content: center; }
-  .btn-danger {
-    background: var(--red); color: #FFF; border: none;
-    padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer;
-    font-size: 12px; font-family: var(--font-heading); font-weight: 700; letter-spacing: 1px;
-  }
-  .btn-danger:hover { filter: brightness(1.1); }
-
-  /* MODAL */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(3px);
-    display: none; align-items: center; justify-content: center;
-    z-index: 50; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--panel);
-    border: 1px solid var(--divider);
-    border-radius: var(--radius-board);
-    width: 100%; max-width: 500px;
-    padding: 30px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-  }
-  .modal h2 {
-    margin: 0 0 20px;
-    font-family: var(--font-heading);
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--primary);
-    text-transform: var(--text-transform);
-    border-bottom: 1px solid var(--divider);
-    padding-bottom: 15px;
-  }
-  .field { margin-bottom: 16px; }
-  .field label {
-    display: block; font-size: 11px; font-weight: 700;
-    color: var(--text-header); margin-bottom: 8px;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .field input, .field select {
-    width: 100%; background: var(--bg); border: 1px solid var(--divider);
-    color: var(--text-main); padding: 12px 14px; border-radius: var(--radius-btn);
-    font-family: var(--font-main); font-size: 13px; font-weight: 500;
-  }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
-  .field-row { display: flex; gap: 15px; }
-  .field-row .field { flex: 1; }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
   
-  .btn-secondary {
-    background: transparent; border: 1px solid var(--divider); color: var(--text-main);
-    padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px;
-    font-family: var(--font-heading); font-weight: 700; letter-spacing: 1px;
-  }
-  .btn-secondary:hover { background: var(--divider); }
+  /* VISTA COMPACTA */
+  body.compact-mode .row-main { padding: 8px 30px; }
+  body.compact-mode .col-header { padding: 8px 30px; }
+  body.compact-mode .cell-sub, body.compact-mode .due-chip { display: none; }
+  body.compact-mode .details-panel { padding: 10px 30px 15px 80px; }
 
   @media (max-width:900px){
     .board-header { flex-direction: column; align-items: flex-start; }
-    .header-actions { width: 100%; justify-content: space-between; }
+    .header-actions { width: 100%; justify-content: space-between; flex-wrap: wrap;}
     .col-header { display: none; }
-    .row { grid-template-columns: 1fr; gap: 8px; padding: 15px 20px 15px 40px; position: relative; }
-    .prio-dot { position: absolute; left: 16px; top: 22px; margin: 0; }
+    .row-main { grid-template-columns: 30px 1fr; gap: 8px; padding: 15px 20px; position: relative; }
+    .prio-dot { display: none;} 
+    .expand-btn { position: absolute; left: 10px; top: 15px; }
+    .cell-main { padding-left: 20px; }
     .cell.small::before { content: attr(data-label) ": "; color: var(--text-header); font-weight: 700; }
-    .row-actions { justify-content: flex-start; margin-top: 8px; }
+    .row-actions { justify-content: flex-start; margin-top: 8px; grid-column: span 2; }
+    .details-panel { padding: 15px 20px; }
   }
 </style>
 </head>
 <body>
+
+<div class="modal-overlay" id="loginOverlay" style="z-index: 100;">
+  <div class="modal" style="max-width: 360px; text-align: center;">
+    <h2>Iniciar sesión</h2>
+    <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">Ingresa tu usuario y contraseña proporcionados por el administrador.</p>
+    <div class="field">
+      <input type="text" id="loginUser" placeholder="Usuario (ej. dany, paulo)" style="text-align: center; font-size: 15px; text-transform: lowercase;">
+    </div>
+    <div class="field">
+      <input type="password" id="loginPassword" placeholder="Contraseña" style="text-align: center; font-size: 15px;">
+    </div>
+    <button class="btn-add" id="loginBtn" style="width: 100%;">Entrar al Tablero</button>
+    <p id="loginError" style="color: var(--red); font-size: 12px; margin-top: 12px; display: none;"></p>
+  </div>
+</div>
 
 <div class="board">
   <div class="board-header">
@@ -641,36 +240,25 @@
       <div class="logo-badge">A&C</div>
       <div class="logo-text">
         <h1>Pendientes Monterrey</h1>
-        <span>Comercio Exterior</span>
+        <span id="userGreeting">Cargando...</span>
+        <button id="logoutBtn" title="Cerrar sesión" style="background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:11px;text-decoration:underline;margin-left:8px;padding:0;">Cerrar sesión</button>
       </div>
     </div>
-    
     <div class="header-actions">
-      <!-- INDICADOR DE CONEXIÓN -->
       <div class="sync-indicator">
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncLabel">Conectando...</span>
       </div>
 
-      <!-- OCULTAR COMPLETADOS -->
-      <label class="toggle-done">
-        <input type="checkbox" id="hideDoneToggle">
-        Ocultar completados
-      </label>
-
-      <!-- SILENCIAR SONIDOS (solo Girly Pop) -->
       <button class="sound-toggle" id="soundToggle" title="Silenciar sonidos">🔊</button>
 
-      <!-- SELECTOR DE TEMAS -->
       <select id="themeSelector" class="theme-selector">
         <option value="terminal-dark">💻 Terminal Oscuro</option>
         <option value="terminal-light">🖨️ Terminal Claro</option>
         <option value="girly-light">🌸 Girly Pop Claro</option>
         <option value="girly-dark">🌙 Girly Pop Oscuro</option>
       </select>
-      
-      <!-- BOTÓN REUBICADO AL HEADER -->
-      <button class="btn-add" id="openModalBtn">Nuevo Pendiente</button>
+      <button class="btn-add edit-only" id="openModalBtn">Nuevo Pendiente</button>
     </div>
   </div>
 
@@ -678,26 +266,46 @@
     <div class="ticker" id="ticker">CARGANDO AVISOS...</div>
   </div>
 
-  <div class="summary-bar" id="summaryBar"></div>
-
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="🔎 Buscar por pedimento o cliente...">
-    <select id="ejecutivoFilter">
-      <option value="todos">Todos los ejecutivos</option>
-    </select>
-    <button class="btn-mini edit-only" id="manageExecBtn">👤 Ejecutivos</button>
-    <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla</button>
-    <button class="btn-mini edit-only" id="uploadLayoutBtn">⬆ Subir layout</button>
-    <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
-    <button class="btn-mini" id="exportCsvBtn">📄 Exportar CSV</button>
-    <button class="btn-mini" id="compactToggleBtn">▤ Vista compacta</button>
-    <button class="btn-mini" id="kioskToggleBtn">🖥 Modo kiosco</button>
-    <button class="btn-mini" id="notifyToggleBtn">🔔 Avisos del navegador</button>
+    <div class="toolbar-header">
+      <div style="font-size: 12px; font-weight: 600; color: var(--text-sub); display: flex; gap: 15px;">
+        <span id="foraneasCount" style="color: var(--amber);">Aduanas Foráneas: 0</span>
+      </div>
+      <button class="btn-toggle-tools" id="toggleToolsBtn">⚙️ Filtros y Herramientas ▼</button>
+    </div>
+    
+    <div class="toolbar-content" id="toolbarContent">
+      <input type="text" id="searchInput" placeholder="🔎 Buscar pedimento o cliente...">
+      <!-- El filtro solo se mostrará para los Admins -->
+      <select id="ejecutivoFilter"><option value="todos">Todos los ejecutivos</option></select>
+      
+      <select id="dateFilter">
+        <option value="todos">Cualquier fecha</option>
+        <option value="semana">Vence esta semana</option>
+        <option value="mes">Vence este mes</option>
+      </select>
+      <label class="toggle-done">
+        <input type="checkbox" id="hideDoneToggle"> Ocultar completados
+      </label>
+      
+      <div style="width: 1px; height: 20px; background: var(--divider); margin: 0 10px;"></div>
+      
+      <button class="btn-mini edit-only admin-only" id="manageExecBtn">👤 Ejecutivos y Cuentas</button>
+      <button class="btn-mini" id="viewChartBtn">📊 Carga de trabajo</button>
+      <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla CSV</button>
+      <button class="btn-mini edit-only" id="uploadLayoutBtn">⬆ Subir layout</button>
+      <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+      <button class="btn-mini" id="exportCsvBtn">📄 Exportar filtrado</button>
+      <button class="btn-mini" id="compactToggleBtn">▤ Vista compacta</button>
+      <button class="btn-mini" id="kioskToggleBtn">🖥 Modo kiosco</button>
+      <button class="btn-mini" id="notifyToggleBtn">🔔 Avisos</button>
+    </div>
   </div>
 
   <div class="tabs" id="tabs"></div>
 
   <div class="col-header">
+    <div></div>
     <div style="text-align:center">PR</div>
     <div>PEDIMENTO / REF</div>
     <div>CLIENTE</div>
@@ -708,12 +316,12 @@
     <div style="text-align:right;">ACCIONES</div>
   </div>
 
-  <div class="rows" id="rows">
-    <div class="empty-state">CARGANDO TABLERO...</div>
-  </div>
+  <div class="rows" id="rows"></div>
 </div>
 
-<!-- Modal -->
+<!-- NUEVO BOTÓN PARA SALIR DEL KIOSCO -->
+<button class="exit-kiosk-btn" id="exitKioskBtn" title="O presiona Escape">❌ Salir de Kiosco</button>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h2 id="modalTitle">Nuevo Pendiente</h2>
@@ -748,29 +356,19 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Tipo de operación</label>
-        <select id="f-tipo">
-          <option>Importación</option>
-          <option>Exportación</option>
-        </select>
+        <label>Tipo</label>
+        <select id="f-tipo"><option>Importación</option><option>Exportación</option></select>
       </div>
       <div class="field">
         <label>Prioridad</label>
-        <select id="f-prioridad">
-          <option value="Alta">Alta</option>
-          <option value="Media" selected>Media</option>
-          <option value="Baja">Baja</option>
-        </select>
+        <select id="f-prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
       </div>
     </div>
     <div class="field-row">
       <div class="field">
         <label>Status</label>
         <select id="f-status">
-          <option>Pendiente</option>
-          <option>En proceso</option>
-          <option>Revisión</option>
-          <option>Completado</option>
+          <option>Pendiente</option><option>En proceso</option><option>Revisión</option><option>Completado</option>
         </select>
       </div>
       <div class="field">
@@ -781,17 +379,15 @@
     <div class="field-row">
       <div class="field">
         <label>Ejecutivo asignado</label>
-        <select id="f-ejecutivo">
-          <option value="">Sin asignar</option>
-        </select>
+        <select id="f-ejecutivo"><option value="">Sin asignar</option></select>
       </div>
       <div class="field">
-        <label>Enlace (Drive, PDF, etc.)</label>
+        <label>Enlace</label>
         <input type="text" id="f-enlace" placeholder="https://...">
       </div>
     </div>
     <div class="field">
-      <label>Notas (opcional)</label>
+      <label>Notas</label>
       <input type="text" id="f-notas" placeholder="Detalles adicionales">
     </div>
     <div class="modal-actions">
@@ -801,42 +397,74 @@
   </div>
 </div>
 
-<!-- Modal de gestión de ejecutivos -->
+<div class="modal-overlay" id="chartOverlay">
+  <div class="modal" style="max-width: 600px;">
+    <h2>Carga de Trabajo Activa</h2>
+    <p style="font-size: 12px; color: var(--text-sub); margin-top:-10px; margin-bottom:20px;">Operaciones pendientes por ejecutivo.</p>
+    <div id="chartContainer"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeChartBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="execOverlay">
-  <div class="modal">
+  <div class="modal" style="max-width: 460px;">
     <h2>Ejecutivos de cuenta</h2>
     <div class="exec-list" id="execList"></div>
     <div class="exec-add-row">
-      <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo">
+      <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo (solo para filtros)">
       <button class="btn-add" id="addExecBtn">Agregar</button>
     </div>
+
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider);">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+        🔐 Crear cuenta de acceso al tablero
+      </div>
+      <div class="field">
+        <input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany)">
+      </div>
+      <div class="field">
+        <input type="text" id="newAccUser" placeholder="Usuario (ej. dany, paulo)" style="text-transform: lowercase;">
+      </div>
+      <div class="field">
+        <input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)">
+      </div>
+      <div class="field">
+        <select id="newAccRole">
+          <option value="ejecutivo">Ejecutivo</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn-add" id="createAccBtn" style="width: 100%;">Crear cuenta</button>
+      <p id="createAccMsg" style="font-size: 11.5px; margin-top: 8px;"></p>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-secondary" id="closeExecBtn">Cerrar</button>
     </div>
   </div>
 </div>
 
-<!-- Modal de confirmación para eliminar -->
+<!-- Modal de confirmación para mover a la papelera -->
 <div class="modal-overlay" id="confirmOverlay">
-  <div class="modal confirm-modal">
-    <h2>Eliminar pendiente</h2>
-    <p id="confirmText">¿Seguro que quieres eliminar este pendiente? Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
+  <div class="modal" style="max-width: 380px; text-align: center;">
+    <h2 style="color: var(--red);">Mover a la papelera</h2>
+    <p id="confirmText" style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">¿Seguro que quieres mover este pendiente a la papelera?</p>
+    <div class="modal-actions" style="justify-content: center;">
       <button class="btn-secondary" id="confirmCancelBtn">Cancelar</button>
-      <button class="btn-danger" id="confirmDeleteBtn">Eliminar</button>
+      <button class="btn-add" id="confirmDeleteBtn" style="background: var(--red);">Mover a papelera</button>
     </div>
   </div>
 </div>
 
-<!-- Librería para leer archivos Excel/CSV (carga masiva por layout) -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 
-<!-- SDK de Firebase Modular -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  // Tu configuración de Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyDiBnMqEli5YXRqZmYXLJ2SK1a93Tvkoag",
     authDomain: "pendientes-ayc.firebaseapp.com",
@@ -847,22 +475,18 @@
     measurementId: "G-32VY2DE244"
   };
 
-  // Inicializar Firebase y la Base de Datos
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  
-  // Apunta a tus datos reales para que puedas verlos con el diseño nuevo
+  const auth = getAuth(app);
   const dbRef = ref(db, 'pendientes_ayc');
   const execRef = ref(db, 'ejecutivos_ayc');
+  const usersRef = ref(db, 'usuarios_ayc');
 
-  // Lógica de Temas
-  const themeSelector = document.getElementById('themeSelector');
-  const savedTheme = localStorage.getItem('ayc-theme') || 'terminal-dark';
-  
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  themeSelector.value = savedTheme;
+  const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+  const secondaryAuth = getAuth(secondaryApp);
+  const DUMMY_DOMAIN = '@ayc.local';
 
-  // ---------- Sonido de "brillitos" (solo temas Girly Pop) ----------
+  // Sonidos
   let sparkleCtx = null;
   let soundMuted = localStorage.getItem('ayc-sound-muted') === '1';
   const soundToggle = document.getElementById('soundToggle');
@@ -873,14 +497,8 @@
     soundToggle.textContent = soundMuted ? '🔇' : '🔊';
   });
 
-  function isGirlyTheme() {
-    return (document.documentElement.getAttribute('data-theme') || '').includes('girly');
-  }
-
-  // Semitonos aleatorios para que el arpegio no suene siempre igual
-  function shiftFreq(freq, semitones) {
-    return freq * Math.pow(2, semitones / 12);
-  }
+  function isGirlyTheme() { return (document.documentElement.getAttribute('data-theme') || '').includes('girly'); }
+  function shiftFreq(freq, semitones) { return freq * Math.pow(2, semitones / 12); }
 
   function playSparkle(anchorEl) {
     if (!isGirlyTheme() || soundMuted) return;
@@ -888,8 +506,8 @@
       sparkleCtx = sparkleCtx || new (window.AudioContext || window.webkitAudioContext)();
       if (sparkleCtx.state === 'suspended') sparkleCtx.resume();
       const now = sparkleCtx.currentTime;
-      const baseNotes = [1568, 1976, 2349, 2793]; // G6, B6, D7, F7
-      const wobble = (Math.random() * 2) - 1; // pequeño desafine global entre -1 y 1 semitono
+      const baseNotes = [1568, 1976, 2349, 2793]; 
+      const wobble = (Math.random() * 2) - 1; 
       baseNotes.forEach((freq, i) => {
         const t0 = now + i * (0.05 + Math.random() * 0.015);
         const osc = sparkleCtx.createOscillator();
@@ -903,67 +521,212 @@
         osc.start(t0);
         osc.stop(t0 + 0.4);
       });
-      const shimmer = sparkleCtx.createOscillator();
-      const shimmerGain = sparkleCtx.createGain();
-      shimmer.type = 'triangle';
-      shimmer.frequency.setValueAtTime(shiftFreq(3200, wobble), now);
-      shimmer.frequency.exponentialRampToValueAtTime(shiftFreq(5200, wobble), now + 0.25);
-      shimmerGain.gain.setValueAtTime(0.05, now);
-      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
-      shimmer.connect(shimmerGain).connect(sparkleCtx.destination);
-      shimmer.start(now);
-      shimmer.stop(now + 0.3);
-    } catch (e) { /* audio no disponible, se ignora */ }
+    } catch (e) { }
     spawnSparkleParticles(anchorEl);
   }
-
-  // Sonido de "swoosh" descendente para eliminar (distinto al de brillitos)
-  function playSwoosh() {
-    if (!isGirlyTheme() || soundMuted) return;
-    try {
-      sparkleCtx = sparkleCtx || new (window.AudioContext || window.webkitAudioContext)();
-      if (sparkleCtx.state === 'suspended') sparkleCtx.resume();
-      const now = sparkleCtx.currentTime;
-      const osc = sparkleCtx.createOscillator();
-      const gain = sparkleCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, now);
-      osc.frequency.exponentialRampToValueAtTime(220, now + 0.3);
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.08, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
-      osc.connect(gain).connect(sparkleCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.33);
-    } catch (e) { /* audio no disponible, se ignora */ }
-  }
-
-  // Partículas visuales ✨ flotando cerca del elemento que disparó el sonido
   function spawnSparkleParticles(anchorEl) {
     if (!isGirlyTheme()) return;
-    const rect = anchorEl && anchorEl.getBoundingClientRect
-      ? anchorEl.getBoundingClientRect()
-      : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+    const rect = anchorEl && anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
     const glyphs = ['✨', '💖', '⭐'];
-    const count = 5;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 5; i++) {
       const el = document.createElement('span');
       el.className = 'sparkle-particle';
       el.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
-      const originX = rect.left + rect.width / 2;
-      const originY = rect.top + rect.height / 2;
-      const sx = (Math.random() - 0.5) * 80;
-      const sy = (Math.random() - 0.5) * 40 - 20;
-      el.style.left = originX + 'px';
-      el.style.top = originY + 'px';
-      el.style.setProperty('--sx', sx + 'px');
-      el.style.setProperty('--sy', sy + 'px');
+      el.style.left = (rect.left + rect.width / 2) + 'px';
+      el.style.top = (rect.top + rect.height / 2) + 'px';
+      el.style.setProperty('--sx', ((Math.random() - 0.5) * 80) + 'px');
+      el.style.setProperty('--sy', ((Math.random() - 0.5) * 40 - 20) + 'px');
       el.style.animationDelay = (i * 0.03) + 's';
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 1000);
     }
   }
 
+  // Normalización
+  function normKey(name) { return (name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function canonicalExecName(name) {
+    const key = normKey(name);
+    if (!key) return '';
+    const known = executives.find(e => normKey(e.nombre) === key);
+    if (known) return known.nombre;
+    const fromTasks = tasks.find(t => t.ejecutivo && normKey(t.ejecutivo) === key);
+    if (fromTasks) return fromTasks.ejecutivo;
+    return name.trim();
+  }
+
+  // Autenticación
+  const loginOverlay = document.getElementById('loginOverlay');
+  const loginError = document.getElementById('loginError');
+  let currentUser = null;          
+  let currentUserProfile = null;   
+  let usersCache = {};             
+  let usersLoaded = false;
+
+  onValue(usersRef, (snapshot) => {
+    usersCache = snapshot.val() || {};
+    usersLoaded = true;
+    if (auth.currentUser) applyProfileForUser(auth.currentUser);
+  });
+
+  async function applyProfileForUser(user) {
+    if (!usersLoaded) { setTimeout(() => applyProfileForUser(user), 200); return; }
+
+    let profile = usersCache[user.uid];
+    if (!profile) {
+      const isFirstEver = Object.keys(usersCache).length === 0;
+      profile = {
+        nombre: canonicalExecName(user.email.split('@')[0]),
+        email: user.email,
+        rol: isFirstEver ? 'admin' : 'ejecutivo'
+      };
+      await set(ref(db, 'usuarios_ayc/' + user.uid), profile);
+    }
+    currentUserProfile = { uid: user.uid, ...profile };
+    currentUser = currentUserProfile.nombre;
+    document.getElementById('userGreeting').textContent =
+      `Hola, ${currentUser}` + (currentUserProfile.rol === 'admin' ? ' (Admin)' : '');
+    document.body.classList.toggle('is-admin', currentUserProfile.rol === 'admin');
+    loginOverlay.classList.remove('open');
+    extractExecutives();
+    render(); // Refrescar para aplicar filtro de privacidad de inmediato
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      applyProfileForUser(user);
+    } else {
+      currentUser = null;
+      currentUserProfile = null;
+      document.body.classList.remove('is-admin');
+      loginOverlay.classList.add('open');
+    }
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const rawUser = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPassword').value;
+    const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
+    
+    loginError.style.display = 'none';
+    if (!rawUser || !pass) return;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+      loginError.textContent = 'Usuario o contraseña incorrectos.';
+      loginError.style.display = 'block';
+    }
+  });
+  document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => { signOut(auth); });
+
+  // Crear cuentas
+  document.getElementById('createAccBtn').addEventListener('click', async () => {
+    const nombre = document.getElementById('newAccName').value.trim();
+    const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
+    const pass = document.getElementById('newAccPass').value;
+    const rol = document.getElementById('newAccRole').value;
+    const msgEl = document.getElementById('createAccMsg');
+    
+    const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
+    msgEl.style.color = 'var(--red)';
+
+    if (!nombre || !rawUser || pass.length < 6) {
+      msgEl.textContent = 'Completa nombre, usuario y contraseña (mín 6 letras).';
+      return;
+    }
+    try {
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+      await set(ref(db, 'usuarios_ayc/' + cred.user.uid), { nombre, email, rol });
+      const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
+      if (!dup) push(execRef, nombre);
+      await signOut(secondaryAuth); 
+
+      msgEl.style.color = 'var(--green)';
+      msgEl.textContent = `Cuenta creada para ${nombre} (${rol}).`;
+      document.getElementById('newAccName').value = '';
+      document.getElementById('newAccUser').value = '';
+      document.getElementById('newAccPass').value = '';
+    } catch (e) {
+      const map = {
+        'auth/email-already-in-use': 'Ese usuario ya está registrado.',
+        'auth/invalid-email': 'El formato de usuario no es válido.',
+        'auth/weak-password': 'La contraseña es muy débil (mínimo 6 caracteres).'
+      };
+      msgEl.textContent = map[e.code] || ('Error: ' + e.message);
+    }
+  });
+
+  function realignCurrentUserCasing() {
+    if (!currentUser) return;
+    const canon = canonicalExecName(currentUser);
+    if (canon !== currentUser) currentUser = canon;
+  }
+
+  onValue(ref(db, '.info/connected'), (snap) => {
+    const dot = document.getElementById('syncDot');
+    const label = document.getElementById('syncLabel');
+    if (snap.val() === true) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 6px var(--green)'; label.textContent = 'Sincronizado'; }
+    else { dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 6px var(--red)'; label.textContent = 'Sin conexión'; }
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('view') === 'read') document.body.classList.add('view-only');
+  
+  const compactBtn = document.getElementById('compactToggleBtn');
+  if (localStorage.getItem('ayc-compact') === '1') document.body.classList.add('compact-mode');
+  compactBtn.addEventListener('click', () => { document.body.classList.toggle('compact-mode'); localStorage.setItem('ayc-compact', document.body.classList.contains('compact-mode') ? '1' : '0'); });
+
+  // Manejo del modo Kiosco actualizado
+  const kioskBtn = document.getElementById('kioskToggleBtn');
+  kioskBtn.addEventListener('click', () => { document.body.classList.add('kiosk-mode'); });
+  
+  // Salida de kiosco con el nuevo botón
+  document.getElementById('exitKioskBtn').addEventListener('click', () => {
+    document.body.classList.remove('kiosk-mode');
+  });
+
+  // Salida de kiosco y cierre de modales con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (document.body.classList.contains('kiosk-mode')) document.body.classList.remove('kiosk-mode');
+      if (confirmOverlay.classList.contains('open')) closeConfirmDelete();
+      if (document.getElementById('modalOverlay').classList.contains('open')) closeModal();
+    }
+  });
+
+  const notifyBtn = document.getElementById('notifyToggleBtn');
+  let notifyEnabled = localStorage.getItem('ayc-notify') === '1';
+  const notifiedIds = new Set();
+  function updateNotifyBtnLabel() { notifyBtn.textContent = notifyEnabled ? '🔔 Avisos activados' : '🔔 Avisos'; }
+  updateNotifyBtnLabel();
+  notifyBtn.addEventListener('click', async () => {
+    if (!('Notification' in window)) { alert('Tu navegador no soporta notificaciones.'); return; }
+    if (!notifyEnabled) { const perm = await Notification.requestPermission(); if (perm === 'granted') { notifyEnabled = true; localStorage.setItem('ayc-notify', '1'); } }
+    else { notifyEnabled = false; localStorage.setItem('ayc-notify', '0'); }
+    updateNotifyBtnLabel();
+  });
+  function checkOverdueNotifications() {
+    if (!notifyEnabled || Notification.permission !== 'granted') return;
+    tasks.forEach(t => {
+      // Notificar solo si es tuyo o eres admin
+      const isMine = currentUserProfile && normKey(t.ejecutivo) === normKey(currentUser);
+      const isAdmin = currentUserProfile && currentUserProfile.rol === 'admin';
+      
+      if ((isMine || isAdmin) && isOverdue(t) && !notifiedIds.has(t.id) && t.status !== 'Eliminado') {
+        notifiedIds.add(t.id);
+        new Notification('Pendiente retrasado — A&C', { body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}` });
+      }
+    });
+  }
+  setInterval(checkOverdueNotifications, 60000);
+
+  const themeSelector = document.getElementById('themeSelector');
+  const savedTheme = localStorage.getItem('ayc-theme') || 'terminal-dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  themeSelector.value = savedTheme;
   themeSelector.addEventListener('change', (e) => {
     const newTheme = e.target.value;
     document.documentElement.setAttribute('data-theme', newTheme);
@@ -971,69 +734,83 @@
     if (newTheme.includes('girly')) playSparkle(themeSelector);
   });
 
-  // Lógica de la UI del Tablero
+  const toggleToolsBtn = document.getElementById('toggleToolsBtn');
+  const toolbarContent = document.getElementById('toolbarContent');
+  toggleToolsBtn.addEventListener('click', () => {
+    toolbarContent.classList.toggle('open');
+    toggleToolsBtn.innerHTML = toolbarContent.classList.contains('open') ? '⚙️ Ocultar Herramientas ▲' : '⚙️ Filtros y Herramientas ▼';
+  });
+
   let tasks = [];
   let executives = [];
+  let currentFilteredTasks = [];
   let editingId = null;
-  let deleteTargetId = null;
   let currentFilter = 'todos';
-  let currentExecFilter = 'todos';
-  let searchTerm = '';
-  let hideDone = false;
   const DEPTOS = ['Aéreo', 'Corresponsalías', 'Marítimo', 'Virtual'];
 
-  // Leer en tiempo real desde tu Firebase
+  let execsSeeded = false;
+  onValue(execRef, (snapshot) => {
+    executives = [];
+    snapshot.forEach((childSnapshot) => { executives.push({ id: childSnapshot.key, nombre: childSnapshot.val() }); });
+    executives.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+    if (!execsSeeded && executives.length === 0) {
+      execsSeeded = true;
+      ['Dany', 'Paulo', 'Benja', 'Steph'].forEach(n => push(execRef, n));
+    }
+    extractExecutives();
+  });
+
   onValue(dbRef, (snapshot) => {
     tasks = [];
+    const now = Date.now();
     snapshot.forEach((childSnapshot) => {
-      tasks.push({ id: childSnapshot.key, ...childSnapshot.val() });
+      let t = { id: childSnapshot.key, ...childSnapshot.val() };
+      if (t.status === 'Eliminado' && t.deletedAt) {
+        const daysInTrash = (now - new Date(t.deletedAt).getTime()) / (1000 * 3600 * 24);
+        if (daysInTrash > 7) { remove(ref(db, 'pendientes_ayc/' + t.id)); return; }
+      }
+      tasks.push(t);
     });
+    extractExecutives();
     render();
     checkOverdueNotifications();
   });
 
-  // Catálogo de ejecutivos en tiempo real
-  onValue(execRef, (snapshot) => {
-    executives = [];
-    snapshot.forEach((childSnapshot) => {
-      executives.push({ id: childSnapshot.key, nombre: childSnapshot.val() });
+  function extractExecutives() {
+    realignCurrentUserCasing();
+
+    const seen = new Map(); 
+    executives.forEach(e => { seen.set(normKey(e.nombre), e.nombre); });
+    tasks.forEach(t => {
+      if (t.ejecutivo && t.status !== 'Eliminado') {
+        const key = normKey(t.ejecutivo);
+        if (!seen.has(key)) seen.set(key, t.ejecutivo.trim());
+      }
     });
-    executives.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    renderExecutiveOptions();
-  });
+    const execArr = Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
 
-  function renderExecutiveOptions() {
-    // Select del formulario
     const formSelect = document.getElementById('f-ejecutivo');
-    const currentFormVal = formSelect.value;
-    formSelect.innerHTML = '<option value="">Sin asignar</option>' +
-      executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
-    formSelect.value = currentFormVal;
-
-    // Filtro del toolbar
     const filterSelect = document.getElementById('ejecutivoFilter');
-    const currentFilterVal = filterSelect.value;
-    filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar</option>' +
-      executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
-    filterSelect.value = currentFilterVal || 'todos';
+    const cForm = formSelect.value;
+    const cFilter = filterSelect.value;
 
-    // Lista dentro del modal de gestión
-    document.getElementById('execList').innerHTML = executives.length
-      ? executives.map(e => `
-        <div class="exec-item">
-          <span>${e.nombre}</span>
-          <button class="icon-btn del" data-exec-id="${e.id}" title="Eliminar ejecutivo">✖</button>
-        </div>`).join('')
-      : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos registrados.</div>';
+    formSelect.innerHTML = '<option value="">Sin asignar</option>' + execArr.map(e => `<option value="${e}">${e}</option>`).join('');
+    if (currentUser && !seen.has(normKey(currentUser))) formSelect.innerHTML += `<option value="${currentUser}">${currentUser}</option>`;
+    formSelect.value = cForm;
+
+    filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar</option>' + execArr.map(e => `<option value="${e}">${e}</option>`).join('');
+    filterSelect.value = cFilter || 'todos';
+
+    document.getElementById('execList').innerHTML = executives.length ? executives.map(e => `
+        <div class="exec-item"><span>${e.nombre}</span><button class="icon-btn del" data-exec-id="${e.id}">✖</button></div>`).join('')
+      : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos fijos.</div>';
 
     document.querySelectorAll('[data-exec-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id')));
-      });
+      btn.addEventListener('click', () => { remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id'))); });
     });
   }
 
-  // Modal de gestión de ejecutivos
   const execOverlay = document.getElementById('execOverlay');
   document.getElementById('manageExecBtn').addEventListener('click', () => execOverlay.classList.add('open'));
   document.getElementById('closeExecBtn').addEventListener('click', () => execOverlay.classList.remove('open'));
@@ -1042,275 +819,193 @@
     const input = document.getElementById('newExecInput');
     const name = input.value.trim();
     if (!name) return;
+    const dup = executives.find(e => normKey(e.nombre) === normKey(name));
+    if (dup) { alert(`Ya existe un ejecutivo registrado como "${dup.nombre}". No se agregó duplicado.`); input.value = ''; return; }
     push(execRef, name);
     input.value = '';
   });
-  document.getElementById('newExecInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('addExecBtn').click();
-  });
 
-  // Búsqueda y filtro por ejecutivo
-  document.getElementById('searchInput').addEventListener('input', (e) => {
-    searchTerm = e.target.value.trim().toLowerCase();
-    render();
-  });
-  document.getElementById('ejecutivoFilter').addEventListener('change', (e) => {
-    currentExecFilter = e.target.value;
-    render();
-  });
-
-  // Indicador de conexión en tiempo real
-  onValue(ref(db, '.info/connected'), (snap) => {
-    const dot = document.getElementById('syncDot');
-    const label = document.getElementById('syncLabel');
-    if (snap.val() === true) {
-      dot.style.background = 'var(--green)';
-      dot.style.boxShadow = '0 0 6px var(--green)';
-      label.textContent = 'Sincronizado';
-    } else {
-      dot.style.background = 'var(--red)';
-      dot.style.boxShadow = '0 0 6px var(--red)';
-      label.textContent = 'Sin conexión';
-    }
-  });
-
-  // Ocultar completados (se recuerda en este dispositivo)
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('ejecutivoFilter').addEventListener('change', render);
+  document.getElementById('dateFilter').addEventListener('change', render);
+  
   const hideDoneToggle = document.getElementById('hideDoneToggle');
-  hideDone = localStorage.getItem('ayc-hide-done') === '1';
+  let hideDone = localStorage.getItem('ayc-hide-done') === '1';
   hideDoneToggle.checked = hideDone;
-  hideDoneToggle.addEventListener('change', () => {
-    hideDone = hideDoneToggle.checked;
-    localStorage.setItem('ayc-hide-done', hideDone ? '1' : '0');
-    render();
-  });
+  hideDoneToggle.addEventListener('change', () => { hideDone = hideDoneToggle.checked; localStorage.setItem('ayc-hide-done', hideDone ? '1' : '0'); render(); });
 
-  // Vista compacta (se recuerda en este dispositivo)
-  const compactBtn = document.getElementById('compactToggleBtn');
-  if (localStorage.getItem('ayc-compact') === '1') document.body.classList.add('compact-mode');
-  compactBtn.addEventListener('click', () => {
-    document.body.classList.toggle('compact-mode');
-    localStorage.setItem('ayc-compact', document.body.classList.contains('compact-mode') ? '1' : '0');
-  });
-
-  // Modo kiosco (solo lectura, ideal para pantalla/monitor)
-  const kioskBtn = document.getElementById('kioskToggleBtn');
-  kioskBtn.addEventListener('click', () => {
-    document.body.classList.toggle('kiosk-mode');
-  });
-  // Salir del modo kiosco con doble-click en el logo (para no quedar atrapado en el monitor)
-  document.querySelector('.logo-block').addEventListener('dblclick', () => {
-    document.body.classList.remove('kiosk-mode');
-  });
-
-  // Notificaciones del navegador para operaciones retrasadas
-  const notifyBtn = document.getElementById('notifyToggleBtn');
-  let notifyEnabled = localStorage.getItem('ayc-notify') === '1';
-  const notifiedIds = new Set();
-  function updateNotifyBtnLabel() {
-    notifyBtn.textContent = notifyEnabled ? '🔔 Avisos activados' : '🔔 Avisos del navegador';
-  }
-  updateNotifyBtnLabel();
-  notifyBtn.addEventListener('click', async () => {
-    if (!('Notification' in window)) { alert('Tu navegador no soporta notificaciones.'); return; }
-    if (!notifyEnabled) {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        notifyEnabled = true;
-        localStorage.setItem('ayc-notify', '1');
-      }
-    } else {
-      notifyEnabled = false;
-      localStorage.setItem('ayc-notify', '0');
+  function getBusinessDaysDiff(endDate) {
+    if(!endDate) return 0;
+    let start = new Date();
+    let end = new Date(endDate);
+    if(end < start) return -1;
+    let count = 0;
+    let cur = new Date(start.getTime());
+    while (cur <= end) {
+      const day = cur.getDay();
+      if (day !== 0 && day !== 6) count++;
+      cur.setDate(cur.getDate() + 1);
     }
-    updateNotifyBtnLabel();
-  });
-  function checkOverdueNotifications() {
-    if (!notifyEnabled || Notification.permission !== 'granted') return;
-    tasks.forEach(t => {
-      if (isOverdue(t) && !notifiedIds.has(t.id)) {
-        notifiedIds.add(t.id);
-        new Notification('Pendiente retrasado — A&C', {
-          body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`,
-          icon: undefined
-        });
-      }
-    });
-  }
-  setInterval(checkOverdueNotifications, 60000);
-
-
-  function isOverdue(t) {
-    if (t.status === 'Completado') return false;
-    if (!t.limite) return false;
-    return new Date(t.limite).getTime() < Date.now();
+    return count;
   }
 
-  function effectiveStatus(t) { return isOverdue(t) ? 'Retrasado' : t.status; }
-  
-  function statusBadgeClass(s) {
-    return {
-      'Pendiente': 'badge-pendiente',
-      'En proceso': 'badge-proceso',
-      'Revisión': 'badge-revision',
-      'Completado': 'badge-completado',
-      'Retrasado': 'badge-retrasado'
-    }[s] || 'badge-pendiente';
-  }
-  
-  function prioClass(p) { return { 'Alta': 'prio-alta', 'Media': 'prio-media', 'Baja': 'prio-baja' }[p] || 'prio-media'; }
-  
-  function formatLimite(iso) {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
+  function isOverdue(t) { return t.status !== 'Completado' && t.status !== 'Eliminado' && t.limite && new Date(t.limite).getTime() < Date.now(); }
+  function statusBadgeClass(s) { return { 'Pendiente':'badge-pendiente', 'En proceso':'badge-proceso', 'Revisión':'badge-revision', 'Completado':'badge-completado', 'Retrasado':'badge-retrasado', 'Eliminado':'badge-eliminado' }[s] || 'badge-pendiente'; }
+  function prioClass(p) { return { 'Alta':'prio-alta', 'Media':'prio-media', 'Baja':'prio-baja' }[p] || 'prio-media'; }
+  function formatLimite(iso) { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
-  // Chip de cuenta regresiva junto a la fecha límite
   function dueChip(t) {
-    if (!t.limite || t.status === 'Completado') return '';
-    const diffMs = new Date(t.limite).getTime() - Date.now();
-    const diffH = diffMs / 3600000;
-    let cls, txt;
-    if (diffMs < 0) {
-      const h = Math.abs(diffH);
-      txt = h < 24 ? `Venció hace ${Math.round(h)}h` : `Venció hace ${Math.round(h/24)}d`;
-      cls = 'late';
-    } else if (diffH <= 6) {
-      txt = `Vence en ${Math.round(diffH)}h`;
-      cls = 'soon';
-    } else if (diffH <= 24) {
-      txt = `Vence hoy`;
-      cls = 'soon';
-    } else {
-      txt = `Vence en ${Math.round(diffH/24)}d`;
-      cls = 'ok';
-    }
-    return `<span class="due-chip ${cls}">${txt}</span>`;
+    if (!t.limite || t.status === 'Completado' || t.status === 'Eliminado') return '';
+    const diffH = (new Date(t.limite).getTime() - Date.now()) / 3600000;
+    if (diffH < 0) return `<span class="due-chip late">Vencido</span>`;
+    if (diffH <= 24) return `<span class="due-chip soon">Vence hoy</span>`;
+    const bDays = getBusinessDaysDiff(t.limite);
+    return `<span class="due-chip ok">En ${bDays} días hábiles</span>`;
   }
 
-  // Historial de cambios de status
-  function logHistory(id, from, to) {
-    if (from === to) return;
-    push(ref(db, 'pendientes_ayc/' + id + '/historial'), {
-      from: from || '—', to, at: new Date().toISOString()
-    });
-  }
-  function lastHistoryText(t) {
-    if (!t.historial) return '';
-    const entries = Object.values(t.historial);
-    if (!entries.length) return '';
-    const last = entries.sort((a, b) => new Date(a.at) - new Date(b.at)).pop();
-    const d = new Date(last.at);
-    const fecha = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${last.from} → ${last.to} · ${fecha}`;
-  }
-
-  // Ticker de avisos: operaciones retrasadas
   function renderTicker() {
-    const overdue = tasks.filter(t => isOverdue(t));
-    const el = document.getElementById('ticker');
-    if (overdue.length === 0) {
-      el.className = 'ticker ok';
-      el.textContent = '>>> SIN OPERACIONES RETRASADAS · TODO EN TIEMPO >>>';
-    } else {
-      el.className = 'ticker';
-      const items = overdue.map(t => `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`).join('   ·   ');
-      el.textContent = `>>> ATENCIÓN — ${overdue.length} OPERACIÓN(ES) RETRASADA(S): ${items} >>>`;
+    let overdue = tasks.filter(t => isOverdue(t) && t.status !== 'Eliminado');
+    
+    // Si no es admin, el ticker solo avisa de TUS operaciones retrasadas
+    if (currentUserProfile && currentUserProfile.rol !== 'admin') {
+      overdue = overdue.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
     }
+
+    const el = document.getElementById('ticker');
+    if (overdue.length === 0) { el.className = 'ticker ok'; el.textContent = '>>> SIN OPERACIONES RETRASADAS · TODO EN TIEMPO >>>'; }
+    else { el.className = 'ticker'; el.textContent = `>>> ATENCIÓN — ${overdue.length} OPERACIÓN(ES) RETRASADA(S): ` + overdue.map(t => `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`).join('   ·   ') + ' >>>'; }
   }
 
   function renderTabs() {
-    const counts = { todos: tasks.length };
-    DEPTOS.forEach(d => counts[d] = tasks.filter(t => t.depto === d).length);
-    const labels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
-    
-    document.getElementById('tabs').innerHTML = labels.map(([key, label]) => {
-      const c = counts[key] || 0;
-      // Estilo dinámico si el contador es mayor a 0
-      const countClass = c > 0 ? 'count has-items' : 'count';
-      return `
-        <div class="tab ${currentFilter === key ? 'active' : ''}" data-key="${key}">
-          ${label} <span class="${countClass}">${c}</span>
-        </div>
-      `;
-    }).join('');
-    
-    document.querySelectorAll('.tab').forEach(el => {
-      el.addEventListener('click', () => {
-        currentFilter = el.getAttribute('data-key');
-        render();
-      });
-    });
+    let activeTasks = tasks.filter(t => t.status !== 'Eliminado');
+    let trashTasks = tasks.filter(t => t.status === 'Eliminado');
+
+    // Privacidad de tabs
+    if (currentUserProfile && currentUserProfile.rol !== 'admin') {
+      activeTasks = activeTasks.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
+      trashTasks = trashTasks.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
+    }
+
+    const counts = { todos: activeTasks.length };
+    DEPTOS.forEach(d => counts[d] = activeTasks.filter(t => t.depto === d).length);
+    counts['papelera'] = trashTasks.length;
+
+    const labels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d]), ['papelera', '🗑️ Papelera']];
+    document.getElementById('tabs').innerHTML = labels.map(([k, l]) => `
+        <div class="tab ${currentFilter === k ? 'active' : ''}" data-key="${k}">${l} <span class="count ${counts[k] > 0 ? 'has-items' : ''}">${counts[k] || 0}</span></div>
+      `).join('');
+    document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { currentFilter = el.getAttribute('data-key'); render(); }));
   }
 
-  function renderSummary() {
-    const total = tasks.length;
-    const late = tasks.filter(t => isOverdue(t)).length;
-    const proceso = tasks.filter(t => t.status === 'En proceso').length;
-    const done = tasks.filter(t => t.status === 'Completado').length;
-    document.getElementById('summaryBar').innerHTML = `
-      <span class="summary-chip total">Total: ${total}</span>
-      <span class="summary-chip late">Retrasados: ${late}</span>
-      <span class="summary-chip proceso">En proceso: ${proceso}</span>
-      <span class="summary-chip done">Completados: ${done}</span>
-    `;
+  function getStartAndEndOf(period) {
+    const now = new Date();
+    if(period === 'semana') {
+      const first = now.getDate() - now.getDay() + 1;
+      const start = new Date(now.setDate(first)); start.setHours(0,0,0,0);
+      const end = new Date(start); end.setDate(end.getDate() + 6); end.setHours(23,59,59,999);
+      return { start, end };
+    }
+    if(period === 'mes') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23,59,59,999);
+      return { start, end };
+    }
+    return null;
   }
 
   function render() {
+    if (!currentUserProfile) return; // Esperar a que cargue el usuario para aplicar filtros seguros
+
     renderTabs();
     renderTicker();
-    renderSummary();
-    const rowsEl = document.getElementById('rows');
-    let filtered = currentFilter === 'todos' ? tasks : tasks.filter(t => t.depto === currentFilter);
-    if (hideDone) filtered = filtered.filter(t => t.status !== 'Completado');
-    if (currentExecFilter === '__sin__') filtered = filtered.filter(t => !t.ejecutivo);
-    else if (currentExecFilter !== 'todos') filtered = filtered.filter(t => t.ejecutivo === currentExecFilter);
-    if (searchTerm) {
-      filtered = filtered.filter(t =>
-        (t.ref || '').toLowerCase().includes(searchTerm) ||
-        (t.cliente || '').toLowerCase().includes(searchTerm)
-      );
+    
+    let filtered = tasks;
+
+    // ----- NUEVA LÓGICA DE PRIVACIDAD POR ROL -----
+    if (currentUserProfile.rol !== 'admin') {
+      // Ejecutivo normal: solo ve lo suyo en cualquier pestaña
+      filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
+    } else {
+      // Admin: Aplica el filtro manual del dropdown
+      const execF = document.getElementById('ejecutivoFilter').value;
+      if (execF === '__sin__') filtered = filtered.filter(t => !t.ejecutivo);
+      else if (execF !== 'todos') filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(execF));
+    }
+    
+    // Contar foráneas visibles según el usuario
+    let foraneas = 0;
+    filtered.forEach(t => { if(t.status !== 'Eliminado' && t.status !== 'Completado' && t.aduana !== 'Monterrey') foraneas++; });
+    document.getElementById('foraneasCount').textContent = `Aduanas Foráneas: ${foraneas}`;
+    
+    // Filtro de Pestañas
+    if (currentFilter === 'papelera') {
+      filtered = filtered.filter(t => t.status === 'Eliminado');
+    } else {
+      filtered = filtered.filter(t => t.status !== 'Eliminado');
+      if (currentFilter !== 'todos') filtered = filtered.filter(t => t.depto === currentFilter);
+      if (hideDone) filtered = filtered.filter(t => t.status !== 'Completado');
     }
 
+    // Filtros de Texto y Fecha
+    const search = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search));
+
+    const dateF = document.getElementById('dateFilter').value;
+    if(dateF !== 'todos') {
+      const range = getStartAndEndOf(dateF);
+      filtered = filtered.filter(t => {
+        if(!t.limite) return false;
+        const d = new Date(t.limite);
+        return d >= range.start && d <= range.end;
+      });
+    }
+
+    // Ordenamiento final
     filtered = [...filtered].sort((a, b) => {
-      const aOverdue = isOverdue(a) ? 0 : 1;
-      const bOverdue = isOverdue(b) ? 0 : 1;
-      if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+      if(a.status === 'Eliminado' || b.status === 'Eliminado') return 0;
+      const ao = isOverdue(a) ? 0 : 1, bo = isOverdue(b) ? 0 : 1;
+      if (ao !== bo) return ao - bo;
       if (a.status === 'Completado' && b.status !== 'Completado') return 1;
       if (b.status === 'Completado' && a.status !== 'Completado') return -1;
       return new Date(a.limite || 0) - new Date(b.limite || 0);
     });
 
-    if (filtered.length === 0) {
-      rowsEl.innerHTML = '<div class="empty-state">No hay operaciones pendientes en esta vista.</div>';
-    } else {
+    currentFilteredTasks = filtered;
+
+    const rowsEl = document.getElementById('rows');
+    if (filtered.length === 0) { rowsEl.innerHTML = '<div class="empty-state">No hay operaciones pendientes con estos filtros en tu cuenta.</div>'; }
+    else {
       rowsEl.innerHTML = filtered.map(t => {
-        const st = effectiveStatus(t);
-        const lastUpdate = lastHistoryText(t);
+        const st = isOverdue(t) && currentFilter !== 'papelera' ? 'Retrasado' : t.status;
+        const isTrash = t.status === 'Eliminado';
+        
         return `
-        <div class="row" data-id="${t.id}">
-          <div class="prio-dot ${prioClass(t.prioridad)}" title="Prioridad ${t.prioridad}"></div>
-          <div>
-            <div class="cell-main">${t.ref || 'S/REF'}</div>
-            <div class="cell-sub">${t.tipo}</div>
+        <div class="row-wrapper" data-id="${t.id}">
+          <div class="row-main">
+            <button class="expand-btn" data-action="toggle" data-id="${t.id}" title="Ver detalles">❯</button>
+            <div class="prio-dot ${prioClass(t.prioridad)}"></div>
+            <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div></div>
+            <div class="cell small" data-label="Cliente">${t.cliente || '—'}${t.ejecutivo ? `<div class="cell-sub">👤 ${t.ejecutivo}</div>` : ''}</div>
+            <div class="cell small" data-label="Aduana">${t.aduana}</div>
+            <div class="cell small" data-label="Depto">${t.depto}</div>
+            <div data-label="Status"><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
+            <div class="cell small" data-label="Límite">${formatLimite(t.limite)}<br>${dueChip(t)}</div>
+            <div class="row-actions">
+              ${isTrash ? 
+                `<button class="icon-btn edit-only" title="Restaurar" data-action="restore" data-id="${t.id}">↩</button>
+                 <button class="icon-btn del admin-only" title="Eliminar definitivamente" data-action="purge" data-id="${t.id}">🗑</button>` : 
+                `<button class="icon-btn done edit-only" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
+                 <button class="icon-btn edit-only" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button>
+                 <button class="icon-btn edit-only" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
+                 <button class="icon-btn del edit-only" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>`
+              }
+            </div>
           </div>
-          <div class="cell small" data-label="Cliente">
-            ${t.cliente || '—'}
-            ${t.ejecutivo ? `<div class="cell-sub">👤 ${t.ejecutivo}</div>` : ''}
-            ${t.enlace ? `<a class="link-chip" href="${t.enlace}" target="_blank" rel="noopener">🔗 Ver enlace</a>` : ''}
-          </div>
-          <div class="cell small" data-label="Aduana">${t.aduana}</div>
-          <div class="cell small" data-label="Depto">${t.depto}</div>
-          <div data-label="Status">
-            <span class="badge ${statusBadgeClass(st)}">${st}</span>
-            ${lastUpdate ? `<div class="last-update">${lastUpdate}</div>` : ''}
-          </div>
-          <div class="cell small" data-label="Límite">${formatLimite(t.limite)}<br>${dueChip(t)}</div>
-          <div class="row-actions">
-            <button class="icon-btn done" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
-            <button class="icon-btn" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button>
-            <button class="icon-btn" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
-            <button class="icon-btn del" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>
+          <div class="details-panel" id="details-${t.id}">
+            <strong>📝 Notas:</strong> ${t.notas || 'Sin notas adicionales.'}<br>
+            ${t.enlace ? `<br><strong>🔗 Enlace:</strong> <a class="link-chip" href="${t.enlace}" target="_blank" rel="noopener">${t.enlace}</a><br>` : ''}
+            <br><em>Último movimiento por: ${t.lastModifiedBy || 'Desconocido'}</em>
+            ${isTrash ? `<br><span style="color:var(--red);">Eliminado el: ${new Date(t.deletedAt).toLocaleDateString()}</span>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -1319,39 +1014,56 @@
   }
 
   function attachRowEvents() {
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const wrapper = this.closest('.row-wrapper');
+        wrapper.classList.toggle('expanded');
+      });
+    });
+
     document.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        if(e.target.classList.contains('expand-btn')) return;
         const id = btn.getAttribute('data-id');
         const action = btn.getAttribute('data-action');
         
         if (action === 'del') {
           openConfirmDelete(id);
+        } else if (action === 'restore') {
+           update(ref(db, 'pendientes_ayc/' + id), { status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser });
+        } else if (action === 'purge') {
+          if (currentUserProfile && currentUserProfile.rol === 'admin' && confirm('Esto borra el pendiente para siempre, sin poder recuperarlo. ¿Continuar?')) {
+            remove(ref(db, 'pendientes_ayc/' + id));
+          }
         } else if (action === 'done') {
-          const t = tasks.find(t => t.id === id);
-          logHistory(id, t ? t.status : null, 'Completado');
-          update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado' });
+          update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser });
           playSparkle(btn);
-        } else if (action === 'edit') {
-          openModal(id);
+        } else if (action === 'edit') { 
+          openModal(id); 
         } else if (action === 'dup') {
           const t = tasks.find(t => t.id === id);
           if (t) {
-            const { id: _oldId, historial, ...rest } = t;
-            const newTaskRef = push(ref(db, 'pendientes_ayc'));
-            set(newTaskRef, { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente' });
+            const { id: _oldId, ...rest } = t;
+            set(push(ref(db, 'pendientes_ayc')), {
+              ...rest,
+              ref: (rest.ref || 'S/REF') + ' (copia)',
+              status: 'Pendiente',
+              deletedAt: null,
+              lastModifiedBy: currentUser
+            });
           }
         }
       });
     });
   }
 
-  // Modal de confirmación de eliminado
   const confirmOverlay = document.getElementById('confirmOverlay');
+  let deleteTargetId = null;
   function openConfirmDelete(id) {
     deleteTargetId = id;
     const t = tasks.find(t => t.id === id);
     document.getElementById('confirmText').textContent =
-      `¿Seguro que quieres eliminar "${t ? (t.ref || 'S/REF') : 'este pendiente'}"? Esta acción no se puede deshacer.`;
+      `¿Seguro que quieres mover "${t ? (t.ref || 'S/REF') : 'este pendiente'}" a la papelera? Podrás restaurarlo dentro de los próximos 7 días.`;
     confirmOverlay.classList.add('open');
   }
   function closeConfirmDelete() {
@@ -1361,25 +1073,97 @@
   document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmDelete);
   confirmOverlay.addEventListener('click', (e) => { if (e.target === confirmOverlay) closeConfirmDelete(); });
   document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-    if (deleteTargetId) remove(ref(db, 'pendientes_ayc/' + deleteTargetId));
-    playSwoosh();
+    if (deleteTargetId) {
+      update(ref(db, 'pendientes_ayc/' + deleteTargetId), { status: 'Eliminado', deletedAt: new Date().toISOString(), deletedBy: currentUser, lastModifiedBy: currentUser });
+    }
     closeConfirmDelete();
   });
 
-  // Cerrar modales con Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (confirmOverlay.classList.contains('open')) closeConfirmDelete();
-      else if (overlay.classList.contains('open')) closeModal();
-    }
+
+  document.getElementById('viewChartBtn').addEventListener('click', () => {
+    const chartContainer = document.getElementById('chartContainer');
+    const execCounts = {};
+    const displayNames = {};
+    let max = 0;
+    
+    // Si no es admin, la gráfica solo debería mostrar su propia carga 
+    // o podríamos dejar que vea la carga global. Dejaremos la carga de los que tiene permiso de ver.
+    currentFilteredTasks.forEach(t => {
+      if(t.status !== 'Completado' && t.status !== 'Eliminado') {
+        const raw = t.ejecutivo || 'Sin asignar';
+        const key = normKey(raw);
+        if (!displayNames[key]) displayNames[key] = raw === 'Sin asignar' ? raw : canonicalExecName(raw);
+        execCounts[key] = (execCounts[key] || 0) + 1;
+        if(execCounts[key] > max) max = execCounts[key];
+      }
+    });
+
+    let html = '';
+    Object.keys(execCounts).sort((a,b) => execCounts[b] - execCounts[a]).forEach(key => {
+      const e = displayNames[key];
+      const percent = max > 0 ? (execCounts[key] / max) * 100 : 0;
+      html += `
+        <div class="chart-row">
+          <div class="chart-label">${e}</div>
+          <div class="chart-bar-wrap"><div class="chart-bar" style="width: ${percent}%;"></div></div>
+          <div class="chart-count">${execCounts[key]}</div>
+        </div>
+      `;
+    });
+    
+    if(!html) html = '<p style="color:var(--text-sub); text-align:center;">No hay operaciones activas.</p>';
+    chartContainer.innerHTML = html;
+    document.getElementById('chartOverlay').classList.add('open');
+  });
+  document.getElementById('closeChartBtn').addEventListener('click', () => { document.getElementById('chartOverlay').classList.remove('open'); });
+
+  function tasksToCsv(list) {
+    const headers = ['ref','cliente','aduana','depto','tipo','prioridad','status','limite','ejecutivo','enlace','notas'];
+    return headers.join(',') + '\n' + list.map(t => headers.map(h => `"${(t[h] ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+  }
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob(['\uFEFF' + content], { type: mime }); 
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+  document.getElementById('exportCsvBtn').addEventListener('click', () => { 
+    if(currentFilteredTasks.length === 0) { alert('No hay datos para exportar.'); return; }
+    downloadFile('Reporte_AC_' + Date.now() + '.csv', tasksToCsv(currentFilteredTasks), 'text/csv;charset=utf-8;'); 
+  });
+  document.getElementById('downloadTemplateBtn').addEventListener('click', () => { downloadFile('plantilla_pendientes_ac.csv', "ref,cliente,aduana,depto,tipo,prioridad,status,limite,ejecutivo,enlace,notas\n26 43 1234 5000123,Cliente Ejemplo SA,Monterrey,Aéreo,Importación,Media,Pendiente,2026-07-15T14:00,,,Notas opcionales", 'text/csv;charset=utf-8;'); });
+
+  document.getElementById('uploadLayoutBtn').addEventListener('click', () => { document.getElementById('layoutFileInput').click(); });
+  document.getElementById('layoutFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const rows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(evt.target.result), { type: 'array' }).Sheets[XLSX.read(new Uint8Array(evt.target.result), { type: 'array' }).SheetNames[0]], { defval: '' });
+        if (!rows.length) { alert('El archivo no tiene filas de datos.'); return; }
+        let count = 0;
+        rows.forEach(row => {
+          const refVal = (row.ref || row.Ref || row.REF || '').toString().trim(); if (!refVal) return;
+          set(push(ref(db, 'pendientes_ayc')), { 
+            ref: refVal, cliente: (row.cliente || row.Cliente || '').toString(), aduana: (row.aduana || row.Aduana || 'Monterrey').toString(), 
+            depto: (row.depto || row.Depto || 'Aéreo').toString(), tipo: (row.tipo || row.Tipo || 'Importación').toString(), prioridad: (row.prioridad || row.Prioridad || 'Media').toString(), 
+            status: (row.status || row.Status || 'Pendiente').toString(), limite: (row.limite || row.Limite || '') ? new Date(row.limite || row.Limite).toISOString() : null, 
+            ejecutivo: (row.ejecutivo || row.Ejecutivo || currentUser || '').toString(), enlace: (row.enlace || row.Enlace || '').toString(), 
+            notas: (row.notas || row.Notas || '').toString(), lastModifiedBy: currentUser 
+          });
+          count++;
+        });
+        alert(`Se cargaron ${count} pendientes desde el layout.`); playSparkle(document.getElementById('uploadLayoutBtn'));
+      } catch (err) { alert('No se pudo leer el archivo. Revisa que use la misma plantilla.'); }
+      e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
   });
 
-  // Lógica del Modal
   const overlay = document.getElementById('modalOverlay');
   function openModal(id) {
     editingId = id || null;
     document.getElementById('modalTitle').textContent = id ? 'Editar Pendiente' : 'Nuevo Pendiente';
-    
     if (id) {
       const t = tasks.find(t => t.id === id);
       document.getElementById('f-ref').value = t.ref || '';
@@ -1390,144 +1174,55 @@
       document.getElementById('f-prioridad').value = t.prioridad;
       document.getElementById('f-status').value = t.status;
       document.getElementById('f-limite').value = t.limite ? t.limite.slice(0, 16) : '';
-      document.getElementById('f-ejecutivo').value = t.ejecutivo || '';
+      
+      // Si eres ejecutivo normal, no puedes reasignar tu pendiente
+      const execField = document.getElementById('f-ejecutivo');
+      execField.value = t.ejecutivo || currentUser || '';
+      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true;
+      else execField.disabled = false;
+
       document.getElementById('f-enlace').value = t.enlace || '';
       document.getElementById('f-notas').value = t.notas || '';
     } else {
-      ['f-ref', 'f-cliente', 'f-notas', 'f-enlace'].forEach(fieldId => document.getElementById(fieldId).value = '');
+      ['f-ref', 'f-cliente', 'f-notas', 'f-enlace'].forEach(f => document.getElementById(f).value = '');
       document.getElementById('f-limite').value = '';
       document.getElementById('f-aduana').value = 'Monterrey';
       document.getElementById('f-depto').value = 'Aéreo';
       document.getElementById('f-prioridad').value = 'Media';
       document.getElementById('f-status').value = 'Pendiente';
-      document.getElementById('f-ejecutivo').value = '';
+      
+      const execField = document.getElementById('f-ejecutivo');
+      execField.value = currentUser || '';
+      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true;
+      else execField.disabled = false;
     }
     overlay.classList.add('open');
   }
 
-  function closeModal() {
-    overlay.classList.remove('open');
-    editingId = null;
-  }
-
-  document.getElementById('openModalBtn').addEventListener('click', function () {
-    playSparkle(this);
-    openModal(null);
-  });
+  function closeModal() { overlay.classList.remove('open'); editingId = null; }
+  document.getElementById('openModalBtn').addEventListener('click', () => { playSparkle(document.getElementById('openModalBtn')); openModal(null); });
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
-  function saveCurrentForm() {
+  document.getElementById('saveBtn').addEventListener('click', () => {
     const refText = document.getElementById('f-ref').value.trim();
     if (!refText) { document.getElementById('f-ref').focus(); return; }
+    
+    // Rescatar el valor del ejecutivo incluso si el campo está deshabilitado
+    const execField = document.getElementById('f-ejecutivo');
+    const selectedExec = execField.disabled ? currentUser : execField.value;
 
     const data = {
-      ref: refText,
-      cliente: document.getElementById('f-cliente').value.trim(),
-      aduana: document.getElementById('f-aduana').value,
-      depto: document.getElementById('f-depto').value,
-      tipo: document.getElementById('f-tipo').value,
-      prioridad: document.getElementById('f-prioridad').value,
-      status: document.getElementById('f-status').value,
-      limite: document.getElementById('f-limite').value || null,
-      ejecutivo: document.getElementById('f-ejecutivo').value,
-      enlace: document.getElementById('f-enlace').value.trim(),
-      notas: document.getElementById('f-notas').value.trim()
+      ref: refText, cliente: document.getElementById('f-cliente').value.trim(), 
+      aduana: document.getElementById('f-aduana').value, depto: document.getElementById('f-depto').value, 
+      tipo: document.getElementById('f-tipo').value, prioridad: document.getElementById('f-prioridad').value,
+      status: document.getElementById('f-status').value, limite: document.getElementById('f-limite').value || null,
+      ejecutivo: selectedExec, enlace: document.getElementById('f-enlace').value.trim(), 
+      notas: document.getElementById('f-notas').value.trim(),
+      lastModifiedBy: currentUser
     };
-
-    if (editingId) {
-      const prev = tasks.find(t => t.id === editingId);
-      if (prev && prev.status !== data.status) logHistory(editingId, prev.status, data.status);
-      update(ref(db, 'pendientes_ayc/' + editingId), data);
-    } else {
-      const newTaskRef = push(ref(db, 'pendientes_ayc'));
-      set(newTaskRef, data);
-      playSparkle(document.getElementById('saveBtn'));
-    }
+    if (editingId) { update(ref(db, 'pendientes_ayc/' + editingId), data); }
+    else { set(push(ref(db, 'pendientes_ayc')), data); }
     closeModal();
-  }
-
-  document.getElementById('saveBtn').addEventListener('click', saveCurrentForm);
-
-  // Atajos de teclado: N = nuevo pendiente, Ctrl/Cmd+Enter = guardar
-  document.addEventListener('keydown', (e) => {
-    const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
-    if (e.key.toLowerCase() === 'n' && !typing && !overlay.classList.contains('open') && !execOverlay.classList.contains('open')) {
-      e.preventDefault();
-      document.getElementById('openModalBtn').click();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && overlay.classList.contains('open')) {
-      e.preventDefault();
-      saveCurrentForm();
-    }
-  });
-
-  // ---------- Exportar a CSV / respaldo ----------
-  function tasksToCsv(list) {
-    const headers = ['ref','cliente','aduana','depto','tipo','prioridad','status','limite','ejecutivo','enlace','notas'];
-    const rows = list.map(t => headers.map(h => `"${(t[h] ?? '').toString().replace(/"/g, '""')}"`).join(','));
-    return headers.join(',') + '\n' + rows.join('\n');
-  }
-  function downloadFile(filename, content, mime) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }
-  document.getElementById('exportCsvBtn').addEventListener('click', () => {
-    downloadFile('pendientes_ac_' + Date.now() + '.csv', tasksToCsv(tasks), 'text/csv;charset=utf-8;');
-  });
-  document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
-    const headers = ['ref','cliente','aduana','depto','tipo','prioridad','status','limite','ejecutivo','enlace','notas'];
-    const example = ['26 43 1234 5000123','Cliente Ejemplo SA','Monterrey','Aéreo','Importación','Media','Pendiente','2026-07-15T14:00','','','Notas opcionales'];
-    downloadFile('plantilla_pendientes_ac.csv', headers.join(',') + '\n' + example.join(','), 'text/csv;charset=utf-8;');
-  });
-
-  // ---------- Carga masiva por layout (CSV o Excel) ----------
-  document.getElementById('uploadLayoutBtn').addEventListener('click', () => {
-    document.getElementById('layoutFileInput').click();
-  });
-  document.getElementById('layoutFileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-        if (!rows.length) { alert('El archivo no tiene filas de datos.'); return; }
-        let count = 0;
-        rows.forEach(row => {
-          const refVal = (row.ref || row.Ref || row.REF || '').toString().trim();
-          if (!refVal) return;
-          const newTaskRef = push(ref(db, 'pendientes_ayc'));
-          set(newTaskRef, {
-            ref: refVal,
-            cliente: (row.cliente || row.Cliente || '').toString(),
-            aduana: (row.aduana || row.Aduana || 'Monterrey').toString(),
-            depto: (row.depto || row.Depto || 'Aéreo').toString(),
-            tipo: (row.tipo || row.Tipo || 'Importación').toString(),
-            prioridad: (row.prioridad || row.Prioridad || 'Media').toString(),
-            status: (row.status || row.Status || 'Pendiente').toString(),
-            limite: (row.limite || row.Limite || '') ? new Date(row.limite || row.Limite).toISOString() : null,
-            ejecutivo: (row.ejecutivo || row.Ejecutivo || '').toString(),
-            enlace: (row.enlace || row.Enlace || '').toString(),
-            notas: (row.notas || row.Notas || '').toString()
-          });
-          count++;
-        });
-        alert(`Se cargaron ${count} pendientes desde el layout.`);
-        playSparkle(document.getElementById('uploadLayoutBtn'));
-      } catch (err) {
-        alert('No se pudo leer el archivo. Revisa que use la misma plantilla (botón "Plantilla").');
-      }
-      e.target.value = '';
-    };
-    reader.readAsArrayBuffer(file);
   });
 </script>
 </body>
