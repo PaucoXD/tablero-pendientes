@@ -214,6 +214,10 @@
   .exec-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--divider); font-size: 13px; }
   .exec-add-row { display: flex; gap: 8px; }
   .exec-add-row input { flex: 1; }
+  .variant-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .variant-row .variant-name { font-size: 12.5px; font-weight: 700; color: var(--red); width: 90px; flex-shrink: 0; }
+  .variant-row select { flex: 1; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 6px 8px; border-radius: var(--radius-btn); font-size: 12px; }
+  .variant-row button { flex-shrink: 0; }
 
   .sparkle-particle { position: fixed; pointer-events: none; font-size: 16px; z-index: 999; animation: sparkleFloat 0.9s ease-out forwards; }
   @keyframes sparkleFloat {
@@ -494,6 +498,16 @@
     <div class="exec-add-row">
       <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo (solo para filtros)">
       <button class="btn-add" id="addExecBtn">Agregar</button>
+    </div>
+
+    <div id="variantesSection" style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider); display: none;">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--red); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+        ⚠️ Variantes sin fusionar
+      </div>
+      <p style="font-size: 11.5px; color: var(--text-sub); margin: 0 0 12px;">
+        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial (ej. "Daniela" en vez de "Dany"). Fusiónalos para que no salgan duplicados en los filtros.
+      </p>
+      <div id="variantesList"></div>
     </div>
 
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider);">
@@ -802,6 +816,57 @@
       : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos fijos.</div>';
 
     document.querySelectorAll('[data-exec-id]').forEach(btn => { btn.addEventListener('click', () => { remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id'))); }); });
+
+    // ---- Detectar variantes de nombre huérfanas (ej. "Daniela" en vez de "Dany") ----
+    const officialKeys = new Set(executives.map(e => normKey(e.nombre)));
+    const variantMap = new Map(); // key normalizado -> nombre tal cual aparece
+    tasks.forEach(t => {
+      if (t.ejecutivo && !t.isTask && t.status !== 'Eliminado') {
+        const key = normKey(t.ejecutivo);
+        if (key && !officialKeys.has(key)) variantMap.set(key, t.ejecutivo.trim());
+      }
+    });
+    catalogo.forEach(c => {
+      if (c.ejecutivoAsignado) {
+        const key = normKey(c.ejecutivoAsignado);
+        if (key && !officialKeys.has(key)) variantMap.set(key, c.ejecutivoAsignado.trim());
+      }
+    });
+
+    const variantesSection = document.getElementById('variantesSection');
+    const variantesList = document.getElementById('variantesList');
+    if (variantMap.size === 0 || executives.length === 0) {
+      variantesSection.style.display = 'none';
+    } else {
+      variantesSection.style.display = 'block';
+      variantesList.innerHTML = Array.from(variantMap.values()).map(name => `
+        <div class="variant-row">
+          <span class="variant-name" title="${name}">${name}</span>
+          <select data-variant-target="${name}">
+            <option value="">Fusionar con...</option>
+            ${executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
+          </select>
+          <button class="btn-mini" data-variant-merge="${name}">Fusionar</button>
+        </div>
+      `).join('');
+      document.querySelectorAll('[data-variant-merge]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const variantName = btn.getAttribute('data-variant-merge');
+          const select = document.querySelector(`[data-variant-target="${variantName}"]`);
+          const target = select.value;
+          if (!target) { alert('Elige a qué ejecutivo oficial fusionarlo primero.'); return; }
+          if (!confirm(`¿Cambiar todos los pedimentos de "${variantName}" para que queden como "${target}"?`)) return;
+          let count = 0;
+          tasks.forEach(t => {
+            if (t.ejecutivo === variantName && !t.isTask) { update(ref(db, 'pendientes_ayc/' + t.id), { ejecutivo: target }); count++; }
+          });
+          catalogo.forEach(c => {
+            if (c.ejecutivoAsignado === variantName) { update(ref(db, 'catalogo_ayc/' + c.id), { ejecutivoAsignado: target }); count++; }
+          });
+          alert(`Listo: "${variantName}" se fusionó con "${target}" en ${count} registro(s).`);
+        });
+      });
+    }
   }
 
   const execOverlay = document.getElementById('execOverlay');
