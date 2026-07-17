@@ -70,7 +70,7 @@
   .sync-indicator { display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; margin-right: 10px;}
   .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); transition: background .2s, box-shadow .2s; }
 
-  /* Agrupación visual del header: utilidad | acciones secundarias | acción principal */
+  /* Agrupación visual del header */
   .header-divider { width: 1px; height: 24px; background: var(--divider); margin: 0 4px; }
   .header-quick-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .btn-quiet {
@@ -602,6 +602,14 @@
   const catalogoRef = ref(db, 'catalogo_ayc');
   const configRef = ref(db, 'config_ayc');
   
+  // VARIABLES DE PAGINACIÓN RESTAURADAS
+  let generalPage = 1;
+  const GENERAL_PAGE_SIZE = 150;
+
+  // LECTURA DE URL PARA SABER SI ESTAMOS EN "MODO GENERAL" (OTRA PÁGINA)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isGeneralMode = urlParams.get('modo') === 'general';
+  
   let corteLibresPorAduana = { Monterrey: 6107606, Laredo: 6120024 };
   function corteLibres(aduana) { return corteLibresPorAduana[aduana] || 0; }
   onValue(configRef, (snap) => {
@@ -697,6 +705,10 @@
     document.getElementById('userGreeting').textContent =
       `Hola, ${currentUser}` + (currentUserProfile.rol === 'admin' ? ' (Admin)' : '');
     document.body.classList.toggle('is-admin', currentUserProfile.rol === 'admin');
+    
+    // Si estamos en la página separada de General, forzamos la vista general
+    if (isGeneralMode) currentFilter = 'general';
+    
     loginOverlay.classList.remove('open');
     extractExecutives();
     render(); 
@@ -948,7 +960,12 @@
     push(execRef, name); input.value = '';
   });
 
-  document.getElementById('searchInput').addEventListener('input', render);
+  // Al buscar, reiniciamos la página a la 1 para no quedarnos en una página vacía
+  document.getElementById('searchInput').addEventListener('input', () => {
+      generalPage = 1;
+      render();
+  });
+  
   document.getElementById('ejecutivoFilter').addEventListener('change', render);
   document.getElementById('dateFilter').addEventListener('change', render);
 
@@ -1027,7 +1044,11 @@
 
     const mainLabels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
     const secondaryLabels = [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
-    if (currentUserProfile && currentUserProfile.rol === 'admin') secondaryLabels.push(['general', '📊 Vista General']);
+    
+    // MODIFICACIÓN: Si es admin, mostramos la pestaña con el icono de abrir en otra ventana
+    if (currentUserProfile && currentUserProfile.rol === 'admin') {
+      secondaryLabels.push(['general', '📊 Vista General ↗']);
+    }
 
     const tabHtml = ([k, l], secondary) => {
       const showAmber = !secondary && counts[k] > 0;
@@ -1037,8 +1058,17 @@
       <div class="tabs-group main">${mainLabels.map(l => tabHtml(l, false)).join('')}</div>
       <div class="tabs-group secondary">${secondaryLabels.map(l => tabHtml(l, true)).join('')}</div>
     `;
+    
     document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => {
       const newKey = el.getAttribute('data-key');
+      
+      // LOGICA PARA ABRIR EN PESTAÑA NUEVA
+      if (newKey === 'general') {
+        const urlBase = window.location.href.split('?')[0];
+        window.open(urlBase + '?modo=general', '_blank');
+        return;
+      }
+      
       if (newKey === 'general' && currentFilter !== 'general') scrollToLastTouched = true;
       currentFilter = newKey; render();
     }));
@@ -1297,15 +1327,41 @@
 
     if (search) merged = merged.filter(m => (m.ref || '').toLowerCase().includes(search) || (m.cliente || '').toLowerCase().includes(search));
 
-    const mty = merged.filter(m => m.aduana === 'Monterrey').sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
-    const lrd = merged.filter(m => m.aduana === 'Laredo').sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
-    const otras = merged.filter(m => m.aduana !== 'Monterrey' && m.aduana !== 'Laredo').sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
+    const mty = merged.filter(m => m.aduana === 'Monterrey');
+    const lrd = merged.filter(m => m.aduana === 'Laredo');
+    const otras = merged.filter(m => m.aduana !== 'Monterrey' && m.aduana !== 'Laredo');
 
-    function renderGrupo(titulo, lista) {
-      if (lista.length === 0) return `<div class="empty-state" style="padding:12px 30px; text-align:left; font-weight:800;">${titulo}: 0 pedimento(s)</div>`;
-      return `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800; border-top:2px solid var(--divider); margin-top:6px;">${titulo}: ${lista.length} pedimento(s)</div>` +
-        lista.map(m => `
-        <div class="row-wrapper general-row" data-ref="${(m.ref || '').replace(/"/g, '&quot;')}">
+    let listaActual;
+    if (generalAduanaFilter === 'Monterrey') listaActual = mty;
+    else if (generalAduanaFilter === 'Laredo') listaActual = lrd;
+    else listaActual = [...mty, ...lrd, ...otras];
+    
+    listaActual = [...listaActual].sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
+
+    // LÓGICA DE PAGINACIÓN RESTAURADA
+    const totalPaginas = Math.max(1, Math.ceil(listaActual.length / GENERAL_PAGE_SIZE));
+    if (generalPage > totalPaginas) generalPage = totalPaginas;
+    const inicio = (generalPage - 1) * GENERAL_PAGE_SIZE;
+    const pagina = listaActual.slice(inicio, inicio + GENERAL_PAGE_SIZE);
+
+    const botones = `
+      <div style="display:flex; gap:8px; padding:14px 30px 4px; flex-wrap:wrap; align-items:center;">
+        <button class="btn-mini${generalAduanaFilter === 'Monterrey' ? ' active-toggle' : ''}" data-general-aduana="Monterrey">🏢 Monterrey (${mty.length})</button>
+        <button class="btn-mini${generalAduanaFilter === 'Laredo' ? ' active-toggle' : ''}" data-general-aduana="Laredo">🚚 Nuevo Laredo (${lrd.length})</button>
+        <button class="btn-mini${generalAduanaFilter === 'todas' ? ' active-toggle' : ''}" data-general-aduana="todas">📊 Ver todo</button>
+        <div style="width: 1px; height: 16px; background: var(--divider); margin: 0 4px;"></div>
+        <button class="btn-mini" id="findLastTakenBtn" style="border-color:var(--accent); color:var(--accent); font-weight:800;">🎯 Buscar último tomado</button>
+      </div>`;
+
+    const HTMLPaginacion = `
+      <div style="display:flex; align-items:center; gap:10px; padding:12px 30px; border-top:1px solid var(--divider);">
+        <button class="btn-mini general-prev-btn" ${generalPage <= 1 ? 'disabled' : ''}>‹ Anterior</button>
+        <span style="font-size:12px; color:var(--text-sub); font-family:var(--font-heading);">Página ${generalPage} de ${totalPaginas} (${listaActual.length} en total, ${GENERAL_PAGE_SIZE} por página)</span>
+        <button class="btn-mini general-next-btn" ${generalPage >= totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
+      </div>`;
+
+    const filas = pagina.length ? pagina.map(m => `
+        <div class="row-wrapper general-row" data-ref="${(m.ref || '').replace(/"/g, '&quot;')}" style="animation:none;">
           <div class="row-main" style="grid-template-columns: 1.4fr 1.1fr 1fr 1fr 1fr 130px;">
             <div class="cell-main">${m.ref || 'S/REF'}</div>
             <div class="cell-client" style="display: flex; align-items: center;">${m.cliente || '—'}</div>
@@ -1314,28 +1370,39 @@
             <div><span class="badge ${m.estadoClass}">${m.estado}</span></div>
             <div class="cell small" style="text-transform:capitalize;">${m.origen}</div>
           </div>
-        </div>`).join('');
-    }
-
-    const botones = `
-      <div style="display:flex; gap:8px; padding:14px 30px 4px;">
-        <button class="btn-mini${generalAduanaFilter === 'Monterrey' ? ' active-toggle' : ''}" data-general-aduana="Monterrey">🏢 Monterrey (${mty.length})</button>
-        <button class="btn-mini${generalAduanaFilter === 'Laredo' ? ' active-toggle' : ''}" data-general-aduana="Laredo">🚚 Nuevo Laredo (${lrd.length})</button>
-        <button class="btn-mini${generalAduanaFilter === 'todas' ? ' active-toggle' : ''}" data-general-aduana="todas">📊 Ver todo</button>
-      </div>`;
-
-    let contenido = '';
-    if (generalAduanaFilter === 'Monterrey') contenido = renderGrupo('🏢 Monterrey', mty);
-    else if (generalAduanaFilter === 'Laredo') contenido = renderGrupo('🚚 Nuevo Laredo', lrd);
-    else contenido = renderGrupo('🏢 Monterrey', mty) + renderGrupo('🚚 Nuevo Laredo', lrd) + (otras.length ? renderGrupo('📦 Otras aduanas', otras) : '');
+        </div>`).join('') : '<div class="empty-state">No hay pedimentos que coincidan.</div>';
 
     rowsEl.innerHTML =
-      `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s) (catálogo + pendientes en cualquier estatus)</div>` +
-      botones + contenido;
+      `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s)</div>` +
+      botones + HTMLPaginacion + filas + HTMLPaginacion;
 
     document.querySelectorAll('[data-general-aduana]').forEach(btn => {
-      btn.addEventListener('click', () => { generalAduanaFilter = btn.getAttribute('data-general-aduana'); renderGeneralTab(); });
+      btn.addEventListener('click', () => { generalAduanaFilter = btn.getAttribute('data-general-aduana'); generalPage = 1; renderGeneralTab(); });
     });
+
+    // EVENTOS DE PAGINACIÓN CORREGIDOS USANDO CLASES
+    document.querySelectorAll('.general-prev-btn').forEach(btn => {
+      btn.addEventListener('click', () => { if (generalPage > 1) { generalPage--; renderGeneralTab(); } });
+    });
+    document.querySelectorAll('.general-next-btn').forEach(btn => {
+      btn.addEventListener('click', () => { if (generalPage < totalPaginas) { generalPage++; renderGeneralTab(); } });
+    });
+
+    const findLastBtn = document.getElementById('findLastTakenBtn');
+    if (findLastBtn) {
+      findLastBtn.addEventListener('click', () => {
+        // Filtrar para encontrar el último tomado en general
+        const tomados = merged.filter(m => m.origen === 'pendiente' && m.ejecutivo && m.ejecutivo !== 'Sin asignar');
+        if (tomados.length === 0) return alert('Aún no hay pedimentos tomados en el sistema.');
+        
+        tomados.sort((a, b) => extractConsecutivo(b.ref) - extractConsecutivo(a.ref));
+        const ultimoRef = tomados[0].ref;
+        
+        generalAduanaFilter = 'todas'; 
+        touchRef(ultimoRef);
+        renderGeneralTab();
+      });
+    }
 
     document.querySelectorAll('.general-row').forEach(row => {
       row.addEventListener('click', () => touchRef(row.getAttribute('data-ref')));
