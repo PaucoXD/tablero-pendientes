@@ -142,6 +142,12 @@
   .chat-box { max-width: 800px; background: var(--bg); border: 1px solid var(--divider); border-radius: 8px; padding: 15px; margin-top: 20px; }
   .chat-header { font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; border-bottom: 1px dashed var(--divider); padding-bottom: 8px; margin-bottom: 10px; }
   .chat-placeholder { text-align: center; color: var(--text-sub); font-size: 12px; font-style: italic; padding: 10px 0; }
+  
+  /* ESTILOS DE CHAT AÑADIDOS */
+  .chat-messages { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .chat-msg { font-size: 12.5px; padding: 10px; border-radius: 6px; background: var(--panel-alt); border: 1px solid var(--divider); }
+  .chat-msg .meta { font-size: 10.5px; color: var(--text-sub); margin-bottom: 5px; display: flex; justify-content: space-between; font-weight: 700; font-family: var(--font-heading); text-transform: uppercase; }
+  .chat-msg .meta .user { color: var(--primary); }
 
   .prio-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; }
   .prio-alta { background: var(--red); box-shadow: 0 0 8px var(--red); }
@@ -1333,10 +1339,35 @@
             <div class="dyn-data-grid">${dynHtml}${consHtml}</div>
             
             <!-- CONTENEDOR CHAT/BITÁCORA -->
-            <div class="chat-box">
-                <div class="chat-header">Comentarios / Bitácora</div>
-                <div class="chat-placeholder">Aún no hay mensajes en esta operación. (Próximamente)</div>
-            </div>
+            ${(() => {
+                let chatHtml = '<div class="chat-placeholder">Aún no hay mensajes en esta operación.</div>';
+                if (t.chat) {
+                    const msgs = Object.values(t.chat).sort((a, b) => a.timestamp - b.timestamp);
+                    if (msgs.length > 0) {
+                        chatHtml = '<div class="chat-messages">' + msgs.map(m => `
+                            <div class="chat-msg">
+                                <div class="meta">
+                                    <span class="user">👤 ${m.usuario}</span>
+                                    <span>${new Date(m.timestamp).toLocaleString('es-MX', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
+                                </div>
+                                <div>${m.texto}</div>
+                            </div>
+                        `).join('') + '</div>';
+                    }
+                }
+                return `
+                <div class="chat-box">
+                    <div class="chat-header">Comentarios / Bitácora</div>
+                    ${chatHtml}
+                    ${!isClient ? `
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <input type="text" id="chat-input-${t.id}" placeholder="Escribe un comentario..." 
+                               onkeydown="if(event.key==='Enter') window.sendChatMessage('${t.id}')"
+                               style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--divider); background:var(--bg); color:var(--text-main); font-size:12px;">
+                        <button class="btn-add" style="padding: 8px 12px;" onclick="window.sendChatMessage('${t.id}')">Enviar</button>
+                    </div>` : ''}
+                </div>`;
+            })()}
 
             ${!isClient ? `<strong>📝 Notas Internas:</strong> ${t.notas || 'Sin notas adicionales.'}<br>` : ''}
             ${t.enlace && !isClient ? `<br><strong>🔗 Enlace:</strong> <a class="link-chip" href="${t.enlace}" target="_blank">${t.enlace}</a><br>` : ''}
@@ -1789,6 +1820,28 @@
     touchRef(document.getElementById('f-ref').value.trim());
     overlay.classList.remove('open');
   });
+
+  // FUNCIÓN PARA ENVIAR MENSAJES AL CHAT
+  window.sendChatMessage = function(taskId) {
+      const input = document.getElementById(`chat-input-${taskId}`);
+      const texto = input.value.trim();
+      if (!texto) return;
+
+      input.disabled = true;
+
+      push(ref(db, `pendientes_ayc/${taskId}/chat`), {
+          texto: texto,
+          usuario: currentUser,
+          timestamp: Date.now()
+      }).then(() => {
+          input.value = '';
+          input.disabled = false;
+          input.focus();
+      }).catch(err => {
+          alert('Error al enviar el mensaje.');
+          input.disabled = false;
+      });
+  };
 </script>
 </body>
 </html>
