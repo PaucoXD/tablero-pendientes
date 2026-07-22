@@ -27,17 +27,22 @@
   [data-theme*="girly"] .modal h2::after { content: " 🎀"; }
 
   /* =========================================
-     ESTILOS GLOBALES
+     ESTILOS GLOBALES Y PERMISOS
      ========================================= */
   * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
   body { margin: 0; background-color: var(--bg); background-image: var(--bg-image); color: var(--text-main); font-family: var(--font-main); min-height: 100vh; padding: 20px; }
   .board { max-width: 1200px; margin: 0 auto; background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); overflow: hidden; }
 
-  /* PERMISOS Y ROLES */
   body.view-only .row-actions, body.view-only #openModalBtn, body.view-only .edit-only { display: none !important; }
   .admin-only { display: none !important; }
   body.is-admin .admin-only { display: inline-flex !important; }
   body.is-admin button.admin-only, body.is-admin select.admin-only { display: inline-block !important; }
+  body:not(.is-admin) #ejecutivoFilter { display: none !important; }
+
+  /* MODO CLIENTE (PORTAL) */
+  body.is-client .edit-only, body.is-client .admin-only, body.is-client .header-quick-actions, body.is-client #openModalBtn, body.is-client .toolbar, body.is-client .row-actions { display: none !important; }
+  body.is-client .board-header { justify-content: flex-start; }
+  body.is-client .header-actions { margin-left: auto; }
   
   /* MODO KIOSCO */
   body.kiosk-mode .header-actions, body.kiosk-mode .toolbar, body.kiosk-mode .tabs { display: none !important; }
@@ -46,18 +51,9 @@
   body.kiosk-mode .col-header, body.kiosk-mode .row-main { grid-template-columns: 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr !important; }
   body.kiosk-mode .expand-btn, body.kiosk-mode .row-actions { display: none !important; }
   body.kiosk-mode .col-header > div:first-child, body.kiosk-mode .col-header > div:last-child { display: none !important; }
-
-  .exit-kiosk-btn {
-    display: none; position: fixed; bottom: 30px; right: 30px;
-    background: var(--red); color: white; border: none; padding: 12px 24px;
-    border-radius: 30px; font-family: var(--font-heading); font-weight: 800; font-size: 14px;
-    cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(255,0,0,0.3);
-    opacity: 0.3; transition: opacity 0.3s, transform 0.2s;
-  }
+  .exit-kiosk-btn { display: none; position: fixed; bottom: 30px; right: 30px; background: var(--red); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-family: var(--font-heading); font-weight: 800; font-size: 14px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(255,0,0,0.3); opacity: 0.3; transition: opacity 0.3s, transform 0.2s; }
   body.kiosk-mode .exit-kiosk-btn { display: block; }
   body.kiosk-mode .exit-kiosk-btn:hover { opacity: 1; transform: scale(1.05); }
-
-  body:not(.is-admin) #ejecutivoFilter { display: none !important; }
 
   /* HEADER */
   .board-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 30px; background: var(--panel-alt); border-bottom: var(--header-border); gap: 15px; flex-wrap: wrap; }
@@ -65,41 +61,20 @@
   .logo-badge { font-family: var(--font-heading); font-weight: 800; font-size: 20px; color: var(--logo-color); background: var(--logo-bg); padding: 6px 12px; border-radius: var(--radius-btn); letter-spacing: 1px; }
   .logo-text h1 { margin: 0; font-family: var(--font-heading); font-size: 16px; color: var(--text-main); text-transform: var(--text-transform); letter-spacing: 1px; font-weight: 800; }
   .logo-text span { font-size: 12px; color: var(--text-sub); letter-spacing: 1px; }
-  
   .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
   .sync-indicator { display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; margin-right: 10px;}
   .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); transition: background .2s, box-shadow .2s; }
-
-  /* Agrupación visual del header */
   .header-divider { width: 1px; height: 24px; background: var(--divider); margin: 0 4px; }
   .header-quick-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .btn-quiet {
-    background: transparent; border: 1px solid var(--divider); color: var(--text-sub);
-    padding: 9px 14px; border-radius: var(--radius-btn); font-family: var(--font-heading);
-    font-weight: 700; font-size: 11.5px; letter-spacing: 0.5px; cursor: pointer;
-    text-transform: var(--text-transform); display: inline-flex; align-items: center; gap: 6px;
-    transition: border-color .15s ease, color .15s ease, background .15s ease;
-  }
+  .btn-quiet { background: transparent; border: 1px solid var(--divider); color: var(--text-sub); padding: 9px 14px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-weight: 700; font-size: 11.5px; letter-spacing: 0.5px; cursor: pointer; text-transform: var(--text-transform); display: inline-flex; align-items: center; gap: 6px; transition: border-color .15s ease, color .15s ease, background .15s ease; }
   .btn-quiet:hover { color: var(--text-main); border-color: var(--text-sub); }
   .btn-quiet.accent-blue:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
   .btn-quiet.accent-take:hover { border-color: var(--accent); color: var(--accent); background: rgba(94,200,255,.1); }
   .btn-quiet.accent-green:hover { border-color: var(--green); color: var(--green); background: var(--green-soft); }
-  
-  .sound-toggle { display: none; background: transparent; border: 1px solid var(--divider); color: var(--text-sub); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 15px; align-items: center; justify-content: center; }
-  .sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
-  [data-theme*="girly"] .sound-toggle { display: flex; }
-
   .theme-selector { background: var(--panel); border: 1px solid var(--divider); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-btn); font-family: var(--font-main); font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
-  
   .btn-add { background: var(--primary); color: #FFF; border: none; padding: 10px 16px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-weight: 800; font-size: 12px; letter-spacing: 1px; cursor: pointer; text-transform: var(--text-transform); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
   .btn-add:hover { transform: translateY(-1px); filter: brightness(1.1); }
   [data-theme*="girly"] .btn-add { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
-  
-  .btn-take { background: var(--accent); color: var(--bg); }
-  [data-theme*="girly"] .btn-take { background: linear-gradient(135deg, #10B981, #059669); }
-  
-  .btn-batch { background: var(--blue); color: #FFF; }
-  [data-theme*="girly"] .btn-batch { background: linear-gradient(135deg, #3B82F6, #8B5CF6); }
 
   /* TICKER AVISOS */
   .ticker-wrap { background: var(--panel-alt); border-bottom: 1px solid var(--divider); overflow: hidden; white-space: nowrap; padding: 5px 0; }
@@ -110,14 +85,10 @@
   /* TOOLBAR PLEGABLE */
   .toolbar { padding: 4px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); }
   .toolbar-header { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px; }
-  .btn-toggle-tools { background: transparent; border: 1px solid var(--divider); color: var(--text-main); padding: 8px 15px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  
+  .btn-toggle-tools { background: transparent; border: 1px solid var(--divider); color: var(--text-main); padding: 8px 15px; border-radius: var(--radius-btn); font-family: var(--font-heading); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .toolbar-content { display: none; width: 100%; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider); gap: 10px; flex-wrap: wrap; align-items: center; }
   .toolbar-content.open { display: flex; animation: fadeIn 0.3s ease; }
   .toolbar-content input, .toolbar-content select { background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-btn); font-family: var(--font-main); font-size: 12.5px; }
-  .toggle-done { display: flex; align-items: center; gap: 7px; font-family: var(--font-heading); font-size: 11px; font-weight: 700; color: var(--text-sub); cursor: pointer; user-select: none; }
-  .toggle-done input { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
-
   .btn-mini { background: transparent; border: 1px solid var(--divider); color: var(--text-sub); padding: 8px 12px; border-radius: var(--radius-btn); cursor: pointer; font-family: var(--font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap;}
   .btn-mini:hover { border-color: var(--primary); color: var(--primary); }
   .btn-mini.active-toggle { background: var(--primary); border-color: var(--primary); color: white; }
@@ -139,38 +110,50 @@
 
   /* TABLAS (GRID) */
   .col-header { display: grid; grid-template-columns: 30px 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 130px; gap: 10px; padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); font-family: var(--font-heading); font-size: 11px; font-weight: 800; color: var(--text-header); text-transform: uppercase; letter-spacing: 1.5px; }
-  
-  /* GRID PARA TAREAS PERSONALES */
   .col-header-tasks { display: grid; grid-template-columns: 30px 40px 2.5fr 1fr 1fr 1fr 110px; gap: 10px; padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); font-family: var(--font-heading); font-size: 11px; font-weight: 800; color: var(--text-header); text-transform: uppercase; letter-spacing: 1.5px; }
   .row-main-task { display: grid; grid-template-columns: 30px 40px 2.5fr 1fr 1fr 1fr 110px; gap: 10px; align-items: center; padding: 18px 30px; transition: background-color .15s ease; }
-
   .rows { min-height: 100px; }
-  
   .row-wrapper { border-bottom: 1px solid var(--divider); animation: fadeIn 0.3s ease; }
   .row-main { display: grid; grid-template-columns: 30px 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 130px; gap: 10px; align-items: center; padding: 18px 30px; transition: background-color .15s ease; }
   .row-wrapper:hover .row-main, .row-wrapper:hover .row-main-task { background-color: var(--panel-alt); }
-  
   .expand-btn { font-size: 12px; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: transparent; border: 1px solid transparent; transition: transform 0.3s ease, background 0.2s; font-family: var(--font-main); font-weight: 800; }
   .expand-btn:hover { background: var(--divider); }
   .row-wrapper.expanded .expand-btn { transform: rotate(90deg); }
   
-  .details-panel { display: none; padding: 15px 30px 20px 80px; background: var(--details-bg); font-size: 13px; color: var(--text-sub); border-top: 1px dashed var(--divider); line-height: 1.6; }
+  /* DETAILS PANEL, TIMELINE Y CHAT */
+  .details-panel { display: none; padding: 20px 30px 30px 80px; background: var(--details-bg); font-size: 13px; color: var(--text-sub); border-top: 1px dashed var(--divider); line-height: 1.6; }
   .row-wrapper.expanded .details-panel { display: block; animation: fadeIn 0.3s ease; }
+  .timeline-container { position: relative; max-width: 800px; margin: 30px 0 40px; padding: 0 20px; }
+  .timeline-track { position: absolute; top: 12px; left: 30px; right: 30px; height: 4px; background: var(--divider); border-radius: 2px; z-index: 1; }
+  .timeline-track-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+  .timeline-steps { display: flex; justify-content: space-between; position: relative; z-index: 2; }
+  .timeline-step { display: flex; flex-direction: column; align-items: center; position: relative; width: 60px; }
+  .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--panel); border: 3px solid var(--divider); margin-top: 7px; transition: all 0.4s ease; }
+  .timeline-step.completed .timeline-dot { border-color: var(--accent); background: var(--accent); }
+  .timeline-step.active .timeline-dot { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 10px rgba(94, 200, 255, 0.5); transform: scale(1.3); }
+  .timeline-label { position: absolute; top: 30px; font-size: 10.5px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; white-space: nowrap; font-family: var(--font-heading); }
+  .timeline-step.active .timeline-label { color: var(--accent); }
+  .timeline-icon { position: absolute; top: -18px; left: 0%; font-size: 26px; transform: translateX(-50%); transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 3; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+  .dyn-data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: var(--panel-alt); padding: 15px; border-radius: 8px; border: 1px solid var(--divider); margin-bottom: 15px; max-width: 800px;}
+  .dyn-data-item { display: flex; flex-direction: column; }
+  .dyn-data-lbl { font-size: 10px; font-family: var(--font-heading); font-weight: 700; color: var(--text-header); text-transform: uppercase; margin-bottom: 2px; }
+  .dyn-data-val { font-size: 13px; font-weight: 600; color: var(--text-main); }
   
+  .chat-box { max-width: 800px; background: var(--bg); border: 1px solid var(--divider); border-radius: 8px; padding: 15px; margin-top: 20px; }
+  .chat-header { font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; border-bottom: 1px dashed var(--divider); padding-bottom: 8px; margin-bottom: 10px; }
+  .chat-placeholder { text-align: center; color: var(--text-sub); font-size: 12px; font-style: italic; padding: 10px 0; }
+
   .prio-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto; }
   .prio-alta { background: var(--red); box-shadow: 0 0 8px var(--red); }
   .prio-media { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
   .prio-baja { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
-
   .cell-main { font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-main); }
   .cell-sub { font-size: 11px; font-weight: 500; color: var(--text-sub); margin-top: 4px; }
-  
   .cell-client { font-family: var(--font-main); font-size: 14.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
   .cell { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-main); }
   .cell.small { font-size: 12px; color: var(--text-sub); }
   .link-chip { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
   .link-chip:hover { text-decoration: underline; }
-
   .badge { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
   .badge-pendiente { background: var(--amber-soft); color: var(--amber); }
   .badge-proceso { background: var(--blue-soft); color: var(--blue); }
@@ -180,14 +163,12 @@
   .badge-despachado { background: rgba(94,200,255,.15); color: var(--accent); }
   .badge-retrasado { background: var(--red-soft); color: var(--red); }
   .badge-eliminado { background: rgba(128,128,128,0.15); color: var(--text-sub); text-decoration: line-through; }
-
   .row-actions { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: nowrap; }
   .icon-btn { background: transparent; border: none; color: var(--text-sub); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
   .icon-btn:hover { background: var(--divider); color: var(--text-main); }
   .icon-btn.done:hover { background: var(--green-soft); color: var(--green); }
   .icon-btn.exp:hover { background: rgba(14, 165, 233, 0.15); color: #0EA5E9; }
   .icon-btn.del:hover { background: var(--red-soft); color: var(--red); }
-
   .empty-state { padding: 60px 20px; text-align: center; color: var(--text-sub); font-family: var(--font-heading); font-weight: 600; }
   .due-chip { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 10px; font-family: var(--font-heading); }
   .due-chip.ok { background: var(--green-soft); color: var(--green); }
@@ -197,7 +178,7 @@
   /* MODALES Y UTILIDADES */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); width: 100%; max-width: 500px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;}
+  .modal { background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); width: 100%; max-width: 550px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;}
   .modal h2 { margin: 0 0 20px; font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--divider); padding-bottom: 15px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-header); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
@@ -207,13 +188,14 @@
   .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; }
   .btn-secondary { background: transparent; border: 1px solid var(--divider); color: var(--text-main); padding: 10px 18px; border-radius: var(--radius-btn); cursor: pointer; font-size: 12px; font-family: var(--font-heading); font-weight: 700; }
   .btn-secondary:hover { background: var(--divider); }
-  
+  .dynamic-section-container { background: var(--panel-alt); padding: 15px; border-radius: 8px; border: 1px dashed var(--divider); margin-bottom: 15px; }
+  .dynamic-block { display: none; }
+  .dynamic-block.active { display: block; animation: fadeIn 0.3s ease; }
   .chart-row { display: flex; align-items: center; margin-bottom: 12px; gap: 15px; }
   .chart-label { width: 120px; font-size: 12px; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chart-bar-wrap { flex: 1; background: var(--bg); height: 12px; border-radius: 6px; overflow: hidden; }
   .chart-bar { height: 100%; background: var(--primary); border-radius: 6px; transition: width 0.5s ease; }
   .chart-count { width: 30px; font-size: 12px; font-weight: 800; color: var(--text-sub); }
-
   .exec-list { max-height: 220px; overflow-y: auto; margin-bottom: 14px; }
   .exec-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--divider); font-size: 13px; }
   .exec-add-row { display: flex; gap: 8px; }
@@ -222,25 +204,13 @@
   .variant-row .variant-name { font-size: 12.5px; font-weight: 700; color: var(--red); width: 90px; flex-shrink: 0; }
   .variant-row select { flex: 1; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 6px 8px; border-radius: var(--radius-btn); font-size: 12px; }
   .variant-row button { flex-shrink: 0; }
-
   .sparkle-particle { position: fixed; pointer-events: none; font-size: 16px; z-index: 999; animation: sparkleFloat 0.9s ease-out forwards; }
-  @keyframes sparkleFloat {
-    0% { opacity: 0; transform: translate(0,0) scale(0.5) rotate(0deg); }
-    15% { opacity: 1; transform: translate(var(--sx,0), calc(var(--sy,0) * 0.3)) scale(1.1) rotate(45deg); }
-    100% { opacity: 0; transform: translate(calc(var(--sx,0) * 2), calc(var(--sy,0) - 40px)) scale(0.4) rotate(180deg); }
-  }
+  @keyframes sparkleFloat { 0% { opacity: 0; transform: translate(0,0) scale(0.5) rotate(0deg); } 15% { opacity: 1; transform: translate(var(--sx,0), calc(var(--sy,0) * 0.3)) scale(1.1) rotate(45deg); } 100% { opacity: 0; transform: translate(calc(var(--sx,0) * 2), calc(var(--sy,0) - 40px)) scale(0.4) rotate(180deg); } }
   @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
 
   /* TARJETAS DE MIS TAREAS */
   .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; padding: 24px 30px; }
-  .task-card {
-    --prio-color: var(--divider);
-    background: var(--panel-alt); border: 1px solid var(--divider); border-radius: 14px;
-    padding: 18px 18px 16px 20px; position: relative; overflow: hidden;
-    display: flex; flex-direction: column; gap: 10px;
-    animation: cardIn .4s cubic-bezier(.2,.8,.2,1) both;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .3s ease;
-  }
+  .task-card { --prio-color: var(--divider); background: var(--panel-alt); border: 1px solid var(--divider); border-radius: 14px; padding: 18px 18px 16px 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 10px; animation: cardIn .4s cubic-bezier(.2,.8,.2,1) both; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .3s ease; }
   .task-card::before { content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: var(--prio-color); }
   .task-card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px -10px rgba(0,0,0,.28); border-color: var(--prio-color); }
   .task-card.prio-alta { --prio-color: var(--red); }
@@ -275,6 +245,8 @@
     .cell.small::before { content: attr(data-label) ": "; color: var(--text-header); font-weight: 700; }
     .row-actions { justify-content: flex-start; margin-top: 8px; grid-column: span 2; }
     .details-panel { padding: 15px 20px; }
+    .timeline-container { padding: 0 10px; }
+    .timeline-label { font-size: 9px; }
   }
 </style>
 </head>
@@ -300,7 +272,7 @@
     <div class="logo-block">
       <div class="logo-badge">A&C</div>
       <div class="logo-text">
-        <h1>Pendientes Monterrey</h1>
+        <h1 id="boardMainTitle">Pendientes Monterrey</h1>
         <span id="userGreeting">Cargando...</span>
         <button id="logoutBtn" title="Cerrar sesión" style="background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:11px;text-decoration:underline;margin-left:8px;padding:0;">Cerrar sesión</button>
       </div>
@@ -331,7 +303,7 @@
     </div>
   </div>
 
-  <div class="ticker-wrap">
+  <div class="ticker-wrap client-hide-tab">
     <div class="ticker" id="ticker">CARGANDO AVISOS...</div>
   </div>
 
@@ -353,24 +325,24 @@
       
       <div style="width: 1px; height: 20px; background: var(--divider); margin: 0 10px;"></div>
       
-      <button class="btn-mini edit-only admin-only" id="manageExecBtn">👤 Ejecutivos y Cuentas</button>
-      <button class="btn-mini" id="viewChartBtn">📊 Carga de trabajo</button>
+      <button class="btn-mini edit-only admin-only" id="manageExecBtn">👤 Usuarios y Cuentas</button>
+      <button class="btn-mini edit-only" id="viewChartBtn">📊 Carga de trabajo</button>
       <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla CSV</button>
       <button class="btn-mini edit-only admin-only" id="uploadLayoutBtn">⬆ Cargar Excel Pedimentos</button>
       <button class="btn-mini edit-only admin-only" id="migrateBtn" title="Mueve al catálogo lo que ya se subió como pendiente sin haber sido tomado">🔧 Reparar import anterior</button>
       <button class="btn-mini edit-only admin-only" id="setCorteMtyBtn" title="A partir de qué consecutivo se consideran libres de verdad en Monterrey">🔢 Corte Monterrey: <span id="corteMtyValue">6107606</span></button>
       <button class="btn-mini edit-only admin-only" id="setCorteLrdBtn" title="A partir de qué consecutivo se consideran libres de verdad en Nuevo Laredo">🔢 Corte Laredo: <span id="corteLrdValue">6120024</span></button>
       <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
-      <button class="btn-mini" id="exportCsvBtn">📄 Exportar filtrado</button>
+      <button class="btn-mini edit-only" id="exportCsvBtn">📄 Exportar filtrado</button>
       <button class="btn-mini" id="compactToggleBtn">▤ Vista compacta</button>
-      <button class="btn-mini" id="kioskToggleBtn">🖥 Modo kiosco</button>
-      <button class="btn-mini" id="notifyToggleBtn">🔔 Avisos</button>
+      <button class="btn-mini edit-only" id="kioskToggleBtn">🖥 Modo kiosco</button>
+      <button class="btn-mini edit-only" id="notifyToggleBtn">🔔 Avisos</button>
     </div>
   </div>
 
   <div class="tabs" style="justify-content: flex-start;">
     <div id="tabs" style="display: contents;"></div>
-    <button class="btn-toggle-tools" id="toggleToolsBtn" style="margin-left: auto;">⚙️ Filtros y Herramientas ▼</button>
+    <button class="btn-toggle-tools edit-only" id="toggleToolsBtn" style="margin-left: auto;">⚙️ Filtros y Herramientas ▼</button>
   </div>
 
   <div class="col-header" id="colHeader"></div>
@@ -409,17 +381,15 @@
   </div>
 </div>
 
-<!-- Modal de Pedimentos -->
+<!-- Modal Principal de Pedimentos con Bloques Dinámicos -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h2 id="modalTitle">Nuevo Pendiente</h2>
-    <div class="field">
-      <label>Pedimento / Referencia</label>
-      <input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123">
-    </div>
-    <div class="field">
-      <label>Cliente / Empresa</label>
-      <input type="text" id="f-cliente" placeholder="Nombre del cliente">
+    
+    <!-- BLOQUE 1: FIJO -->
+    <div class="field-row">
+      <div class="field"><label>Pedimento / Referencia</label><input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123"></div>
+      <div class="field"><label>Cliente / Empresa</label><input type="text" id="f-cliente" placeholder="Nombre exacto del cliente"></div>
     </div>
     <div class="field-row">
       <div class="field">
@@ -437,9 +407,9 @@
         <select id="f-depto">
           <option value="Aéreo" selected>Aéreo</option>
           <option value="Terrestre">Terrestre</option>
-          <option value="Corresponsalías">Corresponsalías</option>
           <option value="Marítimo">Marítimo</option>
           <option value="Virtual">Virtual</option>
+          <option value="Corresponsalías">Corresponsalías</option>
         </select>
       </div>
     </div>
@@ -449,28 +419,106 @@
         <select id="f-tipo"><option>Importación</option><option>Exportación</option></select>
       </div>
       <div class="field">
+        <label style="display:flex; align-items:center; gap:8px; margin-top:20px; cursor:pointer;">
+          <input type="checkbox" id="f-isConsolidado" style="width:16px; height:16px; margin:0; accent-color: var(--primary);"> Es Consolidado
+        </label>
+      </div>
+    </div>
+
+    <!-- BLOQUE 2: DINÁMICO -->
+    <div class="dynamic-section-container">
+      <!-- Campos para Aéreo -->
+      <div id="dyn-Aéreo" class="dynamic-block active">
+        <div class="field-row">
+          <div class="field"><label>Guía (Master/House)</label><input type="text" id="d-guia" placeholder="Ej. 132-12345678"></div>
+          <div class="field"><label>Aerolínea</label><input type="text" id="d-aerolinea"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Recinto / Almacén</label><input type="text" id="d-almacen"></div>
+          <div class="field"><label>ETA (Llegada)</label><input type="date" id="d-eta-aereo"></div>
+        </div>
+      </div>
+
+      <!-- Campos para Terrestre -->
+      <div id="dyn-Terrestre" class="dynamic-block">
+        <div class="field-row">
+          <div class="field"><label>Carta Porte</label><input type="text" id="d-cartaPorte"></div>
+          <div class="field"><label>Línea Transp. (Origen)</label><input type="text" id="d-linea"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Línea Transfer (Cruce)</label><input type="text" id="d-transfer"></div>
+          <div class="field"><label>Caja / Placas</label><input type="text" id="d-caja"></div>
+        </div>
+        <div class="field"><label>ETA Frontera</label><input type="date" id="d-eta-terr"></div>
+      </div>
+
+      <!-- Campos para Marítimo -->
+      <div id="dyn-Marítimo" class="dynamic-block">
+        <div class="field-row">
+          <div class="field"><label>B/L</label><input type="text" id="d-bl"></div>
+          <div class="field"><label>Naviera</label><input type="text" id="d-naviera"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Terminal</label><input type="text" id="d-terminal"></div>
+          <div class="field"><label>Buque / Viaje</label><input type="text" id="d-buque"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>ETA Puerto</label><input type="date" id="d-eta-mar"></div>
+          <div class="field"><label style="color:var(--amber);">Vencimiento Demoras</label><input type="date" id="d-demoras"></div>
+        </div>
+      </div>
+
+      <!-- Campos para Virtual -->
+      <div id="dyn-Virtual" class="dynamic-block">
+        <div class="field-row">
+          <div class="field"><label>Pedimento Origen</label><input type="text" id="d-pedOrigen"></div>
+          <div class="field"><label>Clave (Ej. V1)</label><input type="text" id="d-claveV"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Empresa Transfiere</label><input type="text" id="d-transfiere"></div>
+          <div class="field"><label>Factura(s)</label><input type="text" id="d-facturas"></div>
+        </div>
+      </div>
+      
+      <!-- Campos para Corresponsalías -->
+      <div id="dyn-Corresponsalías" class="dynamic-block">
+        <div class="field-row">
+          <div class="field"><label>Agente Corresponsal</label><input type="text" id="d-corresponsal"></div>
+          <div class="field"><label>Ref. Corresponsal</label><input type="text" id="d-refCorr"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Aduana de Despacho</label><input type="text" id="d-aduanaCorr"></div>
+          <div class="field"><label>Clave Pedimento</label><input type="text" id="d-claveC"></div>
+        </div>
+      </div>
+      
+      <!-- Remesas -->
+      <div class="field" id="wrap-remesas" style="display:none; border-top: 1px dashed var(--divider); padding-top: 15px; margin-top: 15px;">
+        <label style="color:var(--accent);">Número de Remesas / Guías hijas</label>
+        <input type="number" id="d-remesas" placeholder="Ej. 3">
+      </div>
+    </div>
+
+    <!-- BLOQUE 3: GESTIÓN (CIERRE) -->
+    <div class="field-row">
+      <div class="field">
         <label>Prioridad</label>
         <select id="f-prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
       </div>
-    </div>
-    <div class="field-row">
       <div class="field">
         <label>Status</label>
         <select id="f-status">
           <option>Pendiente</option>
           <option>Documentación incompleta</option>
           <option>En proceso</option>
+          <option>Revisión</option>
+          <option>Validado / Pagado</option>
           <option>Modulación</option>
           <option>Reconocimiento</option>
           <option>Despachado</option>
-          <option>Revisión</option>
           <option>Expediente</option>
           <option>Completado</option>
         </select>
-      </div>
-      <div class="field">
-        <label>Fecha límite</label>
-        <input type="datetime-local" id="f-limite">
       </div>
     </div>
     <div class="field-row">
@@ -479,9 +527,13 @@
         <select id="f-ejecutivo"><option value="">Sin asignar</option></select>
       </div>
       <div class="field">
-        <label>Enlace</label>
-        <input type="text" id="f-enlace" placeholder="https://...">
+        <label>Fecha límite</label>
+        <input type="datetime-local" id="f-limite">
       </div>
+    </div>
+    <div class="field">
+      <label>Enlace Externo (Opcional)</label>
+      <input type="text" id="f-enlace" placeholder="https://...">
     </div>
     <div class="field">
       <label>Notas Extra / Checklists</label>
@@ -507,7 +559,7 @@
 
 <div class="modal-overlay" id="execOverlay">
   <div class="modal" style="max-width: 460px;">
-    <h2>Ejecutivos de cuenta</h2>
+    <h2>Usuarios y Cuentas</h2>
     <div class="exec-list" id="execList"></div>
     <div class="exec-add-row">
       <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo (solo para filtros)">
@@ -519,29 +571,29 @@
         ⚠️ Variantes sin fusionar
       </div>
       <p style="font-size: 11.5px; color: var(--text-sub); margin: 0 0 12px;">
-        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial (ej. "Daniela" en vez de "Dany"). Fusiónalos para que no salgan duplicados en los filtros.
+        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial. Fusiónalos para que no salgan duplicados en los filtros.
       </p>
       <div id="variantesList"></div>
     </div>
 
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider);">
       <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-        🔐 Crear cuenta de acceso al tablero
+        🔐 Crear nueva cuenta
       </div>
+      <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany o RESONAC)"></div>
+      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso" style="text-transform: lowercase;"></div>
+      <div class="field"><input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)"></div>
       <div class="field">
-        <input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany)">
-      </div>
-      <div class="field">
-        <input type="text" id="newAccUser" placeholder="Usuario (ej. dany, paulo)" style="text-transform: lowercase;">
-      </div>
-      <div class="field">
-        <input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)">
-      </div>
-      <div class="field">
+        <label>Rol del usuario</label>
         <select id="newAccRole">
-          <option value="ejecutivo">Ejecutivo</option>
-          <option value="admin">Admin</option>
+          <option value="ejecutivo">Ejecutivo (Staff)</option>
+          <option value="admin">Administrador</option>
+          <option value="cliente">Cliente (Portal Portal)</option>
         </select>
+      </div>
+      <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 10px; border-radius: 6px; border: 1px solid var(--divider);">
+        <label style="color: var(--accent);">Empresa Asociada (Exacta)</label>
+        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX" title="El cliente solo verá pedimentos que coincidan con este nombre">
       </div>
       <button class="btn-add" id="createAccBtn" style="width: 100%;">Crear cuenta</button>
       <p id="createAccMsg" style="font-size: 11.5px; margin-top: 8px;"></p>
@@ -589,8 +641,7 @@
     projectId: "pendientes-ayc",
     storageBucket: "pendientes-ayc.firebasestorage.app",
     messagingSenderId: "139916620764",
-    appId: "1:139916620764:web:a386fc3c35a15d89675519",
-    measurementId: "G-32VY2DE244"
+    appId: "1:139916620764:web:a386fc3c35a15d89675519"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -605,8 +656,6 @@
   // VARIABLES DE PAGINACIÓN RESTAURADAS
   let generalPage = 1;
   const GENERAL_PAGE_SIZE = 150;
-
-  // LECTURA DE URL PARA SABER SI ESTAMOS EN "MODO GENERAL" (OTRA PÁGINA)
   const urlParams = new URLSearchParams(window.location.search);
   const isGeneralMode = urlParams.get('modo') === 'general';
   
@@ -620,7 +669,7 @@
     const lrdLabel = document.getElementById('corteLrdValue');
     if (mtyLabel) mtyLabel.textContent = corteLibresPorAduana.Monterrey;
     if (lrdLabel) lrdLabel.textContent = corteLibresPorAduana.Laredo;
-    render();
+    if(currentUserProfile) render();
   });
 
   const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
@@ -628,7 +677,6 @@
   const DUMMY_DOMAIN = '@ayc.local';
 
   function isGirlyTheme() { return (document.documentElement.getAttribute('data-theme') || '').includes('girly'); }
-  function shiftFreq(freq, semitones) { return freq * Math.pow(2, semitones / 12); }
   function playSparkle(anchorEl) {
     if (!isGirlyTheme()) return;
     spawnSparkleParticles(anchorEl);
@@ -685,30 +733,30 @@
     let profile = usersCache[user.uid];
     if (!profile) {
       const isFirstEver = Object.keys(usersCache).length === 0;
-      profile = {
-        nombre: canonicalExecName(user.email.split('@')[0]),
-        email: user.email,
-        rol: isFirstEver ? 'admin' : 'ejecutivo'
-      };
-      try {
-        await set(ref(db, 'usuarios_ayc/' + user.uid), profile);
-      } catch (e) {
-        console.error('No se pudo crear el perfil de usuario:', e);
-        loginError.textContent = 'No se pudo cargar tu perfil. Intenta de nuevo.';
-        loginError.style.display = 'block';
-        return;
-      }
+      profile = { nombre: canonicalExecName(user.email.split('@')[0]), email: user.email, rol: isFirstEver ? 'admin' : 'ejecutivo' };
+      try { await set(ref(db, 'usuarios_ayc/' + user.uid), profile); } 
+      catch (e) { loginError.textContent = 'Error al crear perfil.'; loginError.style.display = 'block'; return; }
       return;
     }
+    
     currentUserProfile = { uid: user.uid, ...profile };
     currentUser = currentUserProfile.nombre;
-    document.getElementById('userGreeting').textContent =
-      `Hola, ${currentUser}` + (currentUserProfile.rol === 'admin' ? ' (Admin)' : '');
-    document.body.classList.toggle('is-admin', currentUserProfile.rol === 'admin');
+    const isAdmin = currentUserProfile.rol === 'admin';
+    const isClient = currentUserProfile.rol === 'cliente';
     
-    // Si estamos en la página separada de General, forzamos la vista general
-    if (isGeneralMode) currentFilter = 'general';
+    document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isClient ? ' (Cliente)' : ''));
     
+    // Asignación de clases para UI (Seguridad de interfaz)
+    document.body.classList.toggle('is-admin', isAdmin);
+    document.body.classList.toggle('is-client', isClient);
+    
+    if (isClient) {
+        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${currentUserProfile.empresaAsociada}`;
+    } else {
+        document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
+    }
+    
+    if (isGeneralMode && !isClient) currentFilter = 'general';
     loginOverlay.classList.remove('open');
     extractExecutives();
     render(); 
@@ -716,7 +764,7 @@
 
   onAuthStateChanged(auth, (user) => {
     if (user) { authUser = user; tryApplyProfile(); } 
-    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin'); loginOverlay.classList.add('open'); }
+    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client'); loginOverlay.classList.add('open'); }
   });
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -734,20 +782,35 @@
   document.getElementById('loginPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
   document.getElementById('logoutBtn').addEventListener('click', () => { signOut(auth); });
 
+  // Lógica para mostrar input de empresa solo si se elige "Cliente"
+  document.getElementById('newAccRole').addEventListener('change', (e) => {
+      document.getElementById('wrap-empresaCliente').style.display = e.target.value === 'cliente' ? 'block' : 'none';
+  });
+
   document.getElementById('createAccBtn').addEventListener('click', async () => {
     const nombre = document.getElementById('newAccName').value.trim();
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
     const rol = document.getElementById('newAccRole').value;
+    const empresaAsociada = rol === 'cliente' ? document.getElementById('newAccEmpresa').value.trim() : '';
+    
     const msgEl = document.getElementById('createAccMsg');
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
     msgEl.style.color = 'var(--red)';
+    
     if (!nombre || !rawUser || pass.length < 6) { msgEl.textContent = 'Completa nombre, usuario y contraseña (mín 6 letras).'; return; }
+    if (rol === 'cliente' && !empresaAsociada) { msgEl.textContent = 'Debes escribir la empresa exacta para el cliente.'; return; }
+
     try {
       const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-      await set(ref(db, 'usuarios_ayc/' + cred.user.uid), { nombre, email, rol });
-      const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
-      if (!dup) push(execRef, nombre);
+      await set(ref(db, 'usuarios_ayc/' + cred.user.uid), { nombre, email, rol, empresaAsociada });
+      
+      // Si es un ejecutivo de la empresa (no cliente), agregarlo a la lista de filtros
+      if (rol !== 'cliente') {
+          const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
+          if (!dup) push(execRef, nombre);
+      }
+      
       await signOut(secondaryAuth); 
       msgEl.style.color = 'var(--green)'; msgEl.textContent = `Cuenta creada para ${nombre} (${rol}).`;
       document.getElementById('newAccName').value = ''; document.getElementById('newAccUser').value = ''; document.getElementById('newAccPass').value = '';
@@ -811,10 +874,39 @@
   let lastTouchedRef = localStorage.getItem('ayc-last-touched-ref') || null;
   let scrollToLastTouched = false; 
   function touchRef(r) { if (!r) return; lastTouchedRef = r; localStorage.setItem('ayc-last-touched-ref', r); }
-  let editingId = null;
   let currentFilter = 'todos';
   let generalAduanaFilter = 'Monterrey'; 
   const DEPTOS = ['Aéreo', 'Terrestre', 'Corresponsalías', 'Marítimo', 'Virtual'];
+
+  // TIMELINE LOGIC 
+  const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
+  
+  function mapToTimelineIndex(status) {
+      const s = (status || '').toLowerCase();
+      if (s.includes('pendiente') || s.includes('incompleta')) return 0;
+      if (s.includes('proceso') || s.includes('revisión')) return 1;
+      if (s.includes('pagado')) return 2;
+      if (s.includes('modulación') || s.includes('reconocimiento') || s.includes('despacho') || s.includes('despachado')) return 3;
+      if (s.includes('expediente') || s.includes('completado') || s.includes('cierre')) return 4;
+      return 0; // Default Recepción
+  }
+
+  function getVehicleIcon(depto) {
+      if (depto === 'Aéreo') return '✈️';
+      if (depto === 'Marítimo') return '🚢';
+      if (depto === 'Terrestre') return '🚛';
+      return '💻'; // Virtual o Corresponsalías
+  }
+
+  window.advanceTimeline = function(taskId) {
+      const t = tasks.find(x => x.id === taskId);
+      if (!t) return;
+      let idx = mapToTimelineIndex(t.status);
+      if (idx < 4) {
+          const nextStatuses = ['Documentación incompleta', 'En proceso', 'Validado / Pagado', 'Modulación', 'Expediente'];
+          update(ref(db, 'pendientes_ayc/' + taskId), { status: nextStatuses[idx + 1], lastModifiedBy: currentUser });
+      }
+  };
 
   let execsSeeded = false;
   onValue(execRef, (snapshot) => {
@@ -837,28 +929,26 @@
       tasks.push(t);
     });
     extractExecutives();
-    render();
+    if(currentUserProfile) render();
     checkOverdueNotifications();
   });
 
   onValue(catalogoRef, (snapshot) => {
     catalogo = [];
     snapshot.forEach((childSnapshot) => { catalogo.push({ id: childSnapshot.key, ...childSnapshot.val() }); });
-    render();
+    if(currentUserProfile) render();
   });
 
   // --------------- FUNCIÓN PARA EXPORTAR FACTURACIÓN -------------------
   window.exportarFacturacion = function() {
     const expedienteTasks = currentFilteredTasks;
     if(expedienteTasks.length === 0) { alert('No hay expedientes para exportar.'); return; }
-    
     let csv = "PEDIMENTO,CLIENTE,ADUANA,TIPO,EJECUTIVO\n";
     expedienteTasks.forEach(t => {
        const ref = (t.ref || '').replace(/,/g, ' ');
        const cliente = (t.cliente || '').replace(/,/g, ' ');
        csv += `${ref},${cliente},${t.aduana},${t.tipo},${t.ejecutivo}\n`;
     });
-    
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -866,7 +956,6 @@
     a.download = `Reporte_Facturacion_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   };
-  // ---------------------------------------------------------------------
 
   function extractExecutives() {
     realignCurrentUserCasing();
@@ -960,12 +1049,7 @@
     push(execRef, name); input.value = '';
   });
 
-  // Al buscar, reiniciamos la página a la 1 para no quedarnos en una página vacía
-  document.getElementById('searchInput').addEventListener('input', () => {
-      generalPage = 1;
-      render();
-  });
-  
+  document.getElementById('searchInput').addEventListener('input', () => { generalPage = 1; render(); });
   document.getElementById('ejecutivoFilter').addEventListener('change', render);
   document.getElementById('dateFilter').addEventListener('change', render);
 
@@ -973,24 +1057,18 @@
   let notifyEnabled = localStorage.getItem('ayc-notify') === '1';
   const notifiedIds = new Set();
   function updateNotifyBtnLabel() {
-    if (!('Notification' in window)) { notifyBtn.textContent = '🔕 No disponible en este navegador'; notifyBtn.disabled = true; return; }
-    if (Notification.permission === 'denied') { notifyBtn.textContent = '🔕 Bloqueado (revisa permisos)'; return; }
+    if (!('Notification' in window)) { notifyBtn.textContent = '🔕 No disponible'; notifyBtn.disabled = true; return; }
+    if (Notification.permission === 'denied') { notifyBtn.textContent = '🔕 Bloqueado'; return; }
     notifyBtn.textContent = notifyEnabled ? '🔔 Avisos activados' : '🔔 Avisos';
   }
   updateNotifyBtnLabel();
   notifyBtn.addEventListener('click', async () => {
     if (!('Notification' in window)) return;
-    if (Notification.permission === 'denied') {
-      alert('Los avisos están bloqueados para esta página en tu navegador. Ve a la configuración del sitio (candado junto a la URL) y permite las notificaciones.');
-      return;
-    }
+    if (Notification.permission === 'denied') { alert('Notificaciones bloqueadas por el navegador.'); return; }
     if (!notifyEnabled) {
       const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
       if (perm === 'granted') { notifyEnabled = true; localStorage.setItem('ayc-notify', '1'); checkOverdueNotifications(); }
-      else if (perm === 'denied') { alert('No diste permiso de notificaciones, así que no podré avisarte.'); }
-    } else {
-      notifyEnabled = false; localStorage.setItem('ayc-notify', '0');
-    }
+    } else { notifyEnabled = false; localStorage.setItem('ayc-notify', '0'); }
     updateNotifyBtnLabel();
   });
   function checkOverdueNotifications() {
@@ -998,18 +1076,15 @@
     tasks.forEach(t => {
       if (!t.isTask && isOverdue(t) && normKey(t.ejecutivo) === normKey(currentUser) && !notifiedIds.has(t.id)) {
         notifiedIds.add(t.id);
-        try {
-          new Notification('⏰ Pedimento retrasado', { body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.aduana}, ${t.depto}` });
-        } catch (e) { console.error('No se pudo mostrar la notificación:', e); }
+        try { new Notification('⏰ Pedimento retrasado', { body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.aduana}, ${t.depto}` }); } catch (e) {}
       }
     });
   }
   setInterval(checkOverdueNotifications, 60000);
 
-  // SE EXCLUYE "Expediente" PARA QUE NO SALGA COMO RETRASADO
   function isOverdue(t) { return t.status !== 'Completado' && t.status !== 'Expediente' && t.status !== 'Eliminado' && t.limite && new Date(t.limite).getTime() < Date.now(); }
   function isLibre(t) { return !t.ejecutivo || t.ejecutivo.trim() === '' || t.ejecutivo === 'Sin asignar'; }
-  function statusBadgeClass(s) { return { 'Pendiente':'badge-pendiente', 'Documentación incompleta':'badge-retrasado', 'En proceso':'badge-proceso', 'Modulación':'badge-revision', 'Reconocimiento':'badge-revision', 'Despachado':'badge-despachado', 'Expediente en despacho':'badge-proceso', 'Revisión':'badge-revision', 'Expediente':'badge-expediente', 'Completado':'badge-completado', 'Retrasado':'badge-retrasado', 'Eliminado':'badge-eliminado' }[s] || 'badge-pendiente'; }
+  function statusBadgeClass(s) { return { 'Pendiente':'badge-pendiente', 'Documentación incompleta':'badge-retrasado', 'En proceso':'badge-proceso', 'Validado / Pagado': 'badge-completado', 'Modulación':'badge-revision', 'Reconocimiento':'badge-revision', 'Despachado':'badge-despachado', 'Revisión':'badge-revision', 'Expediente':'badge-expediente', 'Completado':'badge-completado', 'Retrasado':'badge-retrasado', 'Eliminado':'badge-eliminado' }[s] || 'badge-pendiente'; }
   function prioClass(p) { return { 'Alta':'prio-alta', 'Media':'prio-media', 'Baja':'prio-baja' }[p] || 'prio-media'; }
   function formatLimite(iso) { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
@@ -1018,36 +1093,42 @@
     if (currentUserProfile && currentUserProfile.rol !== 'admin') { overdue = overdue.filter(t => normKey(t.ejecutivo) === normKey(currentUser)); }
     const el = document.getElementById('ticker');
     if (overdue.length === 0) { el.className = 'ticker ok'; el.textContent = '>>> SIN OPERACIONES RETRASADAS · TODO EN TIEMPO >>>'; }
-    else { el.className = 'ticker'; el.textContent = `>>> ATENCIÓN — ${overdue.length} OPERACIÓN(ES) RETRASADA(S): ` + overdue.map(t => `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.depto}`).join('   ·   ') + ' >>>'; }
+    else { el.className = 'ticker'; el.textContent = `>>> ATENCIÓN — ${overdue.length} OPERACIÓN(ES) RETRASADA(S): ` + overdue.map(t => `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'})`).join('   ·   ') + ' >>>'; }
   }
 
   function renderTabs() {
     let activePedimentos = tasks.filter(t => t.status !== 'Eliminado' && !t.isTask);
     let trashPedimentos = tasks.filter(t => t.status === 'Eliminado' && !t.isTask);
-    
     let activeMisTareas = tasks.filter(t => t.status !== 'Eliminado' && t.isTask && t.ejecutivo === currentUser);
+    
+    const isClient = currentUserProfile.rol === 'cliente';
 
-    if (currentUserProfile && currentUserProfile.rol !== 'admin') {
+    // Filtros de Seguridad por rol
+    if (isClient) {
+      activePedimentos = activePedimentos.filter(t => normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada));
+    } else if (currentUserProfile && currentUserProfile.rol !== 'admin') {
       activePedimentos = activePedimentos.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
       trashPedimentos = trashPedimentos.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
     }
     
-    // Filtramos Expediente y Completado del tab principal "Todos"
-    const counts = { todos: activePedimentos.filter(t => !isLibre(t) && t.status !== 'Completado' && t.status !== 'Expediente').length };
+    const counts = { todos: activePedimentos.filter(t => (!isLibre(t) || isClient) && t.status !== 'Completado' && t.status !== 'Expediente').length };
     counts['libres'] = catalogo.filter(isLibreCat).length;
     counts['expediente'] = activePedimentos.filter(t => t.status === 'Expediente').length;
     counts['completados'] = activePedimentos.filter(t => t.status === 'Completado').length;
     counts['general'] = catalogo.length + activePedimentos.length;
-    DEPTOS.forEach(d => counts[d] = activePedimentos.filter(t => t.depto === d && !isLibre(t) && t.status !== 'Completado' && t.status !== 'Expediente').length); 
+    DEPTOS.forEach(d => counts[d] = activePedimentos.filter(t => t.depto === d && (!isLibre(t) || isClient) && t.status !== 'Completado' && t.status !== 'Expediente').length); 
     counts['papelera'] = trashPedimentos.length;
     counts['mis_tareas'] = activeMisTareas.filter(t => t.status !== 'Completado').length;
 
     const mainLabels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
-    const secondaryLabels = [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
     
-    // MODIFICACIÓN: Si es admin, mostramos la pestaña con el icono de abrir en otra ventana
-    if (currentUserProfile && currentUserProfile.rol === 'admin') {
-      secondaryLabels.push(['general', '📊 Vista General ↗']);
+    // Filtramos las pestañas que puede ver el cliente
+    let secondaryLabels = [];
+    if (!isClient) {
+       secondaryLabels = [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
+       if (currentUserProfile && currentUserProfile.rol === 'admin') secondaryLabels.push(['general', '📊 Vista General ↗']);
+    } else {
+       secondaryLabels = [['completados', '✅ Historial de Entregados']];
     }
 
     const tabHtml = ([k, l], secondary) => {
@@ -1061,29 +1142,18 @@
     
     document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => {
       const newKey = el.getAttribute('data-key');
-      
-      // LOGICA PARA ABRIR EN PESTAÑA NUEVA
-      if (newKey === 'general') {
-        const urlBase = window.location.href.split('?')[0];
-        window.open(urlBase + '?modo=general', '_blank');
-        return;
-      }
-      
+      if (newKey === 'general') { window.open(window.location.href.split('?')[0] + '?modo=general', '_blank'); return; }
       if (newKey === 'general' && currentFilter !== 'general') scrollToLastTouched = true;
       currentFilter = newKey; render();
     }));
   }
 
   function isLibreCat(c) { return !c.ejecutivoAsignado || c.ejecutivoAsignado.trim() === ''; }
-
-  function extractConsecutivo(refStr) {
-    const matches = (refStr || '').match(/\d+/g);
-    if (!matches || !matches.length) return NaN;
-    return parseInt(matches[matches.length - 1], 10);
-  }
+  function extractConsecutivo(refStr) { const matches = (refStr || '').match(/\d+/g); return matches ? parseInt(matches[matches.length - 1], 10) : NaN; }
 
   function render() {
     if (!currentUserProfile) return; 
+    const isClient = currentUserProfile.rol === 'cliente';
     renderTabs(); renderTicker();
     
     document.getElementById('libresCount').textContent = `Catálogo por asignar: ${catalogo.filter(isLibreCat).length}`;
@@ -1092,33 +1162,24 @@
     const colHeader = document.getElementById('colHeader');
     const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    if (currentFilter === 'mis_tareas') {
+    // Render de Mis Tareas (Oculto para clientes)
+    if (currentFilter === 'mis_tareas' && !isClient) {
       colHeader.style.display = 'none';
-
       let misFiltered = tasks.filter(t => t.isTask && t.ejecutivo === currentUser && t.status !== 'Eliminado');
       if (search) misFiltered = misFiltered.filter(t => (t.titulo || '').toLowerCase().includes(search));
-      
       misFiltered.sort((a,b) => {
         if (a.status === 'Completado' && b.status !== 'Completado') return 1;
         if (b.status === 'Completado' && a.status !== 'Completado') return -1;
         return new Date(a.limite || 0) - new Date(b.limite || 0);
       });
-
       if (misFiltered.length === 0) { rowsEl.innerHTML = '<div class="empty-state">No tienes tareas personales pendientes. ¡Créate una! ✨</div>'; }
       else {
         rowsEl.innerHTML = `<div class="tasks-grid">${misFiltered.map((t, i) => {
           const st = isOverdue(t) ? 'Retrasado' : t.status;
-          const isDone = t.status === 'Completado';
           return `
-          <div class="task-card ${prioClass(t.prioridad)} ${isDone ? 'is-done' : ''}" data-task-id="${t.id}" style="animation-delay:${i * 45}ms">
-            <div class="task-top">
-              <div class="task-title">${t.titulo}</div>
-              <span class="badge ${statusBadgeClass(st)}">${st}</span>
-            </div>
-            <div class="task-meta">
-              <span class="cell small">📅 ${formatLimite(t.limite)}</span>
-              <span class="cell small">🚩 ${t.prioridad}</span>
-            </div>
+          <div class="task-card ${prioClass(t.prioridad)} ${t.status === 'Completado' ? 'is-done' : ''}" data-task-id="${t.id}" style="animation-delay:${i * 45}ms">
+            <div class="task-top"><div class="task-title">${t.titulo}</div><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
+            <div class="task-meta"><span class="cell small">📅 ${formatLimite(t.limite)}</span><span class="cell small">🚩 ${t.prioridad}</span></div>
             ${t.notas ? `<div class="task-notes">📝 ${t.notas}</div>` : ''}
             <div class="task-actions">
               <button class="icon-btn done" title="Marcar completada" onclick="window.actionTask('${t.id}', 'done')">✔</button>
@@ -1131,48 +1192,44 @@
       return; 
     }
 
-    if (currentFilter === 'libres') { renderCatalogTab(); return; }
-    if (currentFilter === 'general') { renderGeneralTab(); return; }
+    if (currentFilter === 'libres' && !isClient) { renderCatalogTab(); return; }
+    if (currentFilter === 'general' && !isClient) { renderGeneralTab(); return; }
 
     colHeader.style.display = '';
     colHeader.className = 'col-header';
-    colHeader.innerHTML = `
-      <div></div><div style="text-align:center">PR</div><div>PEDIMENTO / REF</div><div>CLIENTE</div><div>ADUANA</div><div>DEPARTAMENTO</div><div>STATUS</div><div>LÍMITE</div><div style="text-align:right;">ACCIONES</div>
-    `;
+    colHeader.innerHTML = `<div></div><div style="text-align:center">PR</div><div>PEDIMENTO / REF</div><div>CLIENTE</div><div>ADUANA</div><div>DEPARTAMENTO</div><div>STATUS</div><div>LÍMITE</div><div style="text-align:right;" class="edit-only">ACCIONES</div>`;
 
-    // BANNER EXPEDIENTE
     let bannerHtml = '';
-    if (currentFilter === 'expediente') {
-        bannerHtml = `
-        <div style="padding: 15px 30px; background: var(--panel-alt); border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    if (currentFilter === 'expediente' && !isClient) {
+        bannerHtml = `<div style="padding: 15px 30px; background: var(--panel-alt); border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <span style="font-size: 13px; font-weight: 700; color: var(--text-sub);">📁 Expedientes listos para procesar.</span>
-            <button onclick="window.exportarFacturacion()" class="btn-add" style="background: var(--green); color: var(--bg); box-shadow: 0 4px 10px rgba(0,229,160,.2);">📄 Generar Reporte Facturación</button>
+            <button onclick="window.exportarFacturacion()" class="btn-add" style="background: var(--green); color: var(--bg);">📄 Reporte Facturación</button>
         </div>`;
     }
 
     let filtered = tasks.filter(t => !t.isTask);
     let execF = 'todos';
     
-    if (currentUserProfile.rol !== 'admin') { filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(currentUser)); } 
-    else {
+    // FILTROS PRINCIPALES DE SEGURIDAD
+    if (isClient) {
+        filtered = filtered.filter(t => normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada));
+    } else if (currentUserProfile.rol !== 'admin') { 
+        filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(currentUser)); 
+    } else {
       execF = document.getElementById('ejecutivoFilter').value;
       if (execF === '__sin__') filtered = filtered.filter(t => isLibre(t));
       else if (execF !== 'todos') filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(execF));
     }
     
-    // Contamos foráneas excluyendo expediente
     let foraneas = 0; filtered.forEach(t => { if(t.status !== 'Eliminado' && t.status !== 'Completado' && t.status !== 'Expediente' && t.aduana !== 'Monterrey') foraneas++; });
     document.getElementById('foraneasCount').textContent = `Aduanas Foráneas: ${foraneas}`;
     
     if (currentFilter === 'papelera') { filtered = filtered.filter(t => t.status === 'Eliminado'); } 
-    else if (currentFilter === 'completados') {
-      filtered = filtered.filter(t => t.status === 'Completado');
-    }
-    else if (currentFilter === 'expediente') {
-      filtered = filtered.filter(t => t.status === 'Expediente');
-    } else {
+    else if (currentFilter === 'completados') { filtered = filtered.filter(t => t.status === 'Completado'); }
+    else if (currentFilter === 'expediente') { filtered = filtered.filter(t => t.status === 'Expediente'); } 
+    else {
       filtered = filtered.filter(t => t.status !== 'Eliminado');
-      if (execF === 'todos') filtered = filtered.filter(t => !isLibre(t));
+      if (execF === 'todos' && !isClient) filtered = filtered.filter(t => !isLibre(t));
       if (currentFilter !== 'todos') filtered = filtered.filter(t => t.depto === currentFilter);
       filtered = filtered.filter(t => t.status !== 'Completado' && t.status !== 'Expediente');
     }
@@ -1196,43 +1253,95 @@
         const isTrash = t.status === 'Eliminado';
 
         let actionsHtml = '';
-        if (isTrash) {
-            actionsHtml = `
-                 <button class="icon-btn edit-only" title="Restaurar" data-action="restore" data-id="${t.id}">↩</button>
-                 <button class="icon-btn del admin-only" title="Eliminar definitivamente" data-action="purge" data-id="${t.id}">🗑</button>`;
-        } else {
-            let moveExpHtml = (t.status !== 'Completado' && t.status !== 'Expediente') ? 
-                `<button class="icon-btn exp edit-only" title="Mover a Expediente" data-action="expediente" data-id="${t.id}">📁</button>` : '';
-
-            actionsHtml = `
-                 ${moveExpHtml}
-                 <button class="icon-btn done edit-only" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button>
-                 <button class="icon-btn edit-only" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button>
-                 <button class="icon-btn edit-only" title="Editar" data-action="edit" data-id="${t.id}">✎</button>
-                 <button class="icon-btn del edit-only" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>
-            `;
+        if (isTrash && !isClient) {
+            actionsHtml = `<button class="icon-btn edit-only" title="Restaurar" data-action="restore" data-id="${t.id}">↩</button><button class="icon-btn del admin-only" title="Eliminar definitivamente" data-action="purge" data-id="${t.id}">🗑</button>`;
+        } else if (!isClient) {
+            let moveExpHtml = (t.status !== 'Completado' && t.status !== 'Expediente') ? `<button class="icon-btn exp edit-only" title="Mover a Expediente" data-action="expediente" data-id="${t.id}">📁</button>` : '';
+            actionsHtml = `${moveExpHtml}<button class="icon-btn done edit-only" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button><button class="icon-btn edit-only" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button><button class="icon-btn edit-only" title="Editar" data-action="edit" data-id="${t.id}">✎</button><button class="icon-btn del edit-only" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>`;
         }
+
+        // LÓGICA DE TIMELINE
+        const currentStepIdx = mapToTimelineIndex(t.status);
+        const icon = getVehicleIcon(t.depto);
+        const positionPercent = (currentStepIdx / 4) * 100;
+        
+        // DATOS DINÁMICOS
+        let dynHtml = '';
+        if (t.depto === 'Marítimo') {
+            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">B/L</span><span class="dyn-data-val">${t.bl || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Naviera</span><span class="dyn-data-val">${t.naviera || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Terminal</span><span class="dyn-data-val">${t.terminal || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Buque/Viaje</span><span class="dyn-data-val">${t.buque || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">ETA</span><span class="dyn-data-val">${t.eta || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--amber)">Venc. Demoras</span><span class="dyn-data-val">${t.demoras || '—'}</span></div>`;
+        } else if (t.depto === 'Aéreo') {
+            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">Guía</span><span class="dyn-data-val">${t.guia || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Aerolínea</span><span class="dyn-data-val">${t.aerolinea || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Almacén</span><span class="dyn-data-val">${t.almacen || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">ETA</span><span class="dyn-data-val">${t.eta || '—'}</span></div>`;
+        } else if (t.depto === 'Terrestre') {
+            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">Carta Porte</span><span class="dyn-data-val">${t.cartaPorte || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Origen / Transfer</span><span class="dyn-data-val">${t.lineaTransportista || '—'} / ${t.transfer || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Caja/Placas</span><span class="dyn-data-val">${t.cajaPlacas || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">ETA Frontera</span><span class="dyn-data-val">${t.eta || '—'}</span></div>`;
+        } else if (t.depto === 'Virtual') {
+            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">Ped. Origen</span><span class="dyn-data-val">${t.pedOrigen || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Clave</span><span class="dyn-data-val">${t.claveV || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Transfiere</span><span class="dyn-data-val">${t.empresaTransfiere || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Facturas</span><span class="dyn-data-val">${t.facturas || '—'}</span></div>`;
+        } else {
+            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">Corresponsal</span><span class="dyn-data-val">${t.corresponsal || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Ref. Corresponsal</span><span class="dyn-data-val">${t.refCorr || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Aduana</span><span class="dyn-data-val">${t.aduanaCorr || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Clave</span><span class="dyn-data-val">${t.claveC || '—'}</span></div>`;
+        }
+        
+        let consHtml = t.consolidado ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--accent)">📦 Consolidado</span><span class="dyn-data-val">${t.remesas || 0} Remesas</span></div>` : '';
 
         return `
         <div class="row-wrapper" data-id="${t.id}">
           <div class="row-main">
-            <button class="expand-btn" data-action="toggle" data-id="${t.id}" title="Ver detalles">❯</button>
+            <button class="expand-btn" data-action="toggle" data-id="${t.id}">❯</button>
             <div class="prio-dot ${prioClass(t.prioridad)}"></div>
             <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div></div>
-            <div data-label="Cliente"><div class="cell-client">${t.cliente || '—'}</div>${t.ejecutivo ? `<div class="cell-sub" style="margin-top: 3px;">👤 ${t.ejecutivo}</div>` : ''}</div>
+            <div data-label="Cliente"><div class="cell-client">${t.cliente || '—'}</div>${!isClient && t.ejecutivo ? `<div class="cell-sub" style="margin-top: 3px;">👤 ${t.ejecutivo}</div>` : ''}</div>
             <div class="cell small" data-label="Aduana">${t.aduana}</div>
             <div class="cell small" data-label="Depto">${t.depto}</div>
-            <div data-label="Status"><span class="badge ${statusBadgeClass(st)}">${st}</span></div>
+            <div data-label="Status"><span class="badge ${isClient ? 'badge-proceso' : statusBadgeClass(st)}">${isClient ? TIMELINE_STEPS[currentStepIdx] : st}</span></div>
             <div class="cell small" data-label="Límite">${formatLimite(t.limite)}</div>
-            <div class="row-actions">
-              ${actionsHtml}
-            </div>
+            <div class="row-actions edit-only">${actionsHtml}</div>
           </div>
+          
           <div class="details-panel" id="details-${t.id}">
-            <strong>📝 Notas:</strong> ${t.notas || 'Sin notas adicionales.'}<br>
-            ${t.enlace ? `<br><strong>🔗 Enlace:</strong> <a class="link-chip" href="${t.enlace}" target="_blank" rel="noopener">${t.enlace}</a><br>` : ''}
+            <!-- TIMELINE -->
+            <div class="timeline-container">
+                <div class="timeline-track"><div class="timeline-track-fill" style="width: ${positionPercent}%;"></div></div>
+                <div class="timeline-icon" style="left: calc(30px + (100% - 60px) * ${currentStepIdx / 4});">${icon}</div>
+                <div class="timeline-steps">
+                    ${TIMELINE_STEPS.map((stepName, i) => {
+                        let stateClass = i < currentStepIdx ? 'completed' : (i === currentStepIdx ? 'active' : '');
+                        return `<div class="timeline-step ${stateClass}"><div class="timeline-dot"></div><div class="timeline-label">${stepName}</div></div>`;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="edit-only" style="margin: 35px 0 20px; display: flex; justify-content: flex-start;">
+               ${currentStepIdx < 4 ? `<button class="btn-quiet accent-take" onclick="window.advanceTimeline('${t.id}')">🚀 Avanzar rápido al sig. paso</button>` : '<span style="color:var(--green); font-weight:bold;">✅ Operación Cerrada</span>'}
+            </div>
+
+            <!-- DATOS DINÁMICOS -->
+            <div class="dyn-data-grid">${dynHtml}${consHtml}</div>
+            
+            <!-- CONTENEDOR CHAT/BITÁCORA -->
+            <div class="chat-box">
+                <div class="chat-header">Comentarios / Bitácora</div>
+                <div class="chat-placeholder">Aún no hay mensajes en esta operación. (Próximamente)</div>
+            </div>
+
+            ${!isClient ? `<strong>📝 Notas Internas:</strong> ${t.notas || 'Sin notas adicionales.'}<br>` : ''}
+            ${t.enlace && !isClient ? `<br><strong>🔗 Enlace:</strong> <a class="link-chip" href="${t.enlace}" target="_blank">${t.enlace}</a><br>` : ''}
             <br><em>Último movimiento por: ${t.lastModifiedBy || 'Desconocido'}</em>
-            ${isTrash ? `<br><span style="color:var(--red);">Eliminado el: ${new Date(t.deletedAt).toLocaleDateString()}</span>` : ''}
+            ${isTrash && !isClient ? `<br><span style="color:var(--red);">Eliminado el: ${new Date(t.deletedAt).toLocaleDateString()}</span>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -1244,7 +1353,6 @@
     document.getElementById('colHeader').style.display = 'none';
     const rowsEl = document.getElementById('rows');
     const isAdmin = currentUserProfile.rol === 'admin';
-
     const search = document.getElementById('searchInput').value.trim().toLowerCase();
     let base = catalogo;
     if (search) base = base.filter(c => (c.ref || '').toLowerCase().includes(search) || (c.cliente || '').toLowerCase().includes(search));
@@ -1282,10 +1390,7 @@
       html += mios.length ? mios.map(c => catRow(c, 'asignado')).join('') : '<div class="empty-state">No tienes pedimentos propios en el catálogo por ahora.</div>';
     }
     rowsEl.innerHTML = html;
-
-    document.querySelectorAll('[data-cat-action="tomar"]').forEach(btn => {
-      btn.addEventListener('click', () => tomarDelCatalogo(btn.getAttribute('data-cat-id')));
-    });
+    document.querySelectorAll('[data-cat-action="tomar"]').forEach(btn => { btn.addEventListener('click', () => tomarDelCatalogo(btn.getAttribute('data-cat-id'))); });
   }
 
   function tomarDelCatalogo(catId) {
@@ -1293,16 +1398,11 @@
     if (!c) return;
     const asignarA = isLibreCat(c) ? currentUser : c.ejecutivoAsignado;
     if (!confirm(`¿Convertir "${c.ref}" en un pendiente activo asignado a ${asignarA}?`)) return;
-
     set(push(ref(db, 'pendientes_ayc')), {
       ref: c.ref, cliente: c.cliente || '', aduana: c.aduana || 'Monterrey', depto: c.depto || 'Aéreo',
       tipo: c.tipo || 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
       ejecutivo: asignarA, enlace: '', notas: c.notas || '', lastModifiedBy: currentUser
-    }).then(() => {
-      remove(ref(db, 'catalogo_ayc/' + catId));
-      touchRef(c.ref);
-      playSparkle(document.getElementById('takePedimentoBtn'));
-    });
+    }).then(() => { remove(ref(db, 'catalogo_ayc/' + catId)); touchRef(c.ref); playSparkle(document.getElementById('takePedimentoBtn')); });
   }
 
   function renderGeneralTab() {
@@ -1311,18 +1411,8 @@
     const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
     let merged = [
-      ...catalogo.map(c => ({
-        ref: c.ref, cliente: c.cliente, aduana: c.aduana, depto: c.depto,
-        ejecutivo: c.ejecutivoAsignado, estado: isLibreCat(c) ? '🆓 Libre' : '📁 En catálogo',
-        estadoClass: isLibreCat(c) ? 'badge-pendiente' : 'badge-revision',
-        origen: 'catalogo', id: c.id
-      })),
-      ...tasks.filter(t => !t.isTask).map(t => ({
-        ref: t.ref, cliente: t.cliente, aduana: t.aduana, depto: t.depto,
-        ejecutivo: t.ejecutivo, estado: isOverdue(t) ? 'Retrasado' : (t.status || 'Pendiente'),
-        estadoClass: statusBadgeClass(isOverdue(t) ? 'Retrasado' : t.status),
-        origen: 'pendiente', id: t.id
-      }))
+      ...catalogo.map(c => ({ ref: c.ref, cliente: c.cliente, aduana: c.aduana, depto: c.depto, ejecutivo: c.ejecutivoAsignado, estado: isLibreCat(c) ? '🆓 Libre' : '📁 En catálogo', estadoClass: isLibreCat(c) ? 'badge-pendiente' : 'badge-revision', origen: 'catalogo', id: c.id })),
+      ...tasks.filter(t => !t.isTask).map(t => ({ ref: t.ref, cliente: t.cliente, aduana: t.aduana, depto: t.depto, ejecutivo: t.ejecutivo, estado: isOverdue(t) ? 'Retrasado' : (t.status || 'Pendiente'), estadoClass: statusBadgeClass(isOverdue(t) ? 'Retrasado' : t.status), origen: 'pendiente', id: t.id }))
     ];
 
     if (search) merged = merged.filter(m => (m.ref || '').toLowerCase().includes(search) || (m.cliente || '').toLowerCase().includes(search));
@@ -1338,7 +1428,6 @@
     
     listaActual = [...listaActual].sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
 
-    // LÓGICA DE PAGINACIÓN RESTAURADA
     const totalPaginas = Math.max(1, Math.ceil(listaActual.length / GENERAL_PAGE_SIZE));
     if (generalPage > totalPaginas) generalPage = totalPaginas;
     const inicio = (generalPage - 1) * GENERAL_PAGE_SIZE;
@@ -1356,71 +1445,40 @@
     const HTMLPaginacion = `
       <div style="display:flex; align-items:center; gap:10px; padding:12px 30px; border-top:1px solid var(--divider);">
         <button class="btn-mini general-prev-btn" ${generalPage <= 1 ? 'disabled' : ''}>‹ Anterior</button>
-        <span style="font-size:12px; color:var(--text-sub); font-family:var(--font-heading);">Página ${generalPage} de ${totalPaginas} (${listaActual.length} en total, ${GENERAL_PAGE_SIZE} por página)</span>
+        <span style="font-size:12px; color:var(--text-sub); font-family:var(--font-heading);">Página ${generalPage} de ${totalPaginas} (${listaActual.length} en total)</span>
         <button class="btn-mini general-next-btn" ${generalPage >= totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
       </div>`;
 
     const filas = pagina.length ? pagina.map(m => `
         <div class="row-wrapper general-row" data-ref="${(m.ref || '').replace(/"/g, '&quot;')}" style="animation:none;">
           <div class="row-main" style="grid-template-columns: 1.4fr 1.1fr 1fr 1fr 1fr 130px;">
-            <div class="cell-main">${m.ref || 'S/REF'}</div>
-            <div class="cell-client" style="display: flex; align-items: center;">${m.cliente || '—'}</div>
-            <div class="cell small">${m.aduana || '—'}</div>
-            <div class="cell small">${m.ejecutivo ? '👤 ' + m.ejecutivo : '🆓 Sin asignar'}</div>
-            <div><span class="badge ${m.estadoClass}">${m.estado}</span></div>
-            <div class="cell small" style="text-transform:capitalize;">${m.origen}</div>
+            <div class="cell-main">${m.ref || 'S/REF'}</div><div class="cell-client" style="display: flex; align-items: center;">${m.cliente || '—'}</div>
+            <div class="cell small">${m.aduana || '—'}</div><div class="cell small">${m.ejecutivo ? '👤 ' + m.ejecutivo : '🆓 Sin asignar'}</div>
+            <div><span class="badge ${m.estadoClass}">${m.estado}</span></div><div class="cell small" style="text-transform:capitalize;">${m.origen}</div>
           </div>
         </div>`).join('') : '<div class="empty-state">No hay pedimentos que coincidan.</div>';
 
-    rowsEl.innerHTML =
-      `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s)</div>` +
-      botones + HTMLPaginacion + filas + HTMLPaginacion;
+    rowsEl.innerHTML = `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s)</div>` + botones + HTMLPaginacion + filas + HTMLPaginacion;
 
-    document.querySelectorAll('[data-general-aduana]').forEach(btn => {
-      btn.addEventListener('click', () => { generalAduanaFilter = btn.getAttribute('data-general-aduana'); generalPage = 1; renderGeneralTab(); });
-    });
-
-    // EVENTOS DE PAGINACIÓN CORREGIDOS USANDO CLASES
-    document.querySelectorAll('.general-prev-btn').forEach(btn => {
-      btn.addEventListener('click', () => { if (generalPage > 1) { generalPage--; renderGeneralTab(); } });
-    });
-    document.querySelectorAll('.general-next-btn').forEach(btn => {
-      btn.addEventListener('click', () => { if (generalPage < totalPaginas) { generalPage++; renderGeneralTab(); } });
-    });
+    document.querySelectorAll('[data-general-aduana]').forEach(btn => { btn.addEventListener('click', () => { generalAduanaFilter = btn.getAttribute('data-general-aduana'); generalPage = 1; renderGeneralTab(); }); });
+    document.querySelectorAll('.general-prev-btn').forEach(btn => { btn.addEventListener('click', () => { if (generalPage > 1) { generalPage--; renderGeneralTab(); } }); });
+    document.querySelectorAll('.general-next-btn').forEach(btn => { btn.addEventListener('click', () => { if (generalPage < totalPaginas) { generalPage++; renderGeneralTab(); } }); });
 
     const findLastBtn = document.getElementById('findLastTakenBtn');
     if (findLastBtn) {
       findLastBtn.addEventListener('click', () => {
-        // Filtrar para encontrar el último tomado en general
         const tomados = merged.filter(m => m.origen === 'pendiente' && m.ejecutivo && m.ejecutivo !== 'Sin asignar');
         if (tomados.length === 0) return alert('Aún no hay pedimentos tomados en el sistema.');
-        
         tomados.sort((a, b) => extractConsecutivo(b.ref) - extractConsecutivo(a.ref));
-        const ultimoRef = tomados[0].ref;
-        
-        generalAduanaFilter = 'todas'; 
-        touchRef(ultimoRef);
-        renderGeneralTab();
+        generalAduanaFilter = 'todas'; touchRef(tomados[0].ref); renderGeneralTab();
       });
     }
 
-    document.querySelectorAll('.general-row').forEach(row => {
-      row.addEventListener('click', () => touchRef(row.getAttribute('data-ref')));
-    });
-
-    if (scrollToLastTouched) {
+    document.querySelectorAll('.general-row').forEach(row => { row.addEventListener('click', () => touchRef(row.getAttribute('data-ref'))); });
+    if (scrollToLastTouched && lastTouchedRef) {
       scrollToLastTouched = false;
-      if (lastTouchedRef) {
-        const target = Array.from(document.querySelectorAll('.general-row')).find(r => r.getAttribute('data-ref') === lastTouchedRef);
-        if (target) {
-          setTimeout(() => {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            target.style.transition = 'background-color .3s';
-            target.style.backgroundColor = 'var(--amber-soft)';
-            setTimeout(() => { target.style.backgroundColor = ''; }, 2500);
-          }, 50);
-        }
-      }
+      const target = Array.from(document.querySelectorAll('.general-row')).find(r => r.getAttribute('data-ref') === lastTouchedRef);
+      if (target) { setTimeout(() => { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.style.transition = 'background-color .3s'; target.style.backgroundColor = 'var(--amber-soft)'; setTimeout(() => { target.style.backgroundColor = ''; }, 2500); }, 50); }
     }
   }
 
@@ -1437,16 +1495,14 @@
         else if (action === 'done') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); } 
         else if (action === 'expediente') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Expediente', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); }
         else if (action === 'edit') { if (t) touchRef(t.ref); openModal(id); } 
-        else if (action === 'dup') {
-          if (t) { const { id: _oldId, ...rest } = t; set(push(ref(db, 'pendientes_ayc')), { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); touchRef(rest.ref); }
-        }
+        else if (action === 'dup') { if (t) { const { id: _oldId, ...rest } = t; set(push(ref(db, 'pendientes_ayc')), { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); touchRef(rest.ref); } }
       });
     });
   }
 
+  // TAREAS PERSONALES
   const taskModal = document.getElementById('taskModalOverlay');
   let editingTaskId = null;
-
   window.openTaskModal = function(id) {
     editingTaskId = id || null;
     document.getElementById('taskModalTitle').textContent = id ? 'Editar Tarea' : 'Nueva Tarea Personal';
@@ -1464,7 +1520,6 @@
     }
     taskModal.classList.add('open');
   };
-
   function closeTaskModal() { taskModal.classList.remove('open'); editingTaskId = null; }
   document.getElementById('openTaskModalBtn').addEventListener('click', () => openTaskModal(null));
   document.getElementById('cancelTaskBtn').addEventListener('click', closeTaskModal);
@@ -1472,23 +1527,8 @@
   document.getElementById('saveTaskBtn').addEventListener('click', () => {
     const titulo = document.getElementById('t-titulo').value.trim();
     if (!titulo) { alert("Escribe qué necesitas hacer."); return; }
-    
-    const data = {
-      isTask: true,
-      titulo: titulo, 
-      prioridad: document.getElementById('t-prioridad').value,
-      limite: document.getElementById('t-limite').value || null, 
-      notas: document.getElementById('t-notas').value.trim(),
-      status: editingTaskId ? tasks.find(x => x.id === editingTaskId).status : 'Pendiente', 
-      ejecutivo: currentUser,
-      lastModifiedBy: currentUser
-    };
-    
-    if (editingTaskId) { 
-      update(ref(db, 'pendientes_ayc/' + editingTaskId), data).catch(e => alert("Error de conexión: " + e.message)); 
-    } else { 
-      set(push(ref(db, 'pendientes_ayc')), data).catch(e => alert("Error de conexión: " + e.message)); 
-    }
+    const data = { isTask: true, titulo: titulo, prioridad: document.getElementById('t-prioridad').value, limite: document.getElementById('t-limite').value || null, notas: document.getElementById('t-notas').value.trim(), status: editingTaskId ? tasks.find(x => x.id === editingTaskId).status : 'Pendiente', ejecutivo: currentUser, lastModifiedBy: currentUser };
+    if (editingTaskId) { update(ref(db, 'pendientes_ayc/' + editingTaskId), data); } else { set(push(ref(db, 'pendientes_ayc')), data); }
     closeTaskModal();
   });
 
@@ -1498,87 +1538,46 @@
       if (action === 'done') update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser });
       if (action === 'del') update(ref(db, 'pendientes_ayc/' + id), { status: 'Eliminado', deletedAt: new Date().toISOString(), lastModifiedBy: currentUser });
     };
-    if (card) { card.classList.add('completing'); setTimeout(finish, 320); }
-    else { finish(); }
+    if (card) { card.classList.add('completing'); setTimeout(finish, 320); } else { finish(); }
   };
 
+  // TOMAR POR LOTE / INDIVIDUAL
   const aduanaChoiceOverlay = document.getElementById('aduanaChoiceOverlay');
   let pendingTakeAction = null; 
-
-  function openAduanaChoice(action) {
-    pendingTakeAction = action;
-    aduanaChoiceOverlay.classList.add('open');
-  }
-  function closeAduanaChoice() {
-    aduanaChoiceOverlay.classList.remove('open');
-    pendingTakeAction = null;
-  }
+  function openAduanaChoice(action) { pendingTakeAction = action; aduanaChoiceOverlay.classList.add('open'); }
+  function closeAduanaChoice() { aduanaChoiceOverlay.classList.remove('open'); pendingTakeAction = null; }
   document.getElementById('cancelAduanaChoiceBtn').addEventListener('click', closeAduanaChoice);
   aduanaChoiceOverlay.addEventListener('click', (e) => { if (e.target === aduanaChoiceOverlay) closeAduanaChoice(); });
-  document.getElementById('choiceMonterreyBtn').addEventListener('click', () => {
-    const action = pendingTakeAction; closeAduanaChoice();
-    if (action === 'single') runTakeSingle('Monterrey'); else if (action === 'batch') runTakeBatch('Monterrey');
-  });
-  document.getElementById('choiceLaredoBtn').addEventListener('click', () => {
-    const action = pendingTakeAction; closeAduanaChoice();
-    if (action === 'single') runTakeSingle('Laredo'); else if (action === 'batch') runTakeBatch('Laredo');
-  });
+  document.getElementById('choiceMonterreyBtn').addEventListener('click', () => { const action = pendingTakeAction; closeAduanaChoice(); if (action === 'single') runTakeSingle('Monterrey'); else if (action === 'batch') runTakeBatch('Monterrey'); });
+  document.getElementById('choiceLaredoBtn').addEventListener('click', () => { const action = pendingTakeAction; closeAduanaChoice(); if (action === 'single') runTakeSingle('Laredo'); else if (action === 'batch') runTakeBatch('Laredo'); });
 
   function runTakeBatch(aduana) {
     let libres = catalogo.filter(c => isLibreCat(c) && extractConsecutivo(c.ref) >= corteLibres(aduana) && c.aduana === aduana);
-    if (libres.length === 0) {
-      alert(`No hay pedimentos libres de ${aduana} a partir del consecutivo ${corteLibres(aduana)}.`);
-      return;
-    }
-
-    const cantidadInput = prompt(`Hay ${libres.length} pedimentos libres de ${aduana} disponibles en este momento.\n\n¿Cuántos pedimentos consecutivos necesitas tomar de golpe?`, "100");
+    if (libres.length === 0) { alert(`No hay libres de ${aduana}.`); return; }
+    const cantidadInput = prompt(`Hay ${libres.length} libres.\n¿Cuántos tomas?`, "100");
     if (!cantidadInput) return;
-
     const cantidad = parseInt(cantidadInput, 10);
-    if (isNaN(cantidad) || cantidad <= 0) { alert("Por favor ingresa un número válido."); return; }
-    if (cantidad > libres.length) { alert(`Solo hay ${libres.length} pedimentos libres de ${aduana}. No puedes tomar ${cantidad}.`); return; }
-
-    if(confirm(`¿Seguro que quieres asignarte a tu nombre los siguientes ${cantidad} pedimentos libres de ${aduana}?`)) {
+    if (isNaN(cantidad) || cantidad <= 0 || cantidad > libres.length) { alert("Número inválido."); return; }
+    if(confirm(`¿Seguro que tomas ${cantidad} de ${aduana}?`)) {
       libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
       const lote = libres.slice(0, cantidad);
-
-      let asignados = 0;
       lote.forEach(next => {
-        const newRef = push(ref(db, 'pendientes_ayc'));
-        set(newRef, {
-          ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo',
-          tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null,
-          ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser
-        });
+        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
         remove(ref(db, 'catalogo_ayc/' + next.id));
-        asignados++;
       });
-
-      alert(`¡Listo! Te has asignado ${asignados} pedimentos de ${aduana} exitosamente. Revisa tu tablero.`);
       playSparkle(document.getElementById('takeBatchBtn'));
     }
   }
 
   function runTakeSingle(aduana) {
     let libres = catalogo.filter(c => isLibreCat(c) && extractConsecutivo(c.ref) >= corteLibres(aduana) && c.aduana === aduana);
-    if (libres.length === 0) {
-      alert(`No hay pedimentos libres de ${aduana} a partir del consecutivo ${corteLibres(aduana)}. Pide al administrador que suba el Excel o ajuste el corte.`);
-      return;
-    }
+    if (libres.length === 0) { alert(`No hay libres de ${aduana}.`); return; }
     libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
     const next = libres[0];
-
-    if(confirm(`El siguiente pedimento libre de ${aduana} es el:\n\n${next.ref}\n\n¿Quieres asignártelo?`)) {
+    if(confirm(`Siguiente de ${aduana}:\n${next.ref}\n¿Asignártelo?`)) {
       const newRef = push(ref(db, 'pendientes_ayc'));
-      set(newRef, {
-        ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo',
-        tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null,
-        ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser
-      }).then(() => {
-        remove(ref(db, 'catalogo_ayc/' + next.id));
-        touchRef(next.ref);
-        playSparkle(document.getElementById('takePedimentoBtn'));
-        openModal(newRef.key); 
+      set(newRef, { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
+        remove(ref(db, 'catalogo_ayc/' + next.id)); touchRef(next.ref); playSparkle(document.getElementById('takePedimentoBtn')); openModal(newRef.key); 
       });
     }
   }
@@ -1586,6 +1585,7 @@
   document.getElementById('takeBatchBtn').addEventListener('click', () => openAduanaChoice('batch'));
   document.getElementById('takePedimentoBtn').addEventListener('click', () => openAduanaChoice('single'));
 
+  // UTILIDADES VARIAS
   const confirmOverlay = document.getElementById('confirmOverlay'); let deleteTargetId = null;
   function openConfirmDelete(id) { deleteTargetId = id; confirmOverlay.classList.add('open'); }
   function closeConfirmDelete() { confirmOverlay.classList.remove('open'); deleteTargetId = null; }
@@ -1606,45 +1606,33 @@
       const percent = max > 0 ? (execCounts[key] / max) * 100 : 0;
       html += `<div class="chart-row"><div class="chart-label">${displayNames[key]}</div><div class="chart-bar-wrap"><div class="chart-bar" style="width: ${percent}%;"></div></div><div class="chart-count">${execCounts[key]}</div></div>`;
     });
-    if(!html) html = '<p style="color:var(--text-sub); text-align:center;">No hay operaciones activas.</p>';
-    chartContainer.innerHTML = html; document.getElementById('chartOverlay').classList.add('open');
+    chartContainer.innerHTML = html || '<p style="color:var(--text-sub); text-align:center;">No hay operaciones activas.</p>'; 
+    document.getElementById('chartOverlay').classList.add('open');
   });
   document.getElementById('closeChartBtn').addEventListener('click', () => { document.getElementById('chartOverlay').classList.remove('open'); });
 
   document.getElementById('migrateBtn').addEventListener('click', () => {
     const candidatos = tasks.filter(t => t.status === 'Pendiente' && !t.isTask);
-    if (candidatos.length === 0) { alert('No hay nada que mover: no encontré pendientes en estatus "Pendiente" sin tomar.'); return; }
-    if (!confirm(`Se moverán ${candidatos.length} pedimento(s) que siguen en estatus "Pendiente" de vuelta al catálogo (pestaña 🆓 Libres).\n\nLo que ya está "En proceso", "Revisión", "Expediente" o "Completado" NO se toca.\n\n¿Continuar?`)) return;
-
+    if (candidatos.length === 0) { alert('No hay nada en estatus "Pendiente" sin tomar.'); return; }
+    if (!confirm(`Se moverán ${candidatos.length} pedimento(s) de vuelta al catálogo.\n¿Continuar?`)) return;
     let moved = 0;
     candidatos.forEach(t => {
-      set(push(catalogoRef), {
-        ref: t.ref || '', cliente: t.cliente || '', aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo',
-        tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '',
-        importadoPor: currentUser, importadoEn: new Date().toISOString()
-      });
-      remove(ref(db, 'pendientes_ayc/' + t.id));
-      moved++;
+      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
+      remove(ref(db, 'pendientes_ayc/' + t.id)); moved++;
     });
-    alert(`Listo: se movieron ${moved} pedimento(s) al catálogo. Revísalos en la pestaña "🆓 Libres".`);
+    alert(`Listo: se movieron ${moved} pedimentos al catálogo.`);
   });
 
   document.getElementById('setCorteMtyBtn').addEventListener('click', () => {
-    const nuevo = prompt('¿A partir de qué consecutivo son libres de verdad en Monterrey?', corteLibresPorAduana.Monterrey);
-    if (nuevo === null) return;
-    const n = parseInt(nuevo.replace(/\D/g, ''), 10);
-    if (isNaN(n)) { alert('Ingresa solo números.'); return; }
-    update(configRef, { corteMonterrey: n });
+    const nuevo = prompt('¿Corte libres Monterrey?', corteLibresPorAduana.Monterrey);
+    if (nuevo !== null && !isNaN(parseInt(nuevo.replace(/\D/g, ''), 10))) update(configRef, { corteMonterrey: parseInt(nuevo.replace(/\D/g, ''), 10) });
   });
   document.getElementById('setCorteLrdBtn').addEventListener('click', () => {
-    const nuevo = prompt('¿A partir de qué consecutivo son libres de verdad en Nuevo Laredo?', corteLibresPorAduana.Laredo);
-    if (nuevo === null) return;
-    const n = parseInt(nuevo.replace(/\D/g, ''), 10);
-    if (isNaN(n)) { alert('Ingresa solo números.'); return; }
-    update(configRef, { corteLaredo: n });
+    const nuevo = prompt('¿Corte libres Nuevo Laredo?', corteLibresPorAduana.Laredo);
+    if (nuevo !== null && !isNaN(parseInt(nuevo.replace(/\D/g, ''), 10))) update(configRef, { corteLaredo: parseInt(nuevo.replace(/\D/g, ''), 10) });
   });
 
-  document.getElementById('uploadLayoutBtn').addEventListener('click', () => { document.getElementById('layoutFileInput').click(); });
+  document.getElementById('uploadLayoutBtn').addEventListener('click', () => document.getElementById('layoutFileInput').click());
   document.getElementById('layoutFileInput').addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -1652,114 +1640,154 @@
       try {
         const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
         let count = 0;
-        
         workbook.SheetNames.forEach(sheetName => {
           if(sheetName === 'Hoja1') return; 
-          
           const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
           rows.forEach(row => {
-            const refExcel = (row['REFERENCIA'] || row['referencia'] || '').toString().trim();
-            const pedimentoExcel = (row['PEDIMENTO'] || row['pedimento'] || '').toString().trim();
-            const refFinal = pedimentoExcel ? `${refExcel} / ${pedimentoExcel}` : refExcel;
-            if (!refFinal) return;
-
-            if ((row['ESTATUS'] || '').toString().trim().toUpperCase() === 'PAGADO') return;
-
-            const clienteVal = (row['CLIENTE'] || '').toString().trim();
-            const ejecutivoVal = (row['EJECUTIVO '] || row['EJECUTIVO'] || '').toString().trim();
-
+            const refFinal = `${(row['REFERENCIA'] || row['referencia'] || '').toString().trim()} / ${(row['PEDIMENTO'] || row['pedimento'] || '').toString().trim()}`.replace(/^ \/ | \/ $/g, '');
+            if (!refFinal || (row['ESTATUS'] || '').toString().trim().toUpperCase() === 'PAGADO') return;
             let tipoOp = (row['OPERACIÓN'] || 'Importación').toString().trim().toUpperCase();
-            if (tipoOp === 'IMPO') tipoOp = 'Importación';
-            if (tipoOp === 'EXPO') tipoOp = 'Exportación';
-
+            if (tipoOp === 'IMPO') tipoOp = 'Importación'; if (tipoOp === 'EXPO') tipoOp = 'Exportación';
             let notasExtra = [];
             if (row['CLAVE']) notasExtra.push(`Clave: ${row['CLAVE']}`);
             if (row['FORMA DE PAGO']) notasExtra.push(`Pago: ${row['FORMA DE PAGO']}`);
             if (row['FACTURACIÓN']) notasExtra.push(`Fact: ${row['FACTURACIÓN']}`);
-
             set(push(catalogoRef), {
-              ref: refFinal,
-              cliente: clienteVal,
-              aduana: sheetName.toUpperCase() === 'NUEVO LAREDO' ? 'Laredo' : 'Monterrey',
-              depto: 'Aéreo',
-              tipo: tipoOp,
-              ejecutivoAsignado: ejecutivoVal, 
-              notas: notasExtra.join(' | '),
-              importadoPor: currentUser,
-              importadoEn: new Date().toISOString()
+              ref: refFinal, cliente: (row['CLIENTE'] || '').toString().trim(), aduana: sheetName.toUpperCase() === 'NUEVO LAREDO' ? 'Laredo' : 'Monterrey', depto: 'Aéreo',
+              tipo: tipoOp, ejecutivoAsignado: (row['EJECUTIVO '] || row['EJECUTIVO'] || '').toString().trim(), notas: notasExtra.join(' | '), importadoPor: currentUser, importadoEn: new Date().toISOString()
             });
             count++;
           });
         });
-        alert(`Se cargaron ${count} pedimentos al catálogo (pestaña "🆓 Libres / Catálogo"). Ninguno se creó todavía como pendiente activo.`);
-        playSparkle(document.getElementById('uploadLayoutBtn'));
-      } catch (err) { alert('Hubo un error al procesar el Excel. Verifica el formato.'); console.error(err); }
+        alert(`Se cargaron ${count} pedimentos al catálogo.`); playSparkle(document.getElementById('uploadLayoutBtn'));
+      } catch (err) { alert('Error al procesar el Excel.'); }
       e.target.value = '';
     };
     reader.readAsArrayBuffer(file);
   });
 
+  // LOGICA DEL MODAL DINÁMICO DE PEDIMENTOS
   const overlay = document.getElementById('modalOverlay');
-  function openModal(id) {
+  const fDepto = document.getElementById('f-depto');
+  const fConsolidado = document.getElementById('f-isConsolidado');
+  let editingId = null;
+
+  fDepto.addEventListener('change', () => {
+      document.querySelectorAll('.dynamic-block').forEach(b => b.classList.remove('active'));
+      const activeBlock = document.getElementById('dyn-' + fDepto.value);
+      if (activeBlock) activeBlock.classList.add('active');
+  });
+  fConsolidado.addEventListener('change', () => { document.getElementById('wrap-remesas').style.display = fConsolidado.checked ? 'block' : 'none'; });
+
+  window.openModal = function(id) {
     editingId = id || null;
     document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pedimento';
+    document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"]').forEach(el => el.value = '');
+    fConsolidado.checked = false;
+
     if (id) {
-      const t = tasks.find(t => t.id === id);
+      const t = tasks.find(x => x.id === id);
       document.getElementById('f-ref').value = t.ref || '';
       document.getElementById('f-cliente').value = t.cliente || '';
-      document.getElementById('f-aduana').value = t.aduana;
-      document.getElementById('f-depto').value = t.depto;
-      document.getElementById('f-tipo').value = t.tipo;
-      document.getElementById('f-prioridad').value = t.prioridad;
-      document.getElementById('f-status').value = t.status;
-      document.getElementById('f-limite').value = t.limite ? t.limite.slice(0, 16) : '';
+      document.getElementById('f-aduana').value = t.aduana || 'Laredo';
+      fDepto.value = t.depto || 'Terrestre';
+      document.getElementById('f-tipo').value = t.tipo || 'Importación';
+      document.getElementById('f-prioridad').value = t.prioridad || 'Media';
+      document.getElementById('f-status').value = t.status || 'Pendiente';
+      if (t.limite) document.getElementById('f-limite').value = t.limite;
       
       const execField = document.getElementById('f-ejecutivo');
       execField.value = t.ejecutivo || currentUser || '';
-      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true;
-      else execField.disabled = false;
+      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true; else execField.disabled = false;
 
       document.getElementById('f-enlace').value = t.enlace || '';
       document.getElementById('f-notas').value = t.notas || '';
+
+      // Dinámicos
+      fConsolidado.checked = t.consolidado || false;
+      document.getElementById('d-remesas').value = t.remesas || '';
+      document.getElementById('d-guia').value = t.guia || '';
+      document.getElementById('d-aerolinea').value = t.aerolinea || '';
+      document.getElementById('d-almacen').value = t.almacen || '';
+      document.getElementById('d-eta-aereo').value = t.depto === 'Aéreo' ? (t.eta || '') : '';
+      
+      document.getElementById('d-cartaPorte').value = t.cartaPorte || '';
+      document.getElementById('d-linea').value = t.lineaTransportista || '';
+      document.getElementById('d-transfer').value = t.transfer || '';
+      document.getElementById('d-caja').value = t.cajaPlacas || '';
+      document.getElementById('d-eta-terr').value = t.depto === 'Terrestre' ? (t.eta || '') : '';
+      
+      document.getElementById('d-bl').value = t.bl || '';
+      document.getElementById('d-naviera').value = t.naviera || '';
+      document.getElementById('d-terminal').value = t.terminal || '';
+      document.getElementById('d-buque').value = t.buque || '';
+      document.getElementById('d-demoras').value = t.demoras || '';
+      document.getElementById('d-eta-mar').value = t.depto === 'Marítimo' ? (t.eta || '') : '';
+      
+      document.getElementById('d-pedOrigen').value = t.pedOrigen || '';
+      document.getElementById('d-claveV').value = t.claveV || '';
+      document.getElementById('d-transfiere').value = t.empresaTransfiere || '';
+      document.getElementById('d-facturas').value = t.facturas || '';
+      
+      document.getElementById('d-corresponsal').value = t.corresponsal || '';
+      document.getElementById('d-refCorr').value = t.refCorr || '';
+      document.getElementById('d-aduanaCorr').value = t.aduanaCorr || '';
+      document.getElementById('d-claveC').value = t.claveC || '';
     } else {
-      ['f-ref', 'f-cliente', 'f-notas', 'f-enlace'].forEach(f => document.getElementById(f).value = '');
-      document.getElementById('f-limite').value = '';
       document.getElementById('f-aduana').value = 'Monterrey';
-      document.getElementById('f-depto').value = 'Aéreo';
+      fDepto.value = 'Aéreo';
       document.getElementById('f-prioridad').value = 'Media';
       document.getElementById('f-status').value = 'Pendiente';
-      
       const execField = document.getElementById('f-ejecutivo');
       execField.value = currentUser || '';
-      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true;
-      else execField.disabled = false;
+      if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true; else execField.disabled = false;
     }
+    fDepto.dispatchEvent(new Event('change'));
+    fConsolidado.dispatchEvent(new Event('change'));
     overlay.classList.add('open');
-  }
+  };
 
-  function closeModal() { overlay.classList.remove('open'); editingId = null; }
-  document.getElementById('openModalBtn').addEventListener('click', () => { playSparkle(document.getElementById('openModalBtn')); openModal(null); });
-  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  document.getElementById('openModalBtn').addEventListener('click', () => window.openModal(null));
+  document.getElementById('cancelBtn').addEventListener('click', () => overlay.classList.remove('open'));
 
   document.getElementById('saveBtn').addEventListener('click', () => {
-    const refText = document.getElementById('f-ref').value.trim();
-    if (!refText) { document.getElementById('f-ref').focus(); return; }
+    const depto = fDepto.value;
+    let etaValue = '';
+    if(depto === 'Aéreo') etaValue = document.getElementById('d-eta-aereo').value;
+    else if(depto === 'Marítimo') etaValue = document.getElementById('d-eta-mar').value;
+    else if(depto === 'Terrestre') etaValue = document.getElementById('d-eta-terr').value;
+
     const execField = document.getElementById('f-ejecutivo');
     const selectedExec = execField.disabled ? currentUser : execField.value;
 
     const data = {
-      ref: refText, cliente: document.getElementById('f-cliente').value.trim(), 
-      aduana: document.getElementById('f-aduana').value, depto: document.getElementById('f-depto').value, 
-      tipo: document.getElementById('f-tipo').value, prioridad: document.getElementById('f-prioridad').value,
-      status: document.getElementById('f-status').value, limite: document.getElementById('f-limite').value || null,
-      ejecutivo: selectedExec, enlace: document.getElementById('f-enlace').value.trim(), 
-      notas: document.getElementById('f-notas').value.trim(),
-      lastModifiedBy: currentUser
+      ref: document.getElementById('f-ref').value.trim(), cliente: document.getElementById('f-cliente').value.trim(), 
+      aduana: document.getElementById('f-aduana').value, depto: depto, tipo: document.getElementById('f-tipo').value, 
+      prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
+      limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
+      enlace: document.getElementById('f-enlace').value.trim(), notas: document.getElementById('f-notas').value.trim(),
+      consolidado: fConsolidado.checked, remesas: document.getElementById('d-remesas').value || 0,
+      
+      guia: document.getElementById('d-guia').value.trim(), aerolinea: document.getElementById('d-aerolinea').value.trim(),
+      almacen: document.getElementById('d-almacen').value.trim(),
+      cartaPorte: document.getElementById('d-cartaPorte').value.trim(), lineaTransportista: document.getElementById('d-linea').value.trim(),
+      transfer: document.getElementById('d-transfer').value.trim(), cajaPlacas: document.getElementById('d-caja').value.trim(), 
+      bl: document.getElementById('d-bl').value.trim(), naviera: document.getElementById('d-naviera').value.trim(), 
+      terminal: document.getElementById('d-terminal').value.trim(), buque: document.getElementById('d-buque').value.trim(),
+      demoras: document.getElementById('d-demoras').value,
+      pedOrigen: document.getElementById('d-pedOrigen').value.trim(), claveV: document.getElementById('d-claveV').value.trim(),
+      empresaTransfiere: document.getElementById('d-transfiere').value.trim(), empresaRecibe: document.getElementById('d-recibe').value.trim(),
+      facturas: document.getElementById('d-facturas').value.trim(), 
+      corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
+      aduanaCorr: document.getElementById('d-aduanaCorr').value.trim(), claveC: document.getElementById('d-claveC').value.trim(),
+      eta: etaValue, lastModifiedBy: currentUser
     };
-    if (editingId) { update(ref(db, 'pendientes_ayc/' + editingId), data); }
-    else { set(push(ref(db, 'pendientes_ayc')), data); }
-    touchRef(refText);
-    closeModal();
+    
+    if (editingId) update(ref(db, 'pendientes_ayc/' + editingId), data);
+    else set(push(ref(db, 'pendientes_ayc')), data);
+    
+    touchRef(document.getElementById('f-ref').value.trim());
+    overlay.classList.remove('open');
   });
 </script>
 </body>
