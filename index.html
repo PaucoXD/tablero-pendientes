@@ -1357,15 +1357,16 @@
                 }
                 return `
                 <div class="chat-box">
-                    <div class="chat-header">Comentarios / Bitácora</div>
+                    <div class="chat-header">💬 Comentarios / Bitácora 
+                        <span style="font-size:11px; opacity:0.7;">(${isClient ? 'Cliente' : 'Interno'})</span>
+                    </div>
                     ${chatHtml}
-                    ${!isClient ? `
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <input type="text" id="chat-input-${t.id}" placeholder="Escribe un comentario..." 
+                        <input type="text" id="chat-input-${t.id}" placeholder="${isClient ? 'Escribe tu consulta o comentario aquí...' : 'Escribe un comentario...'}"
                                onkeydown="if(event.key==='Enter') window.sendChatMessage('${t.id}')"
                                style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--divider); background:var(--bg); color:var(--text-main); font-size:12px;">
                         <button class="btn-add" style="padding: 8px 12px;" onclick="window.sendChatMessage('${t.id}')">Enviar</button>
-                    </div>` : ''}
+                    </div>
                 </div>`;
             })()}
 
@@ -1821,26 +1822,44 @@
     overlay.classList.remove('open');
   });
 
-  // FUNCIÓN PARA ENVIAR MENSAJES AL CHAT
-  window.sendChatMessage = function(taskId) {
-      const input = document.getElementById(`chat-input-${taskId}`);
-      const texto = input.value.trim();
-      if (!texto) return;
+// FUNCIÓN PARA ENVIAR MENSAJES AL CHAT (con notificación para ejecutivos)
+window.sendChatMessage = function(taskId) {
+    const input = document.getElementById(`chat-input-${taskId}`);
+    const texto = input.value.trim();
+    if (!texto) return;
 
-      input.disabled = true;
+    input.disabled = true;
 
-      push(ref(db, `pendientes_ayc/${taskId}/chat`), {
-          texto: texto,
-          usuario: currentUser,
-          timestamp: Date.now()
-      }).then(() => {
-          input.value = '';
-          input.disabled = false;
-          input.focus();
-      }).catch(err => {
-          alert('Error al enviar el mensaje.');
-          input.disabled = false;
-      });
+    const isClientMessage = currentUserProfile && currentUserProfile.rol === 'cliente';
+
+    push(ref(db, `pendientes_ayc/${taskId}/chat`), {
+        texto: texto,
+        usuario: currentUser,
+        timestamp: Date.now(),
+        isClient: isClientMessage
+    }).then(() => {
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+
+        // Notificación cuando un cliente escribe
+        if (isClientMessage && !isClient) {
+            try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const task = tasks.find(t => t.id === taskId);
+                    new Notification('💬 Nuevo mensaje del cliente', {
+                        body: `${task ? task.ref : 'Pedimento'} - ${currentUser}`,
+                        icon: '/favicon.ico'
+                    });
+                }
+            } catch (e) {}
+        }
+    }).catch(err => {
+        console.error(err);
+        alert('Error al enviar el mensaje.');
+        input.disabled = false;
+    });
+};
   };
 </script>
 </body>
