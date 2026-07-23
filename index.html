@@ -1808,7 +1808,9 @@
       terminal: document.getElementById('d-terminal').value.trim(), buque: document.getElementById('d-buque').value.trim(),
       demoras: document.getElementById('d-demoras').value,
       pedOrigen: document.getElementById('d-pedOrigen').value.trim(), claveV: document.getElementById('d-claveV').value.trim(),
-      empresaTransfiere: document.getElementById('d-transfiere').value.trim(), empresaRecibe: document.getElementById('d-recibe').value.trim(),
+      empresaTransfiere: document.getElementById('d-transfiere').value.trim(),
+      // SOLUCIÓN: Agregada validación segura para empresaRecibe
+      empresaRecibe: document.getElementById('d-recibe') ? document.getElementById('d-recibe').value.trim() : '',
       facturas: document.getElementById('d-facturas').value.trim(), 
       corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
       aduanaCorr: document.getElementById('d-aduanaCorr').value.trim(), claveC: document.getElementById('d-claveC').value.trim(),
