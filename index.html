@@ -607,8 +607,9 @@
       </div>
 
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 10px; border-radius: 6px; border: 1px solid var(--divider);">
-        <label style="color: var(--accent);">Empresa Asociada (Exacta)</label>
-        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX">
+        <label style="color: var(--accent);">Empresa(s) Asociada(s) (Exacta)</label>
+        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX, FLUIDMASTER, OMPI">
+        <p style="font-size: 10.5px; color: var(--text-sub); margin: 4px 0 0;">Si es un corresponsal que capturas para varios clientes, escribe los nombres tal cual aparecen en "Cliente", separados por coma.</p>
         
         <!-- MATRIZ DE PERMISOS -->
         <div id="wrap-permisosCliente" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
@@ -744,6 +745,13 @@
   }
 
   function normKey(name) { return (name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  // Compatible con cuentas viejas que solo tenían "empresaAsociada" (una sola empresa)
+  function getEmpresasDe(u) {
+    if (!u) return [];
+    if (Array.isArray(u.empresasAsociadas)) return u.empresasAsociadas;
+    if (u.empresaAsociada) return [u.empresaAsociada];
+    return [];
+  }
   function canonicalExecName(name) {
     const key = normKey(name);
     if (!key) return '';
@@ -813,7 +821,7 @@
     document.body.classList.toggle('is-client', isClient);
     
     if (isClient) {
-        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${currentUserProfile.empresaAsociada}`;
+        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${getEmpresasDe(currentUserProfile).join(', ')}`;
     } else {
         document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
     }
@@ -877,7 +885,7 @@
       document.getElementById('newAccUser').disabled = true; 
       document.getElementById('newAccPass').style.display = 'none'; // Hide password on edit
       document.getElementById('newAccRole').value = u.rol || 'cliente';
-      document.getElementById('newAccEmpresa').value = u.empresaAsociada || '';
+      document.getElementById('newAccEmpresa').value = getEmpresasDe(u).join(', ');
       
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
       
@@ -898,7 +906,9 @@
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
     const rol = document.getElementById('newAccRole').value;
-    const empresaAsociada = rol === 'cliente' ? document.getElementById('newAccEmpresa').value.trim() : '';
+    const empresasAsociadas = rol === 'cliente'
+      ? document.getElementById('newAccEmpresa').value.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
     
     const msgEl = document.getElementById('createAccMsg');
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
@@ -906,7 +916,7 @@
     
     if (!nombre || !rawUser) { msgEl.textContent = 'Completa nombre y usuario.'; return; }
     if (mode === 'create' && pass.length < 6) { msgEl.textContent = 'La contraseña debe tener mínimo 6 letras.'; return; }
-    if (rol === 'cliente' && !empresaAsociada) { msgEl.textContent = 'Debes escribir la empresa exacta para el cliente.'; return; }
+    if (rol === 'cliente' && empresasAsociadas.length === 0) { msgEl.textContent = 'Debes escribir al menos una empresa exacta para el cliente.'; return; }
 
     const aduanasPerm = Array.from(document.querySelectorAll('#perm-aduanas input:checked')).map(cb => cb.value);
     const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
@@ -916,7 +926,7 @@
         nombre, 
         email: mode === 'edit' ? usersCache[editingUserUid].email : email, 
         rol, 
-        empresaAsociada 
+        empresasAsociadas 
     };
     
     if (rol === 'cliente') {
@@ -1231,7 +1241,8 @@
       const hasPerms = !!currentUserProfile.permisos;
       
       activePedimentos = activePedimentos.filter(t => {
-          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
+          const empresasCliente = getEmpresasDe(currentUserProfile);
+          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
@@ -1346,7 +1357,8 @@
       const hasPerms = !!currentUserProfile.permisos;
       
       filtered = filtered.filter(t => {
-          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
+          const empresasCliente = getEmpresasDe(currentUserProfile);
+          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
