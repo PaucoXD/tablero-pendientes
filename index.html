@@ -143,7 +143,6 @@
   .chat-header { font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; border-bottom: 1px dashed var(--divider); padding-bottom: 8px; margin-bottom: 10px; }
   .chat-placeholder { text-align: center; color: var(--text-sub); font-size: 12px; font-style: italic; padding: 10px 0; }
   
-  /* ESTILOS DE CHAT AÑADIDOS */
   .chat-messages { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .chat-msg { font-size: 12.5px; padding: 10px; border-radius: 6px; background: var(--panel-alt); border: 1px solid var(--divider); }
   .chat-msg .meta { font-size: 10.5px; color: var(--text-sub); margin-bottom: 5px; display: flex; justify-content: space-between; font-weight: 700; font-family: var(--font-heading); text-transform: uppercase; }
@@ -184,7 +183,7 @@
   /* MODALES Y UTILIDADES */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); width: 100%; max-width: 550px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;}
+  .modal { background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); width: 100%; max-width: 600px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;}
   .modal h2 { margin: 0 0 20px; font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--divider); padding-bottom: 15px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-header); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
@@ -395,6 +394,7 @@
     <!-- BLOQUE 1: FIJO -->
     <div class="field-row">
       <div class="field"><label>Pedimento / Referencia</label><input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123"></div>
+      <div class="field"><label>Patente / A.A.</label><input type="text" id="f-patente" placeholder="Ej. 1234 (Informativo)"></div>
       <div class="field"><label>Cliente / Empresa</label><input type="text" id="f-cliente" placeholder="Nombre exacto del cliente"></div>
     </div>
     <div class="field-row">
@@ -566,6 +566,10 @@
 <div class="modal-overlay" id="execOverlay">
   <div class="modal" style="max-width: 460px;">
     <h2>Usuarios y Cuentas</h2>
+    
+    <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+      🏷️ Filtros de Ejecutivos
+    </div>
     <div class="exec-list" id="execList"></div>
     <div class="exec-add-row">
       <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo (solo para filtros)">
@@ -577,31 +581,66 @@
         ⚠️ Variantes sin fusionar
       </div>
       <p style="font-size: 11.5px; color: var(--text-sub); margin: 0 0 12px;">
-        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial. Fusiónalos para que no salgan duplicados en los filtros.
+        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial.
       </p>
       <div id="variantesList"></div>
     </div>
 
+    <!-- SECCIÓN DE USUARIOS Y PERMISOS -->
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider);">
-      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-        🔐 Crear nueva cuenta
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; display:flex; justify-content:space-between; align-items:center;">
+        <span>👥 Cuentas de Acceso</span>
+        <button class="btn-mini" onclick="window.resetUserForm()">+ Nueva</button>
       </div>
+      <div class="exec-list" id="usersListUi" style="max-height: 150px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
+
       <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany o RESONAC)"></div>
-      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso" style="text-transform: lowercase;"></div>
+      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso (ej. dany)" style="text-transform: lowercase;"></div>
       <div class="field"><input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)"></div>
       <div class="field">
         <label>Rol del usuario</label>
         <select id="newAccRole">
           <option value="ejecutivo">Ejecutivo (Staff)</option>
           <option value="admin">Administrador</option>
-          <option value="cliente">Cliente (Portal Portal)</option>
+          <option value="cliente">Cliente (Portal Restringido)</option>
         </select>
       </div>
+
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 10px; border-radius: 6px; border: 1px solid var(--divider);">
         <label style="color: var(--accent);">Empresa Asociada (Exacta)</label>
-        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX" title="El cliente solo verá pedimentos que coincidan con este nombre">
+        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX">
+        
+        <!-- MATRIZ DE PERMISOS -->
+        <div id="wrap-permisosCliente" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
+          <label style="color: var(--primary); font-weight: 800; font-size: 11px;">FILTROS DE VISUALIZACIÓN</label>
+          
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Aduanas Permitidas:</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-aduanas">
+            <label><input type="checkbox" value="Monterrey" checked> Monterrey</label>
+            <label><input type="checkbox" value="Laredo" checked> Laredo</label>
+            <label><input type="checkbox" value="Altamira" checked> Altamira</label>
+            <label><input type="checkbox" value="Manzanillo" checked> Manzanillo</label>
+            <label><input type="checkbox" value="Otra" checked> Otra</label>
+          </div>
+
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Operaciones Permitidas:</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-tipos">
+            <label><input type="checkbox" value="Importación" checked> Importación</label>
+            <label><input type="checkbox" value="Exportación" checked> Exportación</label>
+          </div>
+
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Departamentos Permitidos:</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-deptos">
+            <label><input type="checkbox" value="Aéreo" checked> Aéreo</label>
+            <label><input type="checkbox" value="Terrestre" checked> Terrestre</label>
+            <label><input type="checkbox" value="Marítimo" checked> Marítimo</label>
+            <label><input type="checkbox" value="Virtual" checked> Virtual</label>
+            <label><input type="checkbox" value="Corresponsalías" checked> Corresponsalías</label>
+          </div>
+        </div>
       </div>
-      <button class="btn-add" id="createAccBtn" style="width: 100%;">Crear cuenta</button>
+
+      <button class="btn-add" id="createAccBtn" data-mode="create" style="width: 100%;">Crear cuenta</button>
       <p id="createAccMsg" style="font-size: 11.5px; margin-top: 8px;"></p>
     </div>
 
@@ -659,7 +698,6 @@
   const catalogoRef = ref(db, 'catalogo_ayc');
   const configRef = ref(db, 'config_ayc');
   
-  // VARIABLES DE PAGINACIÓN RESTAURADAS
   let generalPage = 1;
   const GENERAL_PAGE_SIZE = 150;
   const urlParams = new URLSearchParams(window.location.search);
@@ -729,9 +767,28 @@
     applyProfileForUser(authUser);
   }
 
+  // Actualiza la lista visual de Usuarios en el modal de Cuentas
+  function updateUsersListUi() {
+    const container = document.getElementById('usersListUi');
+    if (!container) return;
+    container.innerHTML = Object.keys(usersCache).map(uid => {
+        let u = usersCache[uid];
+        let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'admin' ? '👑 Admin' : '👤 Staff');
+        let editBtn = u.rol === 'cliente' ? `<button class="btn-mini" onclick="window.editClientPerms('${uid}')">⚙️ Editar Permisos</button>` : '';
+        return `<div class="exec-item">
+                  <div><strong>${u.nombre}</strong> <span style="font-size:10px; color:var(--text-sub);">(${u.email.split('@')[0]})</span></div>
+                  <div style="display:flex; gap:5px; align-items:center;">
+                    <span class="badge" style="font-size:9px; padding:2px 6px;">${badge}</span>
+                    ${editBtn}
+                  </div>
+                </div>`;
+    }).join('');
+  }
+
   onValue(usersRef, (snapshot) => {
     usersCache = snapshot.val() || {};
     usersLoaded = true;
+    updateUsersListUi();
     tryApplyProfile();
   });
 
@@ -752,7 +809,6 @@
     
     document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isClient ? ' (Cliente)' : ''));
     
-    // Asignación de clases para UI (Seguridad de interfaz)
     document.body.classList.toggle('is-admin', isAdmin);
     document.body.classList.toggle('is-client', isClient);
     
@@ -788,12 +844,56 @@
   document.getElementById('loginPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
   document.getElementById('logoutBtn').addEventListener('click', () => { signOut(auth); });
 
-  // Lógica para mostrar input de empresa solo si se elige "Cliente"
   document.getElementById('newAccRole').addEventListener('change', (e) => {
       document.getElementById('wrap-empresaCliente').style.display = e.target.value === 'cliente' ? 'block' : 'none';
   });
 
+  let editingUserUid = null;
+
+  window.resetUserForm = function() {
+      editingUserUid = null;
+      document.getElementById('createAccBtn').setAttribute('data-mode', 'create');
+      document.getElementById('createAccBtn').textContent = 'Crear cuenta';
+      document.getElementById('newAccName').value = '';
+      document.getElementById('newAccUser').value = '';
+      document.getElementById('newAccUser').disabled = false;
+      document.getElementById('newAccPass').value = '';
+      document.getElementById('newAccPass').style.display = 'block';
+      document.getElementById('newAccRole').value = 'ejecutivo';
+      document.getElementById('newAccEmpresa').value = '';
+      document.getElementById('newAccRole').dispatchEvent(new Event('change'));
+      document.getElementById('createAccMsg').textContent = '';
+      // Reset checkboxes
+      document.querySelectorAll('#wrap-permisosCliente input[type="checkbox"]').forEach(cb => cb.checked = true);
+  };
+
+  window.editClientPerms = function(uid) {
+      const u = usersCache[uid];
+      if(!u) return;
+      editingUserUid = uid;
+      
+      document.getElementById('newAccName').value = u.nombre || '';
+      document.getElementById('newAccUser').value = u.email.split('@')[0] || '';
+      document.getElementById('newAccUser').disabled = true; 
+      document.getElementById('newAccPass').style.display = 'none'; // Hide password on edit
+      document.getElementById('newAccRole').value = u.rol || 'cliente';
+      document.getElementById('newAccEmpresa').value = u.empresaAsociada || '';
+      
+      document.getElementById('newAccRole').dispatchEvent(new Event('change'));
+      
+      const p = u.permisos || { aduanas:[], tipos:[], deptos:[] };
+      document.querySelectorAll('#perm-aduanas input').forEach(cb => cb.checked = p.aduanas.includes(cb.value));
+      document.querySelectorAll('#perm-tipos input').forEach(cb => cb.checked = p.tipos.includes(cb.value));
+      document.querySelectorAll('#perm-deptos input').forEach(cb => cb.checked = p.deptos.includes(cb.value));
+      
+      const btn = document.getElementById('createAccBtn');
+      btn.setAttribute('data-mode', 'edit');
+      btn.textContent = "Actualizar Permisos de Cliente";
+      document.getElementById('createAccMsg').textContent = '';
+  };
+
   document.getElementById('createAccBtn').addEventListener('click', async () => {
+    const mode = document.getElementById('createAccBtn').getAttribute('data-mode');
     const nombre = document.getElementById('newAccName').value.trim();
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
@@ -804,24 +904,42 @@
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
     msgEl.style.color = 'var(--red)';
     
-    if (!nombre || !rawUser || pass.length < 6) { msgEl.textContent = 'Completa nombre, usuario y contraseña (mín 6 letras).'; return; }
+    if (!nombre || !rawUser) { msgEl.textContent = 'Completa nombre y usuario.'; return; }
+    if (mode === 'create' && pass.length < 6) { msgEl.textContent = 'La contraseña debe tener mínimo 6 letras.'; return; }
     if (rol === 'cliente' && !empresaAsociada) { msgEl.textContent = 'Debes escribir la empresa exacta para el cliente.'; return; }
 
+    const aduanasPerm = Array.from(document.querySelectorAll('#perm-aduanas input:checked')).map(cb => cb.value);
+    const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
+    const deptosPerm = Array.from(document.querySelectorAll('#perm-deptos input:checked')).map(cb => cb.value);
+
+    const userPayload = { 
+        nombre, 
+        email: mode === 'edit' ? usersCache[editingUserUid].email : email, 
+        rol, 
+        empresaAsociada 
+    };
+    
+    if (rol === 'cliente') {
+        userPayload.permisos = { aduanas: aduanasPerm, tipos: tiposPerm, deptos: deptosPerm };
+    }
+
     try {
-      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-      await set(ref(db, 'usuarios_ayc/' + cred.user.uid), { nombre, email, rol, empresaAsociada });
-      
-      // Si es un ejecutivo de la empresa (no cliente), agregarlo a la lista de filtros
-      if (rol !== 'cliente') {
-          const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
-          if (!dup) push(execRef, nombre);
+      if (mode === 'create') {
+          const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+          await set(ref(db, 'usuarios_ayc/' + cred.user.uid), userPayload);
+          if (rol !== 'cliente') {
+              const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
+              if (!dup) push(execRef, nombre);
+          }
+          await signOut(secondaryAuth); 
+          msgEl.style.color = 'var(--green)'; msgEl.textContent = `Cuenta creada para ${nombre}.`;
+      } else if (mode === 'edit' && editingUserUid) {
+          await update(ref(db, 'usuarios_ayc/' + editingUserUid), userPayload);
+          msgEl.style.color = 'var(--green)'; msgEl.textContent = `Permisos actualizados para ${nombre}.`;
       }
-      
-      await signOut(secondaryAuth); 
-      msgEl.style.color = 'var(--green)'; msgEl.textContent = `Cuenta creada para ${nombre} (${rol}).`;
-      document.getElementById('newAccName').value = ''; document.getElementById('newAccUser').value = ''; document.getElementById('newAccPass').value = '';
+      setTimeout(window.resetUserForm, 2000);
     } catch (e) {
-      const map = { 'auth/email-already-in-use': 'Ese usuario ya está registrado.', 'auth/weak-password': 'La contraseña es muy débil (mínimo 6 caracteres).' };
+      const map = { 'auth/email-already-in-use': 'Ese usuario ya está registrado.', 'auth/weak-password': 'La contraseña es muy débil.' };
       msgEl.textContent = map[e.code] || ('Error: ' + e.message);
     }
   });
@@ -884,7 +1002,6 @@
   let generalAduanaFilter = 'Monterrey'; 
   const DEPTOS = ['Aéreo', 'Terrestre', 'Corresponsalías', 'Marítimo', 'Virtual'];
 
-  // TIMELINE LOGIC 
   const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
   
   function mapToTimelineIndex(status) {
@@ -894,14 +1011,14 @@
       if (s.includes('pagado')) return 2;
       if (s.includes('modulación') || s.includes('reconocimiento') || s.includes('despacho') || s.includes('despachado')) return 3;
       if (s.includes('expediente') || s.includes('completado') || s.includes('cierre')) return 4;
-      return 0; // Default Recepción
+      return 0;
   }
 
   function getVehicleIcon(depto) {
       if (depto === 'Aéreo') return '✈️';
       if (depto === 'Marítimo') return '🚢';
       if (depto === 'Terrestre') return '🚛';
-      return '💻'; // Virtual o Corresponsalías
+      return '💻'; 
   }
 
   window.advanceTimeline = function(taskId) {
@@ -945,15 +1062,15 @@
     if(currentUserProfile) render();
   });
 
-  // --------------- FUNCIÓN PARA EXPORTAR FACTURACIÓN -------------------
   window.exportarFacturacion = function() {
     const expedienteTasks = currentFilteredTasks;
     if(expedienteTasks.length === 0) { alert('No hay expedientes para exportar.'); return; }
-    let csv = "PEDIMENTO,CLIENTE,ADUANA,TIPO,EJECUTIVO\n";
+    let csv = "PEDIMENTO,PATENTE,CLIENTE,ADUANA,TIPO,EJECUTIVO\n";
     expedienteTasks.forEach(t => {
        const ref = (t.ref || '').replace(/,/g, ' ');
+       const pat = (t.patente || '').replace(/,/g, ' ');
        const cliente = (t.cliente || '').replace(/,/g, ' ');
-       csv += `${ref},${cliente},${t.aduana},${t.tipo},${t.ejecutivo}\n`;
+       csv += `${ref},${pat},${cliente},${t.aduana},${t.tipo},${t.ejecutivo}\n`;
     });
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1046,7 +1163,7 @@
 
   const execOverlay = document.getElementById('execOverlay');
   document.getElementById('manageExecBtn').addEventListener('click', () => execOverlay.classList.add('open'));
-  document.getElementById('closeExecBtn').addEventListener('click', () => execOverlay.classList.remove('open'));
+  document.getElementById('closeExecBtn').addEventListener('click', () => { execOverlay.classList.remove('open'); resetUserForm(); });
   document.getElementById('addExecBtn').addEventListener('click', () => {
     const input = document.getElementById('newExecInput'); const name = input.value.trim();
     if (!name) return;
@@ -1109,9 +1226,18 @@
     
     const isClient = currentUserProfile.rol === 'cliente';
 
-    // Filtros de Seguridad por rol
     if (isClient) {
-      activePedimentos = activePedimentos.filter(t => normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada));
+      const p = currentUserProfile.permisos || { aduanas: [], tipos: [], deptos: [] };
+      const hasPerms = !!currentUserProfile.permisos;
+      
+      activePedimentos = activePedimentos.filter(t => {
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
+          if (!hasPerms) return matchEmpresa;
+          const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
+          const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
+          const matchDepto = p.deptos ? p.deptos.includes(t.depto) : false;
+          return matchEmpresa && matchAduana && matchTipo && matchDepto;
+      });
     } else if (currentUserProfile && currentUserProfile.rol !== 'admin') {
       activePedimentos = activePedimentos.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
       trashPedimentos = trashPedimentos.filter(t => normKey(t.ejecutivo) === normKey(currentUser));
@@ -1128,7 +1254,6 @@
 
     const mainLabels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
     
-    // Filtramos las pestañas que puede ver el cliente
     let secondaryLabels = [];
     if (!isClient) {
        secondaryLabels = [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
@@ -1168,7 +1293,6 @@
     const colHeader = document.getElementById('colHeader');
     const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    // Render de Mis Tareas (Oculto para clientes)
     if (currentFilter === 'mis_tareas' && !isClient) {
       colHeader.style.display = 'none';
       let misFiltered = tasks.filter(t => t.isTask && t.ejecutivo === currentUser && t.status !== 'Eliminado');
@@ -1218,7 +1342,17 @@
     
     // FILTROS PRINCIPALES DE SEGURIDAD
     if (isClient) {
-        filtered = filtered.filter(t => normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada));
+      const p = currentUserProfile.permisos || { aduanas: [], tipos: [], deptos: [] };
+      const hasPerms = !!currentUserProfile.permisos;
+      
+      filtered = filtered.filter(t => {
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
+          if (!hasPerms) return matchEmpresa;
+          const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
+          const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
+          const matchDepto = p.deptos ? p.deptos.includes(t.depto) : false;
+          return matchEmpresa && matchAduana && matchTipo && matchDepto;
+      });
     } else if (currentUserProfile.rol !== 'admin') { 
         filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(currentUser)); 
     } else {
@@ -1240,7 +1374,7 @@
       filtered = filtered.filter(t => t.status !== 'Completado' && t.status !== 'Expediente');
     }
 
-    if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search));
+    if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search) || (t.patente || '').toLowerCase().includes(search));
 
     filtered = [...filtered].sort((a, b) => {
       if(a.status === 'Eliminado' || b.status === 'Eliminado') return 0;
@@ -1266,12 +1400,10 @@
             actionsHtml = `${moveExpHtml}<button class="icon-btn done edit-only" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button><button class="icon-btn edit-only" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button><button class="icon-btn edit-only" title="Editar" data-action="edit" data-id="${t.id}">✎</button><button class="icon-btn del edit-only" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>`;
         }
 
-        // LÓGICA DE TIMELINE
         const currentStepIdx = mapToTimelineIndex(t.status);
         const icon = getVehicleIcon(t.depto);
         const positionPercent = (currentStepIdx / 4) * 100;
         
-        // DATOS DINÁMICOS
         let dynHtml = '';
         if (t.depto === 'Marítimo') {
             dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">B/L</span><span class="dyn-data-val">${t.bl || '—'}</span></div>
@@ -1303,6 +1435,7 @@
         }
         
         let consHtml = t.consolidado ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--accent)">📦 Consolidado</span><span class="dyn-data-val">${t.remesas || 0} Remesas</span></div>` : '';
+        let patenteHtml = t.patente ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--primary)">Patente / A.A.</span><span class="dyn-data-val">${t.patente}</span></div>` : '';
 
         return `
         <div class="row-wrapper" data-id="${t.id}">
@@ -1319,7 +1452,6 @@
           </div>
           
           <div class="details-panel" id="details-${t.id}">
-            <!-- TIMELINE -->
             <div class="timeline-container">
                 <div class="timeline-track"><div class="timeline-track-fill" style="width: ${positionPercent}%;"></div></div>
                 <div class="timeline-icon" style="left: calc(30px + (100% - 60px) * ${currentStepIdx / 4});">${icon}</div>
@@ -1336,9 +1468,8 @@
             </div>
 
             <!-- DATOS DINÁMICOS -->
-            <div class="dyn-data-grid">${dynHtml}${consHtml}</div>
+            <div class="dyn-data-grid">${patenteHtml}${dynHtml}${consHtml}</div>
             
-            <!-- CONTENEDOR CHAT/BITÁCORA -->
             ${(() => {
                 let chatHtml = '<div class="chat-placeholder">Aún no hay mensajes en esta operación.</div>';
                 if (t.chat) {
@@ -1617,7 +1748,6 @@
   document.getElementById('takeBatchBtn').addEventListener('click', () => openAduanaChoice('batch'));
   document.getElementById('takePedimentoBtn').addEventListener('click', () => openAduanaChoice('single'));
 
-  // UTILIDADES VARIAS
   const confirmOverlay = document.getElementById('confirmOverlay'); let deleteTargetId = null;
   function openConfirmDelete(id) { deleteTargetId = id; confirmOverlay.classList.add('open'); }
   function closeConfirmDelete() { confirmOverlay.classList.remove('open'); deleteTargetId = null; }
@@ -1698,7 +1828,6 @@
     reader.readAsArrayBuffer(file);
   });
 
-  // LOGICA DEL MODAL DINÁMICO DE PEDIMENTOS
   const overlay = document.getElementById('modalOverlay');
   const fDepto = document.getElementById('f-depto');
   const fConsolidado = document.getElementById('f-isConsolidado');
@@ -1720,6 +1849,7 @@
     if (id) {
       const t = tasks.find(x => x.id === id);
       document.getElementById('f-ref').value = t.ref || '';
+      document.getElementById('f-patente').value = t.patente || '';
       document.getElementById('f-cliente').value = t.cliente || '';
       document.getElementById('f-aduana').value = t.aduana || 'Laredo';
       fDepto.value = t.depto || 'Terrestre';
@@ -1735,7 +1865,6 @@
       document.getElementById('f-enlace').value = t.enlace || '';
       document.getElementById('f-notas').value = t.notas || '';
 
-      // Dinámicos
       fConsolidado.checked = t.consolidado || false;
       document.getElementById('d-remesas').value = t.remesas || '';
       document.getElementById('d-guia').value = t.guia || '';
@@ -1793,7 +1922,9 @@
     const selectedExec = execField.disabled ? currentUser : execField.value;
 
     const data = {
-      ref: document.getElementById('f-ref').value.trim(), cliente: document.getElementById('f-cliente').value.trim(), 
+      ref: document.getElementById('f-ref').value.trim(),
+      patente: document.getElementById('f-patente').value.trim(),
+      cliente: document.getElementById('f-cliente').value.trim(), 
       aduana: document.getElementById('f-aduana').value, depto: depto, tipo: document.getElementById('f-tipo').value, 
       prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
@@ -1809,7 +1940,6 @@
       demoras: document.getElementById('d-demoras').value,
       pedOrigen: document.getElementById('d-pedOrigen').value.trim(), claveV: document.getElementById('d-claveV').value.trim(),
       empresaTransfiere: document.getElementById('d-transfiere').value.trim(),
-      // SOLUCIÓN: Agregada validación segura para empresaRecibe
       empresaRecibe: document.getElementById('d-recibe') ? document.getElementById('d-recibe').value.trim() : '',
       facturas: document.getElementById('d-facturas').value.trim(), 
       corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
@@ -1824,7 +1954,6 @@
     overlay.classList.remove('open');
   });
 
-  // FUNCIÓN PARA ENVIAR MENSAJES AL CHAT (SIN ALERTA)
   window.sendChatMessage = function(taskId) {
       const input = document.getElementById(`chat-input-${taskId}`);
       if (!input) return;
@@ -1845,8 +1974,7 @@
           input.disabled = false;
           input.focus();
       }).catch(err => {
-          console.error("Error de Firebase (posiblemente reglas de seguridad):", err);
-          // Alerta eliminada por solicitud, solo se reactiva el input
+          console.error("Error de Firebase:", err);
           input.disabled = false;
       });
   };
