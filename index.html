@@ -39,16 +39,19 @@
   body.is-admin button.admin-only, body.is-admin select.admin-only { display: inline-block !important; }
   body:not(.is-admin) #ejecutivoFilter { display: none !important; }
 
-  /* MODO CLIENTE (PORTAL) */
+  /* MODO CLIENTE / CORRESPONSAL (PORTAL) */
   body.is-client .edit-only, body.is-client .admin-only, body.is-client .header-quick-actions, body.is-client #openModalBtn, body.is-client .toolbar, body.is-client .row-actions { display: none !important; }
   body.is-client .board-header { justify-content: flex-start; }
   body.is-client .header-actions { margin-left: auto; }
   
+  /* RESTRICCIONES ESPECÍFICAS DE CORRESPONSAL (OCULTAR DATOS DEL CLIENTE SI ES NECESARIO O VICEVERSA) */
+  body.is-corresponsal .client-only-field { display: none !important; }
+
   /* MODO KIOSCO */
   body.kiosk-mode .header-actions, body.kiosk-mode .toolbar, body.kiosk-mode .tabs { display: none !important; }
   body.kiosk-mode .board { max-width: 100%; border-radius: 0; border: none; box-shadow: none; }
   body.kiosk-mode { padding: 0; }
-  body.kiosk-mode .col-header, body.kiosk-mode .row-main { grid-template-columns: 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr !important; }
+  body.kiosk-mode .col-header, body.kiosk-mode .row-main { grid-template-columns: 40px 1.4fr 1.1fr 1.0fr 1.1fr 1fr 1fr !important; }
   body.kiosk-mode .expand-btn, body.kiosk-mode .row-actions { display: none !important; }
   body.kiosk-mode .col-header > div:first-child, body.kiosk-mode .col-header > div:last-child { display: none !important; }
   .exit-kiosk-btn { display: none; position: fixed; bottom: 30px; right: 30px; background: var(--red); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-family: var(--font-heading); font-weight: 800; font-size: 14px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(255,0,0,0.3); opacity: 0.3; transition: opacity 0.3s, transform 0.2s; }
@@ -179,6 +182,13 @@
   .due-chip.ok { background: var(--green-soft); color: var(--green); }
   .due-chip.soon { background: var(--amber-soft); color: var(--amber); }
   .due-chip.late { background: var(--red-soft); color: var(--red); }
+
+  /* ESTILOS AUTOCOMPLETADO (NUEVO) */
+  .autocomplete-container { position: relative; width: 100%; }
+  .autocomplete-items { position: absolute; border: 1px solid var(--divider); border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: var(--panel); border-radius: 0 0 var(--radius-btn) var(--radius-btn); max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+  .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--divider); color: var(--text-main); font-size: 12.5px; display: flex; justify-content: space-between; align-items: center; }
+  .autocomplete-item:hover { background-color: var(--panel-alt); }
+  .autocomplete-item strong { color: var(--primary); font-family: var(--font-heading); font-size: 11px; }
 
   /* MODALES Y UTILIDADES */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
@@ -330,12 +340,15 @@
       
       <div style="width: 1px; height: 20px; background: var(--divider); margin: 0 10px;"></div>
       
+      <!-- BOTONES DE CATÁLOGOS MAESTROS -->
+      <button class="btn-mini edit-only admin-only" id="manageClientesBtn" style="border-color: var(--accent); color: var(--accent);">🏢 Clientes</button>
+      <button class="btn-mini edit-only admin-only" id="manageCorresponsalesBtn" style="border-color: var(--amber); color: var(--amber);">🚢 Corresponsales</button>
       <button class="btn-mini edit-only admin-only" id="manageExecBtn">👤 Usuarios y Cuentas</button>
       <button class="btn-mini edit-only" id="viewChartBtn">📊 Carga de trabajo</button>
       <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla CSV</button>
       <button class="btn-mini edit-only admin-only" id="uploadLayoutBtn">⬆ Cargar Excel Pedimentos</button>
       <button class="btn-mini edit-only admin-only" id="migrateBtn" title="Mueve al catálogo lo que ya se subió como pendiente sin haber sido tomado">🔧 Reparar import anterior</button>
-      <button class="btn-mini edit-only admin-only" id="setCorteMtyBtn" title="A partir de qué consecutivo se consideran libres de verdad en Monterrey">🔢 Corte Monterrey: <span id="corteMtyValue">6107606</span></button>
+      <button class="btn-mini edit-only admin-only" id="setCorteMtyBtn" title="A partir de qué consecutivo se consideran libres de verdad en Monterrey">🔢 Corte Mty: <span id="corteMtyValue">6107606</span></button>
       <button class="btn-mini edit-only admin-only" id="setCorteLrdBtn" title="A partir de qué consecutivo se consideran libres de verdad en Nuevo Laredo">🔢 Corte Laredo: <span id="corteLrdValue">6120024</span></button>
       <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
       <button class="btn-mini edit-only" id="exportCsvBtn">📄 Exportar filtrado</button>
@@ -395,7 +408,16 @@
     <div class="field-row">
       <div class="field"><label>Pedimento / Referencia</label><input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123"></div>
       <div class="field"><label>Patente / A.A.</label><input type="text" id="f-patente" placeholder="Ej. 1234 (Informativo)"></div>
-      <div class="field"><label>Cliente / Empresa</label><input type="text" id="f-cliente" placeholder="Nombre exacto del cliente"></div>
+      
+      <!-- CAMPO DE CLIENTE CON AUTOCOMPLETADO -->
+      <div class="field">
+        <label>Cliente / Empresa</label>
+        <div class="autocomplete-container">
+            <input type="text" id="f-cliente" placeholder="Escribe para buscar..." autocomplete="off">
+            <input type="hidden" id="f-cliente-id">
+            <div id="cliente-autocomplete-list" class="autocomplete-items"></div>
+        </div>
+      </div>
     </div>
     <div class="field-row">
       <div class="field">
@@ -552,6 +574,57 @@
   </div>
 </div>
 
+<!-- MODAL: ADMINISTRACIÓN DE CATÁLOGO DE CLIENTES -->
+<div class="modal-overlay" id="clientesOverlay">
+  <div class="modal" style="max-width: 500px;">
+    <h2 style="color: var(--accent);">🏢 Catálogo Maestro de Clientes</h2>
+    
+    <div class="exec-list" id="catClientesList" style="max-height: 250px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
+
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">
+        ➕ Dar de Alta Nuevo Cliente
+      </div>
+      <div class="field"><input type="text" id="newCatClienteNombre" placeholder="Nombre Comercial (ej. RESONAC BY DECKAMMEX)"></div>
+      <div class="field"><input type="text" id="newCatClienteRazon" placeholder="Razón Social (Opcional)"></div>
+      <div class="field"><input type="text" id="newCatClienteRFC" placeholder="RFC (Opcional)"></div>
+      
+      <button class="btn-add" id="saveCatClienteBtn" style="width: 100%; background: var(--accent); color: var(--bg);">Guardar en Catálogo</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeClientesBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO MODAL: ADMINISTRACIÓN DE CATÁLOGO DE CORRESPONSALES -->
+<div class="modal-overlay" id="corresponsalesOverlay">
+  <div class="modal" style="max-width: 500px;">
+    <h2 style="color: var(--amber);">🚢 Catálogo Maestro de Corresponsales</h2>
+    
+    <div class="exec-list" id="catCorrespList" style="max-height: 220px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
+
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">
+        ➕ Dar de Alta Nuevo Corresponsal
+      </div>
+      <div class="field"><input type="text" id="newCorrespNombre" placeholder="Nombre Comercial (ej. TRASE, PALCO)"></div>
+      <div class="field"><input type="text" id="newCorrespCiudad" placeholder="Ciudad / Aduana (ej. Laredo)"></div>
+      <div class="field">
+        <label style="color: var(--accent);">Cliente Asignado (Exacto que atiende)</label>
+        <input type="text" id="newCorrespCliente" placeholder="Ej. RESONAC BY DECKAMMEX">
+      </div>
+      
+      <button class="btn-add" id="saveCorrespBtn" style="width: 100%; background: var(--amber); color: var(--bg);">Guardar Corresponsal</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeCorrespBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="chartOverlay">
   <div class="modal" style="max-width: 600px;">
     <h2>Carga de Trabajo Activa</h2>
@@ -594,8 +667,8 @@
       </div>
       <div class="exec-list" id="usersListUi" style="max-height: 150px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
 
-      <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany o RESONAC)"></div>
-      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso (ej. dany)" style="text-transform: lowercase;"></div>
+      <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany o TRASE)"></div>
+      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso (ej. trase)" style="text-transform: lowercase;"></div>
       <div class="field"><input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)"></div>
       <div class="field">
         <label>Rol del usuario</label>
@@ -603,13 +676,13 @@
           <option value="ejecutivo">Ejecutivo (Staff)</option>
           <option value="admin">Administrador</option>
           <option value="cliente">Cliente (Portal Restringido)</option>
+          <option value="corresponsal">Corresponsal Externo</option>
         </select>
       </div>
 
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 10px; border-radius: 6px; border: 1px solid var(--divider);">
-        <label style="color: var(--accent);">Empresa(s) Asociada(s) (Exacta)</label>
-        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX, FLUIDMASTER, OMPI">
-        <p style="font-size: 10.5px; color: var(--text-sub); margin: 4px 0 0;">Si es un corresponsal que capturas para varios clientes, escribe los nombres tal cual aparecen en "Cliente", separados por coma.</p>
+        <label style="color: var(--accent);">Empresa Asociada / Cliente que Atiende (Exacto)</label>
+        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX">
         
         <!-- MATRIZ DE PERMISOS -->
         <div id="wrap-permisosCliente" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
@@ -699,6 +772,10 @@
   const catalogoRef = ref(db, 'catalogo_ayc');
   const configRef = ref(db, 'config_ayc');
   
+  // REFERENCIAS PARA CATÁLOGOS MAESTROS
+  const clientesRef = ref(db, 'clientes_ayc');
+  const corresponsalesRef = ref(db, 'corresponsales_ayc');
+  
   let generalPage = 1;
   const GENERAL_PAGE_SIZE = 150;
   const urlParams = new URLSearchParams(window.location.search);
@@ -745,13 +822,6 @@
   }
 
   function normKey(name) { return (name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
-  // Compatible con cuentas viejas que solo tenían "empresaAsociada" (una sola empresa)
-  function getEmpresasDe(u) {
-    if (!u) return [];
-    if (Array.isArray(u.empresasAsociadas)) return u.empresasAsociadas;
-    if (u.empresaAsociada) return [u.empresaAsociada];
-    return [];
-  }
   function canonicalExecName(name) {
     const key = normKey(name);
     if (!key) return '';
@@ -775,14 +845,13 @@
     applyProfileForUser(authUser);
   }
 
-  // Actualiza la lista visual de Usuarios en el modal de Cuentas
   function updateUsersListUi() {
     const container = document.getElementById('usersListUi');
     if (!container) return;
     container.innerHTML = Object.keys(usersCache).map(uid => {
         let u = usersCache[uid];
-        let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'admin' ? '👑 Admin' : '👤 Staff');
-        let editBtn = u.rol === 'cliente' ? `<button class="btn-mini" onclick="window.editClientPerms('${uid}')">⚙️ Editar Permisos</button>` : '';
+        let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'corresponsal' ? '🚢 Corresponsal' : (u.rol === 'admin' ? '👑 Admin' : '👤 Staff'));
+        let editBtn = (u.rol === 'cliente' || u.rol === 'corresponsal') ? `<button class="btn-mini" onclick="window.editClientPerms('${uid}')">⚙️ Editar Permisos</button>` : '';
         return `<div class="exec-item">
                   <div><strong>${u.nombre}</strong> <span style="font-size:10px; color:var(--text-sub);">(${u.email.split('@')[0]})</span></div>
                   <div style="display:flex; gap:5px; align-items:center;">
@@ -813,15 +882,17 @@
     currentUserProfile = { uid: user.uid, ...profile };
     currentUser = currentUserProfile.nombre;
     const isAdmin = currentUserProfile.rol === 'admin';
-    const isClient = currentUserProfile.rol === 'cliente';
+    const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
+    const isCorresp = currentUserProfile.rol === 'corresponsal';
     
-    document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isClient ? ' (Cliente)' : ''));
+    document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isCorresp ? ' (Corresponsal)' : (isClient ? ' (Cliente)' : '')));
     
     document.body.classList.toggle('is-admin', isAdmin);
     document.body.classList.toggle('is-client', isClient);
+    document.body.classList.toggle('is-corresponsal', isCorresp);
     
     if (isClient) {
-        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${getEmpresasDe(currentUserProfile).join(', ')}`;
+        document.getElementById('boardMainTitle').textContent = `Portal: ${currentUserProfile.empresaAsociada}`;
     } else {
         document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
     }
@@ -834,7 +905,7 @@
 
   onAuthStateChanged(auth, (user) => {
     if (user) { authUser = user; tryApplyProfile(); } 
-    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client'); loginOverlay.classList.add('open'); }
+    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client', 'is-corresponsal'); loginOverlay.classList.add('open'); }
   });
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -853,7 +924,8 @@
   document.getElementById('logoutBtn').addEventListener('click', () => { signOut(auth); });
 
   document.getElementById('newAccRole').addEventListener('change', (e) => {
-      document.getElementById('wrap-empresaCliente').style.display = e.target.value === 'cliente' ? 'block' : 'none';
+      const isExternal = e.target.value === 'cliente' || e.target.value === 'corresponsal';
+      document.getElementById('wrap-empresaCliente').style.display = isExternal ? 'block' : 'none';
   });
 
   let editingUserUid = null;
@@ -871,7 +943,6 @@
       document.getElementById('newAccEmpresa').value = '';
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
       document.getElementById('createAccMsg').textContent = '';
-      // Reset checkboxes
       document.querySelectorAll('#wrap-permisosCliente input[type="checkbox"]').forEach(cb => cb.checked = true);
   };
 
@@ -883,9 +954,9 @@
       document.getElementById('newAccName').value = u.nombre || '';
       document.getElementById('newAccUser').value = u.email.split('@')[0] || '';
       document.getElementById('newAccUser').disabled = true; 
-      document.getElementById('newAccPass').style.display = 'none'; // Hide password on edit
+      document.getElementById('newAccPass').style.display = 'none'; 
       document.getElementById('newAccRole').value = u.rol || 'cliente';
-      document.getElementById('newAccEmpresa').value = getEmpresasDe(u).join(', ');
+      document.getElementById('newAccEmpresa').value = u.empresaAsociada || '';
       
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
       
@@ -896,7 +967,7 @@
       
       const btn = document.getElementById('createAccBtn');
       btn.setAttribute('data-mode', 'edit');
-      btn.textContent = "Actualizar Permisos de Cliente";
+      btn.textContent = "Actualizar Permisos de Cuenta";
       document.getElementById('createAccMsg').textContent = '';
   };
 
@@ -906,9 +977,7 @@
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
     const rol = document.getElementById('newAccRole').value;
-    const empresasAsociadas = rol === 'cliente'
-      ? document.getElementById('newAccEmpresa').value.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
+    const empresaAsociada = (rol === 'cliente' || rol === 'corresponsal') ? document.getElementById('newAccEmpresa').value.trim() : '';
     
     const msgEl = document.getElementById('createAccMsg');
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
@@ -916,7 +985,7 @@
     
     if (!nombre || !rawUser) { msgEl.textContent = 'Completa nombre y usuario.'; return; }
     if (mode === 'create' && pass.length < 6) { msgEl.textContent = 'La contraseña debe tener mínimo 6 letras.'; return; }
-    if (rol === 'cliente' && empresasAsociadas.length === 0) { msgEl.textContent = 'Debes escribir al menos una empresa exacta para el cliente.'; return; }
+    if ((rol === 'cliente' || rol === 'corresponsal') && !empresaAsociada) { msgEl.textContent = 'Debes escribir la empresa exacta asociada.'; return; }
 
     const aduanasPerm = Array.from(document.querySelectorAll('#perm-aduanas input:checked')).map(cb => cb.value);
     const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
@@ -926,10 +995,10 @@
         nombre, 
         email: mode === 'edit' ? usersCache[editingUserUid].email : email, 
         rol, 
-        empresasAsociadas 
+        empresaAsociada 
     };
     
-    if (rol === 'cliente') {
+    if (rol === 'cliente' || rol === 'corresponsal') {
         userPayload.permisos = { aduanas: aduanasPerm, tipos: tiposPerm, deptos: deptosPerm };
     }
 
@@ -937,7 +1006,7 @@
       if (mode === 'create') {
           const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
           await set(ref(db, 'usuarios_ayc/' + cred.user.uid), userPayload);
-          if (rol !== 'cliente') {
+          if (rol !== 'cliente' && rol !== 'corresponsal') {
               const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
               if (!dup) push(execRef, nombre);
           }
@@ -953,6 +1022,145 @@
       msgEl.textContent = map[e.code] || ('Error: ' + e.message);
     }
   });
+
+  // ==========================================
+  // CATÁLOGO MAESTRO DE CLIENTES Y CORRESPONSALES
+  // ==========================================
+  let clientesCatalogo = [];
+  let corresponsalesCatalogo = [];
+  
+  onValue(clientesRef, (snapshot) => {
+      clientesCatalogo = [];
+      snapshot.forEach(child => { clientesCatalogo.push({ id: child.key, ...child.val() }); });
+      clientesCatalogo.sort((a,b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      renderCatClientesList();
+  });
+
+  onValue(corresponsalesRef, (snapshot) => {
+      corresponsalesCatalogo = [];
+      snapshot.forEach(child => { corresponsalesCatalogo.push({ id: child.key, ...child.val() }); });
+      corresponsalesCatalogo.sort((a,b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      renderCatCorrespList();
+  });
+
+  const clientesOverlay = document.getElementById('clientesOverlay');
+  document.getElementById('manageClientesBtn').addEventListener('click', () => clientesOverlay.classList.add('open'));
+  document.getElementById('closeClientesBtn').addEventListener('click', () => clientesOverlay.classList.remove('open'));
+
+  const corresponsalesOverlay = document.getElementById('corresponsalesOverlay');
+  document.getElementById('manageCorresponsalesBtn').addEventListener('click', () => corresponsalesOverlay.classList.add('open'));
+  document.getElementById('closeCorrespBtn').addEventListener('click', () => corresponsalesOverlay.classList.remove('open'));
+
+  function renderCatClientesList() {
+      const container = document.getElementById('catClientesList');
+      if (!container) return;
+      if (clientesCatalogo.length === 0) {
+          container.innerHTML = '<div class="empty-state">No hay clientes registrados en el catálogo.</div>';
+          return;
+      }
+      container.innerHTML = clientesCatalogo.map(c => `
+          <div class="exec-item">
+              <div>
+                  <strong style="color:var(--accent);">${c.nombre}</strong><br>
+                  <span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'} - ${c.razonSocial || 'Sin Razón Social'}</span>
+              </div>
+              <button class="icon-btn del" onclick="window.deleteCatCliente('${c.id}')" title="Eliminar de catálogo">✖</button>
+          </div>
+      `).join('');
+  }
+
+  function renderCatCorrespList() {
+      const container = document.getElementById('catCorrespList');
+      if (!container) return;
+      if (corresponsalesCatalogo.length === 0) {
+          container.innerHTML = '<div class="empty-state">No hay corresponsales registrados.</div>';
+          return;
+      }
+      container.innerHTML = corresponsalesCatalogo.map(co => `
+          <div class="exec-item">
+              <div>
+                  <strong style="color:var(--amber);">${co.nombre}</strong> <span style="font-size:10px; color:var(--text-sub);">(${co.ciudad || 'Genérico'})</span><br>
+                  <span style="font-size:10px; color:var(--accent);">Atiende a: <strong>${co.clienteAsignado || 'General'}</strong></span>
+              </div>
+              <button class="icon-btn del" onclick="window.deleteCatCorresp('${co.id}')" title="Eliminar">✖</button>
+          </div>
+      `).join('');
+  }
+
+  document.getElementById('saveCatClienteBtn').addEventListener('click', () => {
+      const nombre = document.getElementById('newCatClienteNombre').value.trim();
+      const razon = document.getElementById('newCatClienteRazon').value.trim();
+      const rfc = document.getElementById('newCatClienteRFC').value.trim();
+
+      if (!nombre) { alert("El nombre comercial es obligatorio."); return; }
+      const dup = clientesCatalogo.find(c => normKey(c.nombre) === normKey(nombre));
+      if (dup) { alert("Ya existe un cliente con ese nombre en el catálogo."); return; }
+
+      set(push(clientesRef), { nombre, razonSocial: razon, rfc, fechaRegistro: Date.now(), registradoPor: currentUser });
+      document.getElementById('newCatClienteNombre').value = '';
+      document.getElementById('newCatClienteRazon').value = '';
+      document.getElementById('newCatClienteRFC').value = '';
+  });
+
+  document.getElementById('saveCorrespBtn').addEventListener('click', () => {
+      const nombre = document.getElementById('newCorrespNombre').value.trim();
+      const ciudad = document.getElementById('newCorrespCiudad').value.trim();
+      const clienteAsignado = document.getElementById('newCorrespCliente').value.trim();
+
+      if (!nombre) { alert("El nombre del corresponsal es obligatorio."); return; }
+      set(push(corresponsalesRef), { nombre, ciudad, clienteAsignado, fechaRegistro: Date.now(), registradoPor: currentUser });
+      document.getElementById('newCorrespNombre').value = '';
+      document.getElementById('newCorrespCiudad').value = '';
+      document.getElementById('newCorrespCliente').value = '';
+  });
+
+  window.deleteCatCliente = function(id) {
+      if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?")) remove(ref(db, 'clientes_ayc/' + id));
+  };
+  window.deleteCatCorresp = function(id) {
+      if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, 'corresponsales_ayc/' + id));
+  };
+
+  // AUTOCOMPLETADO DE CLIENTES EN MODAL PEDIMENTOS
+  const fClienteInput = document.getElementById('f-cliente');
+  const fClienteIdInput = document.getElementById('f-cliente-id');
+  const autoList = document.getElementById('cliente-autocomplete-list');
+
+  fClienteInput.addEventListener('input', function() {
+      const val = this.value;
+      autoList.innerHTML = '';
+      fClienteIdInput.value = '';
+      if (!val) { autoList.style.display = 'none'; return; }
+      
+      const valLower = val.toLowerCase();
+      const matches = clientesCatalogo.filter(c => 
+          (c.nombre || '').toLowerCase().includes(valLower) || 
+          (c.rfc || '').toLowerCase().includes(valLower)
+      );
+      
+      if (matches.length > 0) {
+          autoList.style.display = 'block';
+          matches.forEach(c => {
+              const div = document.createElement('div');
+              div.className = 'autocomplete-item';
+              div.innerHTML = `<div><strong>${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'}</span></div>`;
+              div.addEventListener('click', () => {
+                  fClienteInput.value = c.nombre;
+                  fClienteIdInput.value = c.id;
+                  autoList.style.display = 'none';
+              });
+              autoList.appendChild(div);
+          });
+      } else {
+          autoList.style.display = 'none';
+      }
+  });
+
+  document.addEventListener('click', (e) => {
+      if (e.target !== fClienteInput) autoList.style.display = 'none';
+  });
+  // ==========================================
+
 
   function realignCurrentUserCasing() {
     if (!currentUser) return;
@@ -980,6 +1188,8 @@
       if (confirmOverlay.classList.contains('open')) closeConfirmDelete();
       if (document.getElementById('modalOverlay').classList.contains('open')) closeModal();
       if (document.getElementById('taskModalOverlay').classList.contains('open')) closeTaskModal();
+      if (clientesOverlay.classList.contains('open')) clientesOverlay.classList.remove('open');
+      if (corresponsalesOverlay.classList.contains('open')) corresponsalesOverlay.classList.remove('open');
     }
   });
 
@@ -1234,15 +1444,14 @@
     let trashPedimentos = tasks.filter(t => t.status === 'Eliminado' && !t.isTask);
     let activeMisTareas = tasks.filter(t => t.status !== 'Eliminado' && t.isTask && t.ejecutivo === currentUser);
     
-    const isClient = currentUserProfile.rol === 'cliente';
+    const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
 
     if (isClient) {
       const p = currentUserProfile.permisos || { aduanas: [], tipos: [], deptos: [] };
       const hasPerms = !!currentUserProfile.permisos;
       
       activePedimentos = activePedimentos.filter(t => {
-          const empresasCliente = getEmpresasDe(currentUserProfile);
-          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
@@ -1295,7 +1504,9 @@
 
   function render() {
     if (!currentUserProfile) return; 
-    const isClient = currentUserProfile.rol === 'cliente';
+    const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
+    const isCorresp = currentUserProfile.rol === 'corresponsal';
+    
     renderTabs(); renderTicker();
     
     document.getElementById('libresCount').textContent = `Catálogo por asignar: ${catalogo.filter(isLibreCat).length}`;
@@ -1357,8 +1568,7 @@
       const hasPerms = !!currentUserProfile.permisos;
       
       filtered = filtered.filter(t => {
-          const empresasCliente = getEmpresasDe(currentUserProfile);
-          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
@@ -1486,8 +1696,10 @@
                 let chatHtml = '<div class="chat-placeholder">Aún no hay mensajes en esta operación.</div>';
                 if (t.chat) {
                     const msgs = Object.values(t.chat).sort((a, b) => a.timestamp - b.timestamp);
-                    if (msgs.length > 0) {
-                        chatHtml = '<div class="chat-messages">' + msgs.map(m => `
+                    // Si es cliente puro (no corresponsal), filtramos mensajes que no deban verse si se requiere
+                    const filteredMsgs = isCorresp ? msgs : (isClient ? msgs.filter(m => !m.isInternal) : msgs);
+                    if (filteredMsgs.length > 0) {
+                        chatHtml = '<div class="chat-messages">' + filteredMsgs.map(m => `
                             <div class="chat-msg">
                                 <div class="meta">
                                     <span class="user">👤 ${m.usuario}</span>
@@ -1501,11 +1713,11 @@
                 return `
                 <div class="chat-box">
                     <div class="chat-header">💬 Comentarios / Bitácora 
-                        <span style="font-size:11px; opacity:0.7;">(${isClient ? 'Cliente' : 'Interno'})</span>
+                        <span style="font-size:11px; opacity:0.7;">(${isClient ? (isCorresp ? 'Corresponsal / Operativo' : 'Portal Cliente') : 'Interno'})</span>
                     </div>
                     ${chatHtml}
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <input type="text" id="chat-input-${t.id}" placeholder="${isClient ? 'Escribe tu consulta o comentario aquí...' : 'Escribe un comentario...'}"
+                        <input type="text" id="chat-input-${t.id}" placeholder="${isClient ? 'Escribe tu mensaje...' : 'Escribe un comentario...'}"
                                onkeydown="if(event.key==='Enter') window.sendChatMessage('${t.id}')"
                                style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--divider); background:var(--bg); color:var(--text-main); font-size:12px;">
                         <button class="btn-add" style="padding: 8px 12px;" onclick="window.sendChatMessage('${t.id}')">Enviar</button>
@@ -1675,7 +1887,6 @@
     });
   }
 
-  // TAREAS PERSONALES
   const taskModal = document.getElementById('taskModalOverlay');
   let editingTaskId = null;
   window.openTaskModal = function(id) {
@@ -1716,7 +1927,6 @@
     if (card) { card.classList.add('completing'); setTimeout(finish, 320); } else { finish(); }
   };
 
-  // TOMAR POR LOTE / INDIVIDUAL
   const aduanaChoiceOverlay = document.getElementById('aduanaChoiceOverlay');
   let pendingTakeAction = null; 
   function openAduanaChoice(action) { pendingTakeAction = action; aduanaChoiceOverlay.classList.add('open'); }
@@ -1737,7 +1947,7 @@
       libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
       const lote = libres.slice(0, cantidad);
       lote.forEach(next => {
-        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
+        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
         remove(ref(db, 'catalogo_ayc/' + next.id));
       });
       playSparkle(document.getElementById('takeBatchBtn'));
@@ -1751,7 +1961,7 @@
     const next = libres[0];
     if(confirm(`Siguiente de ${aduana}:\n${next.ref}\n¿Asignártelo?`)) {
       const newRef = push(ref(db, 'pendientes_ayc'));
-      set(newRef, { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
+      set(newRef, { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
         remove(ref(db, 'catalogo_ayc/' + next.id)); touchRef(next.ref); playSparkle(document.getElementById('takePedimentoBtn')); openModal(newRef.key); 
       });
     }
@@ -1791,7 +2001,7 @@
     if (!confirm(`Se moverán ${candidatos.length} pedimento(s) de vuelta al catálogo.\n¿Continuar?`)) return;
     let moved = 0;
     candidatos.forEach(t => {
-      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
+      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
       remove(ref(db, 'pendientes_ayc/' + t.id)); moved++;
     });
     alert(`Listo: se movieron ${moved} pedimentos al catálogo.`);
@@ -1855,7 +2065,7 @@
   window.openModal = function(id) {
     editingId = id || null;
     document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pedimento';
-    document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"]').forEach(el => el.value = '');
+    document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"], #modalOverlay input[type="hidden"]').forEach(el => el.value = '');
     fConsolidado.checked = false;
 
     if (id) {
@@ -1863,6 +2073,7 @@
       document.getElementById('f-ref').value = t.ref || '';
       document.getElementById('f-patente').value = t.patente || '';
       document.getElementById('f-cliente').value = t.cliente || '';
+      document.getElementById('f-cliente-id').value = t.cliente_id || '';
       document.getElementById('f-aduana').value = t.aduana || 'Laredo';
       fDepto.value = t.depto || 'Terrestre';
       document.getElementById('f-tipo').value = t.tipo || 'Importación';
@@ -1937,6 +2148,7 @@
       ref: document.getElementById('f-ref').value.trim(),
       patente: document.getElementById('f-patente').value.trim(),
       cliente: document.getElementById('f-cliente').value.trim(), 
+      cliente_id: document.getElementById('f-cliente-id').value.trim() || null, 
       aduana: document.getElementById('f-aduana').value, depto: depto, tipo: document.getElementById('f-tipo').value, 
       prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
@@ -1975,12 +2187,14 @@
       input.disabled = true;
 
       const isClientMessage = currentUserProfile && currentUserProfile.rol === 'cliente';
+      const isInternal = currentUserProfile && currentUserProfile.rol === 'ejecutivo' || currentUserProfile.rol === 'admin';
 
       push(ref(db, `pendientes_ayc/${taskId}/chat`), {
           texto: texto,
           usuario: currentUser || 'Usuario',
           timestamp: Date.now(),
-          isClient: isClientMessage
+          isClient: isClientMessage,
+          isInternal: isInternal
       }).then(() => {
           input.value = '';
           input.disabled = false;
