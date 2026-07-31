@@ -31,7 +31,9 @@
      ========================================= */
   * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
   body { margin: 0; background-color: var(--bg); background-image: var(--bg-image); color: var(--text-main); font-family: var(--font-main); min-height: 100vh; padding: 20px; }
-  .board { max-width: 1200px; margin: 0 auto; background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); overflow: hidden; }
+  
+  /* CAMBIO: Se remueve overflow: hidden del .board para permitir que los menús flotantes se salgan visualmente si es necesario */
+  .board { max-width: 1200px; margin: 0 auto; background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); position: relative; }
 
   body.view-only .row-actions, body.view-only #openModalBtn, body.view-only .edit-only { display: none !important; }
   .admin-only { display: none !important; }
@@ -43,7 +45,6 @@
   body.is-client .edit-only, body.is-client .admin-only, body.is-client .header-quick-actions, body.is-client #openModalBtn, body.is-client .toolbar, body.is-client .row-actions { display: none !important; }
   body.is-client .board-header { justify-content: flex-start; }
   body.is-client .header-actions { margin-left: auto; }
-  
   body.is-corresponsal .client-only-field { display: none !important; }
 
   /* MODO KIOSCO */
@@ -110,8 +111,21 @@
     .tabs-group.secondary { padding-left: 0; border-left: none; border-top: 1px dashed var(--divider); padding-top: 6px; }
   }
 
-  /* TABLAS (GRID) */
+  /* TABLAS (GRID) Y ENCABEZADOS ESTILO EXCEL */
   .col-header { display: grid; grid-template-columns: 30px 40px 1.4fr 1.1fr 1fr 1.1fr 1fr 1fr 130px; gap: 10px; padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); font-family: var(--font-heading); font-size: 11px; font-weight: 800; color: var(--text-header); text-transform: uppercase; letter-spacing: 1.5px; }
+  .th-filter { cursor: pointer; user-select: none; transition: color 0.15s; position: relative; text-decoration: none !important; }
+  .th-filter:hover { color: var(--primary); }
+  .th-filter.filtered { color: var(--primary); }
+
+  /* CAMBIO: z-index elevado a 9999 para que siempre quede por encima de todo */
+  .excel-dropdown-menu { position: absolute; background: var(--panel); border: 1px solid var(--divider); box-shadow: 0 15px 35px rgba(0,0,0,0.5); border-radius: 8px; width: 240px; z-index: 9999; padding: 10px; display: none; font-family: var(--font-main); text-transform: none; font-weight: normal; }
+  .excel-dropdown-menu.open { display: block; animation: fadeIn 0.15s ease; }
+  .excel-menu-item { padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
+  .excel-menu-item:hover { background: var(--panel-alt); color: var(--primary); }
+  .excel-menu-divider { height: 1px; background: var(--divider); margin: 6px 0; }
+  .excel-checkbox-list { max-height: 150px; overflow-y: auto; margin-top: 5px; display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--divider); padding: 6px; border-radius: 4px; background: var(--bg); }
+  .excel-checkbox-item { font-size: 11.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
   .col-header-tasks { display: grid; grid-template-columns: 30px 40px 2.5fr 1fr 1fr 1fr 110px; gap: 10px; padding: 15px 30px; background: var(--panel); border-bottom: 1px solid var(--divider); font-family: var(--font-heading); font-size: 11px; font-weight: 800; color: var(--text-header); text-transform: uppercase; letter-spacing: 1.5px; }
   .row-main-task { display: grid; grid-template-columns: 30px 40px 2.5fr 1fr 1fr 1fr 110px; gap: 10px; align-items: center; padding: 18px 30px; transition: background-color .15s ease; }
   .rows { min-height: 100px; }
@@ -182,7 +196,7 @@
   .due-chip.soon { background: var(--amber-soft); color: var(--amber); }
   .due-chip.late { background: var(--red-soft); color: var(--red); }
 
-  /* ESTILOS AUTOCOMPLETADO (NUEVO) */
+  /* AUTOCOMPLETADO */
   .autocomplete-container { position: relative; width: 100%; }
   .autocomplete-items { position: absolute; border: 1px solid var(--divider); border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: var(--panel); border-radius: 0 0 var(--radius-btn) var(--radius-btn); max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
   .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--divider); color: var(--text-main); font-size: 12.5px; display: flex; justify-content: space-between; align-items: center; }
@@ -362,7 +376,34 @@
     <button class="btn-toggle-tools edit-only" id="toggleToolsBtn" style="margin-left: auto;">⚙️ Filtros y Herramientas ▼</button>
   </div>
 
-  <div class="col-header" id="colHeader"></div>
+  <!-- ENCABEZADOS DE TABLA CON MENÚ FLOTANTE TIPO EXCEL -->
+  <div class="col-header" id="colHeader">
+    <div></div>
+    <div style="text-align:center">PR</div>
+    <div class="th-filter" data-col="ref" id="th-ref">PEDIMENTO / REF ▾</div>
+    <div class="th-filter" data-col="cliente" id="th-cliente">CLIENTE ▾</div>
+    <div class="th-filter" data-col="aduana" id="th-aduana">ADUANA ▾</div>
+    <div class="th-filter" data-col="depto" id="th-depto">DEPARTAMENTO ▾</div>
+    <div class="th-filter" data-col="status" id="th-status">STATUS ▾</div>
+    <div>LÍMITE</div>
+    <div style="text-align:right;" class="edit-only">ACCIONES</div>
+  </div>
+
+  <!-- MENÚ FLOTANTE EXCEL CON Z-INDEX MÁS ALTO -->
+  <div id="excelDropdown" class="excel-dropdown-menu">
+    <div class="excel-menu-item" data-action="sort-asc">⬆️ Ordenar A a Z</div>
+    <div class="excel-menu-item" data-action="sort-desc">⬇️ Ordenar Z a A</div>
+    <div class="excel-menu-divider"></div>
+    <div class="excel-menu-item" data-action="clear-filter" style="color: var(--amber);">🧹 Quitar filtro</div>
+    <div class="excel-menu-divider"></div>
+    <div style="font-size: 11px; font-weight: 700; color: var(--text-header); padding: 0 4px; margin-bottom: 4px;">Filtrar por valor:</div>
+    <label class="excel-checkbox-item" style="font-weight: 700; color: var(--primary); margin-bottom: 4px; border-bottom: 1px dashed var(--divider); padding-bottom: 4px;">
+      <input type="checkbox" id="excelSelectAll" style="accent-color: var(--primary);">
+      <span>(Seleccionar todo / Ninguno)</span>
+    </label>
+    <input type="text" id="excelSearchBox" placeholder="Buscar..." style="width: 100%; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); padding: 6px; border-radius: 4px; font-size: 11.5px; margin-bottom: 6px;">
+    <div class="excel-checkbox-list" id="excelValuesList"></div>
+  </div>
 
   <div class="rows" id="rows"></div>
 </div>
@@ -519,7 +560,7 @@
       </div>
     </div>
 
-    <!-- BLOQUE INDEPENDIENTE: CORRESPONSALÍAS (CON AUTOCOMPLETADO CONECTADO) -->
+    <!-- BLOQUE INDEPENDIENTE: CORRESPONSALÍAS -->
     <div id="wrap-corresponsalia" style="display:none; background: rgba(255,179,0,0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--amber); margin-bottom: 15px;">
       <h4 style="margin:0 0 10px; color:var(--amber); font-size:12px; font-family:var(--font-heading); text-transform:uppercase;">Datos del Corresponsal</h4>
       <div class="field-row">
@@ -585,98 +626,67 @@
   </div>
 </div>
 
-<!-- MODAL: ADMINISTRACIÓN DE CATÁLOGO DE CLIENTES -->
+<!-- MODAL: CLIENTES -->
 <div class="modal-overlay" id="clientesOverlay">
   <div class="modal" style="max-width: 500px;">
     <h2 style="color: var(--accent);">🏢 Catálogo Maestro de Clientes</h2>
-    
     <div class="exec-list" id="catClientesList" style="max-height: 250px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
-
     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
-      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">
-        ➕ Dar de Alta Nuevo Cliente
-      </div>
-      <div class="field"><input type="text" id="newCatClienteNombre" placeholder="Nombre Comercial (ej. RESONAC BY DECKAMMEX)"></div>
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">➕ Dar de Alta Nuevo Cliente</div>
+      <div class="field"><input type="text" id="newCatClienteNombre" placeholder="Nombre Comercial"></div>
       <div class="field"><input type="text" id="newCatClienteRazon" placeholder="Razón Social (Opcional)"></div>
       <div class="field"><input type="text" id="newCatClienteRFC" placeholder="RFC (Opcional)"></div>
-      
       <button class="btn-add" id="saveCatClienteBtn" style="width: 100%; background: var(--accent); color: var(--bg);">Guardar en Catálogo</button>
     </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" id="closeClientesBtn">Cerrar</button>
-    </div>
+    <div class="modal-actions"><button class="btn-secondary" id="closeClientesBtn">Cerrar</button></div>
   </div>
 </div>
 
-<!-- MODAL: ADMINISTRACIÓN DE CATÁLOGO DE CORRESPONSALES -->
+<!-- MODAL: CORRESPONSALES -->
 <div class="modal-overlay" id="corresponsalesOverlay">
   <div class="modal" style="max-width: 500px;">
     <h2 style="color: var(--amber);">🚢 Catálogo Maestro de Corresponsales</h2>
-    
     <div class="exec-list" id="catCorrespList" style="max-height: 220px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
-
     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
-      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">
-        ➕ Dar de Alta Nuevo Corresponsal
-      </div>
-      <div class="field"><input type="text" id="newCorrespNombre" placeholder="Nombre Comercial (ej. TRASE, PALCO)"></div>
-      <div class="field"><input type="text" id="newCorrespCiudad" placeholder="Ciudad / Aduana (ej. Laredo)"></div>
-      
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">➕ Dar de Alta Nuevo Corresponsal</div>
+      <div class="field"><input type="text" id="newCorrespNombre" placeholder="Nombre Comercial"></div>
+      <div class="field"><input type="text" id="newCorrespCiudad" placeholder="Ciudad / Aduana"></div>
       <button class="btn-add" id="saveCorrespBtn" style="width: 100%; background: var(--amber); color: var(--bg);">Guardar Corresponsal</button>
     </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" id="closeCorrespBtn">Cerrar</button>
-    </div>
+    <div class="modal-actions"><button class="btn-secondary" id="closeCorrespBtn">Cerrar</button></div>
   </div>
 </div>
 
 <div class="modal-overlay" id="chartOverlay">
   <div class="modal" style="max-width: 600px;">
     <h2>Carga de Trabajo Activa</h2>
-    <p style="font-size: 12px; color: var(--text-sub); margin-top:-10px; margin-bottom:20px;">Operaciones pendientes por ejecutivo.</p>
     <div id="chartContainer"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="closeChartBtn">Cerrar</button>
-    </div>
+    <div class="modal-actions"><button class="btn-secondary" id="closeChartBtn">Cerrar</button></div>
   </div>
 </div>
 
 <div class="modal-overlay" id="execOverlay">
   <div class="modal" style="max-width: 460px;">
     <h2>Usuarios y Cuentas</h2>
-    
-    <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-      🏷️ Filtros de Ejecutivos
-    </div>
+    <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase;">🏷️ Filtros de Ejecutivos</div>
     <div class="exec-list" id="execList"></div>
     <div class="exec-add-row">
-      <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo (solo para filtros)">
+      <input type="text" id="newExecInput" placeholder="Nombre del ejecutivo">
       <button class="btn-add" id="addExecBtn">Agregar</button>
     </div>
-
     <div id="variantesSection" style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider); display: none;">
-      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--red); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-        ⚠️ Variantes sin fusionar
-      </div>
-      <p style="font-size: 11.5px; color: var(--text-sub); margin: 0 0 12px;">
-        Estos nombres aparecen en pedimentos pero no coinciden con tu lista oficial.
-      </p>
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--red); margin-bottom: 6px; text-transform: uppercase;">⚠️ Variantes sin fusionar</div>
       <div id="variantesList"></div>
     </div>
-
-    <!-- SECCIÓN DE USUARIOS Y PERMISOS -->
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--divider);">
-      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
         <span>👥 Cuentas de Acceso</span>
         <button class="btn-mini" onclick="window.resetUserForm()">+ Nueva</button>
       </div>
       <div class="exec-list" id="usersListUi" style="max-height: 150px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;"></div>
-
-      <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar (ej. Dany o TRASE)"></div>
-      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso (ej. trase)" style="text-transform: lowercase;"></div>
-      <div class="field"><input type="password" id="newAccPass" placeholder="Contraseña (mínimo 6 caracteres)"></div>
+      <div class="field"><input type="text" id="newAccName" placeholder="Nombre a mostrar"></div>
+      <div class="field"><input type="text" id="newAccUser" placeholder="Usuario de acceso" style="text-transform: lowercase;"></div>
+      <div class="field"><input type="password" id="newAccPass" placeholder="Contraseña"></div>
       <div class="field">
         <label>Rol del usuario</label>
         <select id="newAccRole">
@@ -686,19 +696,12 @@
           <option value="corresponsal">Corresponsal Externo</option>
         </select>
       </div>
-
-      <!-- SECCIÓN DE CLIENTES ASOCIADOS (MÚLTIPLES) -->
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 12px; border-radius: 6px; border: 1px solid var(--divider);">
         <label style="color: var(--accent); margin-bottom: 8px;">Selecciona los Clientes que Atiende / Ve:</label>
-        <div id="checkboxClientesList" style="max-height: 140px; overflow-y: auto; background: var(--bg); padding: 8px; border: 1px solid var(--divider); border-radius: 4px; display: flex; flex-direction: column; gap: 6px;">
-          <!-- Se llena dinámicamente con checkboxes de tus clientes -->
-        </div>
-        
-        <!-- MATRIZ DE PERMISOS -->
+        <div id="checkboxClientesList" style="max-height: 140px; overflow-y: auto; background: var(--bg); padding: 8px; border: 1px solid var(--divider); border-radius: 4px; display: flex; flex-direction: column; gap: 6px;"></div>
         <div id="wrap-permisosCliente" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
           <label style="color: var(--primary); font-weight: 800; font-size: 11px;">FILTROS DE VISUALIZACIÓN</label>
-          
-          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Aduanas Permitidas:</div>
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold;">Aduanas Permitidas:</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-aduanas">
             <label><input type="checkbox" value="Monterrey" checked> Monterrey</label>
             <label><input type="checkbox" value="Laredo" checked> Laredo</label>
@@ -706,14 +709,12 @@
             <label><input type="checkbox" value="Manzanillo" checked> Manzanillo</label>
             <label><input type="checkbox" value="Otra" checked> Otra</label>
           </div>
-
-          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Operaciones Permitidas:</div>
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold;">Operaciones Permitidas:</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-tipos">
             <label><input type="checkbox" value="Importación" checked> Importación</label>
             <label><input type="checkbox" value="Exportación" checked> Exportación</label>
           </div>
-
-          <div style="font-size: 11px; margin-top: 8px; font-weight: bold; color: var(--text-main);">Departamentos Permitidos:</div>
+          <div style="font-size: 11px; margin-top: 8px; font-weight: bold;">Departamentos Permitidos:</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-deptos">
             <label><input type="checkbox" value="Aéreo" checked> Aéreo</label>
             <label><input type="checkbox" value="Terrestre" checked> Terrestre</label>
@@ -722,14 +723,10 @@
           </div>
         </div>
       </div>
-
       <button class="btn-add" id="createAccBtn" data-mode="create" style="width: 100%;">Crear cuenta</button>
       <p id="createAccMsg" style="font-size: 11.5px; margin-top: 8px;"></p>
     </div>
-
-    <div class="modal-actions">
-      <button class="btn-secondary" id="closeExecBtn">Cerrar</button>
-    </div>
+    <div class="modal-actions"><button class="btn-secondary" id="closeExecBtn">Cerrar</button></div>
   </div>
 </div>
 
@@ -747,7 +744,6 @@
 <div class="modal-overlay" id="aduanaChoiceOverlay">
   <div class="modal" style="max-width: 340px; text-align: center;">
     <h2>¿De qué aduana?</h2>
-    <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 18px;">Elige de qué aduana quieres asignar el/los pedimento(s) libres.</p>
     <div style="display: flex; gap: 10px;">
       <button class="btn-add" id="choiceMonterreyBtn" style="flex: 1;">Monterrey</button>
       <button class="btn-add" id="choiceLaredoBtn" style="flex: 1; background: var(--blue);">Nuevo Laredo</button>
@@ -910,7 +906,6 @@
     updateUsersListUi();
     tryApplyProfile();
   }, (error) => {
-    console.error("Error leyendo usuarios:", error);
     usersLoaded = true;
     tryApplyProfile();
   });
@@ -983,7 +978,6 @@
   });
 
   let editingUserUid = null;
-
   window.resetUserForm = function() {
       editingUserUid = null;
       document.getElementById('createAccBtn').setAttribute('data-mode', 'create');
@@ -1004,23 +998,18 @@
       const u = usersCache[uid];
       if(!u) return;
       editingUserUid = uid;
-      
       document.getElementById('newAccName').value = u.nombre || '';
       document.getElementById('newAccUser').value = u.email.split('@')[0] || '';
       document.getElementById('newAccUser').disabled = true; 
       document.getElementById('newAccPass').style.display = 'none'; 
       document.getElementById('newAccRole').value = u.rol || 'cliente';
-      
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
-      
       const asociadas = u.empresaAsociada ? u.empresaAsociada.split(',').map(s => s.trim()) : [];
       renderClientesCheckboxes(asociadas);
-      
       const p = u.permisos || { aduanas:[], tipos:[], deptos:[] };
       document.querySelectorAll('#perm-aduanas input').forEach(cb => cb.checked = p.aduanas.includes(cb.value));
       document.querySelectorAll('#perm-tipos input').forEach(cb => cb.checked = p.tipos.includes(cb.value));
       document.querySelectorAll('#perm-deptos input').forEach(cb => cb.checked = p.deptos.includes(cb.value));
-      
       const btn = document.getElementById('createAccBtn');
       btn.setAttribute('data-mode', 'edit');
       btn.textContent = "Actualizar Cuenta y Clientes";
@@ -1033,11 +1022,9 @@
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
     const rol = document.getElementById('newAccRole').value;
-    
     const isExternal = rol === 'cliente' || rol === 'corresponsal';
     const checkedClientes = Array.from(document.querySelectorAll('#checkboxClientesList input:checked')).map(cb => cb.value);
     const empresaAsociada = isExternal ? checkedClientes.join(', ') : '';
-    
     const msgEl = document.getElementById('createAccMsg');
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
     msgEl.style.color = 'var(--red)';
@@ -1050,16 +1037,8 @@
     const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
     const deptosPerm = Array.from(document.querySelectorAll('#perm-deptos input:checked')).map(cb => cb.value);
 
-    const userPayload = { 
-        nombre, 
-        email: mode === 'edit' ? usersCache[editingUserUid].email : email, 
-        rol, 
-        empresaAsociada 
-    };
-    
-    if (isExternal) {
-        userPayload.permisos = { aduanas: aduanasPerm, tipos: tiposPerm, deptos: deptosPerm };
-    }
+    const userPayload = { nombre, email: mode === 'edit' ? usersCache[editingUserUid].email : email, rol, empresaAsociada };
+    if (isExternal) userPayload.permisos = { aduanas: aduanasPerm, tipos: tiposPerm, deptos: deptosPerm };
 
     try {
       if (mode === 'create') {
@@ -1094,10 +1073,7 @@
   function renderCatClientesList() {
       const container = document.getElementById('catClientesList');
       if (!container) return;
-      if (clientesCatalogo.length === 0) {
-          container.innerHTML = '<div class="empty-state">No hay clientes registrados en el catálogo.</div>';
-          return;
-      }
+      if (clientesCatalogo.length === 0) { container.innerHTML = '<div class="empty-state">No hay clientes registrados en el catálogo.</div>'; return; }
       container.innerHTML = clientesCatalogo.map(c => `
           <div class="exec-item">
               <div>
@@ -1112,10 +1088,7 @@
   function renderCatCorrespList() {
       const container = document.getElementById('catCorrespList');
       if (!container) return;
-      if (corresponsalesCatalogo.length === 0) {
-          container.innerHTML = '<div class="empty-state">No hay corresponsales registrados.</div>';
-          return;
-      }
+      if (corresponsalesCatalogo.length === 0) { container.innerHTML = '<div class="empty-state">No hay corresponsales registrados.</div>'; return; }
       container.innerHTML = corresponsalesCatalogo.map(co => `
           <div class="exec-item">
               <div>
@@ -1130,11 +1103,9 @@
       const nombre = document.getElementById('newCatClienteNombre').value.trim();
       const razon = document.getElementById('newCatClienteRazon').value.trim();
       const rfc = document.getElementById('newCatClienteRFC').value.trim();
-
       if (!nombre) { alert("El nombre comercial es obligatorio."); return; }
       const dup = clientesCatalogo.find(c => normKey(c.nombre) === normKey(nombre));
       if (dup) { alert("Ya existe un cliente con ese nombre en el catálogo."); return; }
-
       set(push(clientesRef), { nombre, razonSocial: razon, rfc, fechaRegistro: Date.now(), registradoPor: currentUser });
       document.getElementById('newCatClienteNombre').value = '';
       document.getElementById('newCatClienteRazon').value = '';
@@ -1144,19 +1115,14 @@
   document.getElementById('saveCorrespBtn').addEventListener('click', () => {
       const nombre = document.getElementById('newCorrespNombre').value.trim();
       const ciudad = document.getElementById('newCorrespCiudad').value.trim();
-
       if (!nombre) { alert("El nombre del corresponsal es obligatorio."); return; }
       set(push(corresponsalesRef), { nombre, ciudad, fechaRegistro: Date.now(), registradoPor: currentUser });
       document.getElementById('newCorrespNombre').value = '';
       document.getElementById('newCorrespCiudad').value = '';
   });
 
-  window.deleteCatCliente = function(id) {
-      if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?")) remove(ref(db, 'clientes_ayc/' + id));
-  };
-  window.deleteCatCorresp = function(id) {
-      if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, 'corresponsales_ayc/' + id));
-  };
+  window.deleteCatCliente = function(id) { if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?")) remove(ref(db, 'clientes_ayc/' + id)); };
+  window.deleteCatCorresp = function(id) { if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, 'corresponsales_ayc/' + id)); };
 
   function realignCurrentUserCasing() {
     if (!currentUser) return;
@@ -1186,6 +1152,7 @@
       if (document.getElementById('taskModalOverlay').classList.contains('open')) closeTaskModal();
       if (clientesOverlay.classList.contains('open')) clientesOverlay.classList.remove('open');
       if (corresponsalesOverlay.classList.contains('open')) corresponsalesOverlay.classList.remove('open');
+      document.getElementById('excelDropdown').classList.remove('open');
     }
   });
 
@@ -1218,7 +1185,6 @@
   let generalAduanaFilter = 'Monterrey'; 
   
   const DEPTOS = ['Aéreo', 'Terrestre', 'Marítimo', 'Virtual']; 
-
   const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
   
   function mapToTimelineIndex(status) {
@@ -1262,12 +1228,7 @@
     const now = Date.now();
     snapshot.forEach((childSnapshot) => {
       let t = { id: childSnapshot.key, ...childSnapshot.val() };
-      
-      if (t.depto === 'Corresponsalías') {
-          t.depto = 'Marítimo';
-          t.isCorresponsal = true;
-      }
-
+      if (t.depto === 'Corresponsalías') { t.depto = 'Marítimo'; t.isCorresponsal = true; }
       if (t.status === 'Eliminado' && t.deletedAt) {
         const daysInTrash = (now - new Date(t.deletedAt).getTime()) / (1000 * 3600 * 24);
         if (daysInTrash > 7) { remove(ref(db, 'pendientes_ayc/' + t.id)); return; }
@@ -1336,56 +1297,6 @@
       : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos fijos.</div>';
 
     document.querySelectorAll('[data-exec-id]').forEach(btn => { btn.addEventListener('click', () => { remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id'))); }); });
-
-    const officialKeys = new Set(executives.map(e => normKey(e.nombre)));
-    const variantMap = new Map(); 
-    tasks.forEach(t => {
-      if (t.ejecutivo && !t.isTask && t.status !== 'Eliminado') {
-        const key = normKey(t.ejecutivo);
-        if (key && !officialKeys.has(key)) variantMap.set(key, t.ejecutivo.trim());
-      }
-    });
-    catalogo.forEach(c => {
-      if (c.ejecutivoAsignado) {
-        const key = normKey(c.ejecutivoAsignado);
-        if (key && !officialKeys.has(key)) variantMap.set(key, c.ejecutivoAsignado.trim());
-      }
-    });
-
-    const variantesSection = document.getElementById('variantesSection');
-    const variantesList = document.getElementById('variantesList');
-    if (variantMap.size === 0 || executives.length === 0) {
-      variantesSection.style.display = 'none';
-    } else {
-      variantesSection.style.display = 'block';
-      variantesList.innerHTML = Array.from(variantMap.values()).map(name => `
-        <div class="variant-row">
-          <span class="variant-name" title="${name}">${name}</span>
-          <select data-variant-target="${name}">
-            <option value="">Fusionar con...</option>
-            ${executives.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
-          </select>
-          <button class="btn-mini" data-variant-merge="${name}">Fusionar</button>
-        </div>
-      `).join('');
-      document.querySelectorAll('[data-variant-merge]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const variantName = btn.getAttribute('data-variant-merge');
-          const select = document.querySelector(`[data-variant-target="${variantName}"]`);
-          const target = select.value;
-          if (!target) { alert('Elige a qué ejecutivo oficial fusionarlo primero.'); return; }
-          if (!confirm(`¿Cambiar todos los pedimentos de "${variantName}" para que queden como "${target}"?`)) return;
-          let count = 0;
-          tasks.forEach(t => {
-            if (t.ejecutivo === variantName && !t.isTask) { update(ref(db, 'pendientes_ayc/' + t.id), { ejecutivo: target }); count++; }
-          });
-          catalogo.forEach(c => {
-            if (c.ejecutivoAsignado === variantName) { update(ref(db, 'catalogo_ayc/' + c.id), { ejecutivoAsignado: target }); count++; }
-          });
-          alert(`Listo: "${variantName}" se fusionó con "${target}" en ${count} registro(s).`);
-        });
-      });
-    }
   }
 
   const execOverlay = document.getElementById('execOverlay');
@@ -1395,7 +1306,7 @@
     const input = document.getElementById('newExecInput'); const name = input.value.trim();
     if (!name) return;
     const dup = executives.find(e => normKey(e.nombre) === normKey(name));
-    if (dup) { alert(`Ya existe un ejecutivo registrado como "${dup.nombre}". No se agregó duplicado.`); input.value = ''; return; }
+    if (dup) { alert(`Ya existe un ejecutivo registrado como "${dup.nombre}".`); input.value = ''; return; }
     push(execRef, name); input.value = '';
   });
 
@@ -1421,12 +1332,13 @@
     } else { notifyEnabled = false; localStorage.setItem('ayc-notify', '0'); }
     updateNotifyBtnLabel();
   });
+
   function checkOverdueNotifications() {
     if (!notifyEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
     tasks.forEach(t => {
       if (!t.isTask && isOverdue(t) && normKey(t.ejecutivo) === normKey(currentUser) && !notifiedIds.has(t.id)) {
         notifiedIds.add(t.id);
-        try { new Notification('⏰ Pedimento retrasado', { body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'}) — ${t.aduana}, ${t.depto}` }); } catch (e) {}
+        try { new Notification('⏰ Pedimento retrasado', { body: `${t.ref || 'S/REF'} (${t.cliente || 'sin cliente'})` }); } catch (e) {}
       }
     });
   }
@@ -1510,6 +1422,9 @@
   function isLibreCat(c) { return !c.ejecutivoAsignado || c.ejecutivoAsignado.trim() === ''; }
   function extractConsecutivo(refStr) { const matches = (refStr || '').match(/\d+/g); return matches ? parseInt(matches[matches.length - 1], 10) : NaN; }
 
+  window.activeColumnFilters = {};
+  window.currentSort = { col: null, asc: true };
+
   function render() {
     if (!currentUserProfile) return; 
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
@@ -1522,6 +1437,20 @@
     const rowsEl = document.getElementById('rows');
     const colHeader = document.getElementById('colHeader');
     const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+    ['ref', 'cliente', 'aduana', 'depto', 'status'].forEach(col => {
+        const el = document.getElementById(`th-${col}`);
+        if (el) {
+            const labels = { ref: 'PEDIMENTO / REF', cliente: 'CLIENTE', aduana: 'ADUANA', depto: 'DEPARTAMENTO', status: 'STATUS' };
+            let txt = labels[col];
+            if (window.activeColumnFilters[col]) txt += ' 🔍';
+            if (window.currentSort.col === col) txt += window.currentSort.asc ? ' 🔼' : ' 🔽';
+            txt += ' ▾';
+            el.textContent = txt;
+            if (window.activeColumnFilters[col]) el.classList.add('filtered');
+            else el.classList.remove('filtered');
+        }
+    });
 
     if (currentFilter === 'mis_tareas' && !isClient) {
       colHeader.style.display = 'none';
@@ -1556,8 +1485,6 @@
     if (currentFilter === 'general' && !isClient) { renderGeneralTab(); return; }
 
     colHeader.style.display = '';
-    colHeader.className = 'col-header';
-    colHeader.innerHTML = `<div></div><div style="text-align:center">PR</div><div>PEDIMENTO / REF</div><div>CLIENTE</div><div>ADUANA</div><div>DEPARTAMENTO</div><div>STATUS</div><div>LÍMITE</div><div style="text-align:right;" class="edit-only">ACCIONES</div>`;
 
     let bannerHtml = '';
     if (currentFilter === 'expediente' && !isClient) {
@@ -1606,8 +1533,27 @@
 
     if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search) || (t.patente || '').toLowerCase().includes(search));
 
+    Object.keys(window.activeColumnFilters).forEach(col => {
+        const valSet = window.activeColumnFilters[col];
+        if (valSet && valSet.size > 0) {
+            filtered = filtered.filter(t => {
+                let cellVal = col === 'status' ? (isOverdue(t) && currentFilter !== 'papelera' ? 'Retrasado' : t.status) : (t[col] || '—');
+                return valSet.has(cellVal);
+            });
+        }
+    });
+
     filtered = [...filtered].sort((a, b) => {
-      if(a.status === 'Eliminado' || b.status === 'Eliminado') return 0;
+      if (a.status === 'Eliminado' || b.status === 'Eliminado') return 0;
+      
+      if (window.currentSort.col) {
+          const col = window.currentSort.col;
+          let valA = col === 'status' ? (isOverdue(a) ? 'Retrasado' : a.status) : (a[col] || '');
+          let valB = col === 'status' ? (isOverdue(b) ? 'Retrasado' : b.status) : (b[col] || '');
+          let comp = valA.toString().localeCompare(valB.toString(), 'es', { numeric: true });
+          return window.currentSort.asc ? comp : -comp;
+      }
+
       const ao = isOverdue(a) ? 0 : 1, bo = isOverdue(b) ? 0 : 1;
       if (ao !== bo) return ao - bo;
       if (a.status === 'Completado' && b.status !== 'Completado') return 1;
@@ -1699,7 +1645,6 @@
                ${currentStepIdx < 4 ? `<button class="btn-quiet accent-take" onclick="window.advanceTimeline('${t.id}')">🚀 Avanzar rápido al sig. paso</button>` : '<span style="color:var(--green); font-weight:bold;">✅ Operación Cerrada</span>'}
             </div>
 
-            <!-- DATOS DINÁMICOS -->
             <div class="dyn-data-grid">${patenteHtml}${dynHtml}${consHtml}</div>
             
             ${(() => {
@@ -1721,23 +1666,16 @@
                 }
                 return `
                 <div class="chat-box">
-                    <div class="chat-header">💬 Comentarios / Bitácora 
-                        <span style="font-size:11px; opacity:0.7;">(${isClient ? (isCorresp ? 'Corresponsal / Operativo' : 'Portal Cliente') : 'Interno'})</span>
-                    </div>
+                    <div class="chat-header">💬 Comentarios / Bitácora</div>
                     ${chatHtml}
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <input type="text" id="chat-input-${t.id}" placeholder="${isClient ? 'Escribe tu mensaje...' : 'Escribe un comentario...'}"
+                        <input type="text" id="chat-input-${t.id}" placeholder="Escribe un comentario..."
                                onkeydown="if(event.key==='Enter') window.sendChatMessage('${t.id}')"
                                style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--divider); background:var(--bg); color:var(--text-main); font-size:12px;">
                         <button class="btn-add" style="padding: 8px 12px;" onclick="window.sendChatMessage('${t.id}')">Enviar</button>
                     </div>
                 </div>`;
             })()}
-
-            ${!isClient ? `<strong>📝 Notas Internas:</strong> ${t.notas || 'Sin notas adicionales.'}<br>` : ''}
-            ${t.enlace && !isClient ? `<br><strong>🔗 Enlace:</strong> <a class="link-chip" href="${t.enlace}" target="_blank">${t.enlace}</a><br>` : ''}
-            <br><em>Último movimiento por: ${t.lastModifiedBy || 'Desconocido'}</em>
-            ${isTrash && !isClient ? `<br><span style="color:var(--red);">Eliminado el: ${new Date(t.deletedAt).toLocaleDateString()}</span>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -1774,16 +1712,11 @@
     }
 
     let html = '';
+    html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800;">🆓 Libres para tomar (${libres.length})</div>`;
+    html += libres.length ? libres.map(c => catRow(c, 'libre')).join('') : '<div class="empty-state">No hay pedimentos libres.</div>';
     if (isAdmin) {
-      html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800;">🆓 Libres para tomar (${libres.length})</div>`;
-      html += libres.length ? libres.map(c => catRow(c, 'libre')).join('') : '<div class="empty-state">No hay pedimentos libres en el catálogo.</div>';
-      html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800; border-top:1px dashed var(--divider);">📁 Ya asignados en el catálogo (${deOtros.length})</div>`;
-      html += deOtros.length ? deOtros.map(c => catRow(c, 'asignado')).join('') : '<div class="empty-state">Nadie tiene pedimentos asignados en el catálogo todavía.</div>';
-    } else {
-      html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800;">🆓 Libres para tomar (${libres.length})</div>`;
-      html += libres.length ? libres.map(c => catRow(c, 'libre')).join('') : '<div class="empty-state">No hay pedimentos libres por ahora.</div>';
-      html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800; border-top:1px dashed var(--divider);">📁 Asignados a ti en el sistema (${mios.length})</div>`;
-      html += mios.length ? mios.map(c => catRow(c, 'asignado')).join('') : '<div class="empty-state">No tienes pedimentos propios en el catálogo por ahora.</div>';
+      html += `<div class="empty-state" style="padding:14px 30px; text-align:left; font-weight:800; border-top:1px dashed var(--divider);">📁 Ya asignados (${deOtros.length})</div>`;
+      html += deOtros.length ? deOtros.map(c => catRow(c, 'asignado')).join('') : '<div class="empty-state">Nadie tiene asignados.</div>';
     }
     rowsEl.innerHTML = html;
     document.querySelectorAll('[data-cat-action="tomar"]').forEach(btn => { btn.addEventListener('click', () => tomarDelCatalogo(btn.getAttribute('data-cat-id'))); });
@@ -1834,15 +1767,6 @@
         <button class="btn-mini${generalAduanaFilter === 'Monterrey' ? ' active-toggle' : ''}" data-general-aduana="Monterrey">🏢 Monterrey (${mty.length})</button>
         <button class="btn-mini${generalAduanaFilter === 'Laredo' ? ' active-toggle' : ''}" data-general-aduana="Laredo">🚚 Nuevo Laredo (${lrd.length})</button>
         <button class="btn-mini${generalAduanaFilter === 'todas' ? ' active-toggle' : ''}" data-general-aduana="todas">📊 Ver todo</button>
-        <div style="width: 1px; height: 16px; background: var(--divider); margin: 0 4px;"></div>
-        <button class="btn-mini" id="findLastTakenBtn" style="border-color:var(--accent); color:var(--accent); font-weight:800;">🎯 Buscar último tomado</button>
-      </div>`;
-
-    const HTMLPaginacion = `
-      <div style="display:flex; align-items:center; gap:10px; padding:12px 30px; border-top:1px solid var(--divider);">
-        <button class="btn-mini general-prev-btn" ${generalPage <= 1 ? 'disabled' : ''}>‹ Anterior</button>
-        <span style="font-size:12px; color:var(--text-sub); font-family:var(--font-heading);">Página ${generalPage} de ${totalPaginas} (${listaActual.length} en total)</span>
-        <button class="btn-mini general-next-btn" ${generalPage >= totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
       </div>`;
 
     const filas = pagina.length ? pagina.map(m => `
@@ -1852,31 +1776,114 @@
             <div class="cell small">${m.aduana || '—'}</div><div class="cell small">${m.ejecutivo ? '👤 ' + m.ejecutivo : '🆓 Sin asignar'}</div>
             <div><span class="badge ${m.estadoClass}">${m.estado}</span></div><div class="cell small" style="text-transform:capitalize;">${m.origen}</div>
           </div>
-        </div>`).join('') : '<div class="empty-state">No hay pedimentos que coincidan.</div>';
+        </div>`).join('') : '<div class="empty-state">No hay pedimentos.</div>';
 
-    rowsEl.innerHTML = `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s)</div>` + botones + HTMLPaginacion + filas + HTMLPaginacion;
-
-    document.querySelectorAll('[data-general-aduana]').forEach(btn => { btn.addEventListener('click', () => { generalAduanaFilter = btn.getAttribute('data-general-aduana'); generalPage = 1; renderGeneralTab(); }); });
-    document.querySelectorAll('.general-prev-btn').forEach(btn => { btn.addEventListener('click', () => { if (generalPage > 1) { generalPage--; renderGeneralTab(); } }); });
-    document.querySelectorAll('.general-next-btn').forEach(btn => { btn.addEventListener('click', () => { if (generalPage < totalPaginas) { generalPage++; renderGeneralTab(); } }); });
-
-    const findLastBtn = document.getElementById('findLastTakenBtn');
-    if (findLastBtn) {
-      findLastBtn.addEventListener('click', () => {
-        const tomados = merged.filter(m => m.origen === 'pendiente' && m.ejecutivo && m.ejecutivo !== 'Sin asignar');
-        if (tomados.length === 0) return alert('Aún no hay pedimentos tomados en el sistema.');
-        tomados.sort((a, b) => extractConsecutivo(b.ref) - extractConsecutivo(a.ref));
-        generalAduanaFilter = 'todas'; touchRef(tomados[0].ref); renderGeneralTab();
-      });
-    }
-
-    document.querySelectorAll('.general-row').forEach(row => { row.addEventListener('click', () => touchRef(row.getAttribute('data-ref'))); });
-    if (scrollToLastTouched && lastTouchedRef) {
-      scrollToLastTouched = false;
-      const target = Array.from(document.querySelectorAll('.general-row')).find(r => r.getAttribute('data-ref') === lastTouchedRef);
-      if (target) { setTimeout(() => { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.style.transition = 'background-color .3s'; target.style.backgroundColor = 'var(--amber-soft)'; setTimeout(() => { target.style.backgroundColor = ''; }, 2500); }, 50); }
-    }
+    rowsEl.innerHTML = `<div class="empty-state" style="padding:14px 30px 0; text-align:left; font-weight:800;">📊 Universo completo: ${merged.length} pedimento(s)</div>` + botones + filas;
   }
+
+  let activeMenuCol = null;
+
+  document.addEventListener('click', (e) => {
+      const th = e.target.closest('.th-filter');
+      const dropdown = document.getElementById('excelDropdown');
+      
+      if (th) {
+          e.stopPropagation();
+          activeMenuCol = th.getAttribute('data-col');
+          
+          const rect = th.getBoundingClientRect();
+          dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+          dropdown.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
+          dropdown.classList.add('open');
+          
+          document.getElementById('excelSearchBox').value = '';
+          buildExcelDropdownValues(activeMenuCol);
+          return;
+      }
+      
+      if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('open');
+      }
+  });
+
+  function getUniqueValuesForCol(col) {
+      return [...new Set(tasks.filter(t => !t.isTask && t.status !== 'Eliminado').map(t => {
+          if (col === 'status') return isOverdue(t) ? 'Retrasado' : t.status;
+          return t[col] || '—';
+      }))].sort((a,b) => a.localeCompare(b, 'es', { numeric: true }));
+  }
+
+  function buildExcelDropdownValues(col, filterText = '') {
+      const listEl = document.getElementById('excelValuesList');
+      const uniqueVals = getUniqueValuesForCol(col);
+      
+      if (!window.activeColumnFilters[col]) {
+          window.activeColumnFilters[col] = new Set(uniqueVals);
+      }
+      const currentSelected = window.activeColumnFilters[col];
+
+      const filteredVals = uniqueVals.filter(v => v.toLowerCase().includes(filterText.toLowerCase()));
+
+      listEl.innerHTML = filteredVals.map(v => {
+          const isChecked = currentSelected.has(v);
+          return `<label class="excel-checkbox-item">
+                    <input type="checkbox" value="${v}" ${isChecked ? 'checked' : ''} data-excel-val style="accent-color:var(--primary);">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v}">${v}</span>
+                  </label>`;
+      }).join('');
+
+      const selectAllCb = document.getElementById('excelSelectAll');
+      const allFilteredChecked = filteredVals.length > 0 && filteredVals.every(v => currentSelected.has(v));
+      selectAllCb.checked = allFilteredChecked;
+
+      listEl.querySelectorAll('[data-excel-val]').forEach(chk => {
+          chk.addEventListener('change', () => {
+              if (chk.checked) window.activeColumnFilters[activeMenuCol].add(chk.value);
+              else window.activeColumnFilters[activeMenuCol].delete(chk.value);
+              
+              const currentFiltered = getUniqueValuesForCol(activeMenuCol).filter(v => v.toLowerCase().includes(document.getElementById('excelSearchBox').value.toLowerCase()));
+              selectAllCb.checked = currentFiltered.length > 0 && currentFiltered.every(v => window.activeColumnFilters[activeMenuCol].has(v));
+              
+              render();
+          });
+      });
+  }
+
+  document.getElementById('excelSelectAll').addEventListener('change', (e) => {
+      if (!activeMenuCol) return;
+      const filterText = document.getElementById('excelSearchBox').value.toLowerCase();
+      const currentFiltered = getUniqueValuesForCol(activeMenuCol).filter(v => v.toLowerCase().includes(filterText));
+      
+      if (e.target.checked) {
+          currentFiltered.forEach(v => window.activeColumnFilters[activeMenuCol].add(v));
+      } else {
+          currentFiltered.forEach(v => window.activeColumnFilters[activeMenuCol].delete(v));
+      }
+      buildExcelDropdownValues(activeMenuCol, filterText);
+      render();
+  });
+
+  document.getElementById('excelSearchBox').addEventListener('input', (e) => {
+      if (activeMenuCol) buildExcelDropdownValues(activeMenuCol, e.target.value);
+  });
+
+  document.querySelectorAll('.excel-menu-item[data-action]').forEach(item => {
+      item.addEventListener('click', () => {
+          const action = item.getAttribute('data-action');
+          const dropdown = document.getElementById('excelDropdown');
+          
+          if (action === 'sort-asc') {
+              window.currentSort = { col: activeMenuCol, asc: true };
+          } else if (action === 'sort-desc') {
+              window.currentSort = { col: activeMenuCol, asc: false };
+          } else if (action === 'clear-filter') {
+              delete window.activeColumnFilters[activeMenuCol];
+              window.currentSort = { col: null, asc: true };
+          }
+          dropdown.classList.remove('open');
+          render();
+      });
+  });
 
   function attachRowEvents() {
     document.querySelectorAll('.expand-btn').forEach(btn => { btn.addEventListener('click', function() { this.closest('.row-wrapper').classList.toggle('expanded'); }); });
@@ -1887,7 +1894,7 @@
         const t = tasks.find(t => t.id === id);
         if (action === 'del') { openConfirmDelete(id); } 
         else if (action === 'restore') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); if (t) touchRef(t.ref); } 
-        else if (action === 'purge') { if (currentUserProfile && currentUserProfile.rol === 'admin' && confirm('Esto borra el registro para siempre. ¿Continuar?')) { remove(ref(db, 'pendientes_ayc/' + id)); } } 
+        else if (action === 'purge') { if (currentUserProfile && currentUserProfile.rol === 'admin' && confirm('¿Borrar para siempre?')) { remove(ref(db, 'pendientes_ayc/' + id)); } } 
         else if (action === 'done') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); } 
         else if (action === 'expediente') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Expediente', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); }
         else if (action === 'edit') { if (t) touchRef(t.ref); openModal(id); } 
@@ -2006,14 +2013,14 @@
 
   document.getElementById('migrateBtn').addEventListener('click', () => {
     const candidatos = tasks.filter(t => t.status === 'Pendiente' && !t.isTask);
-    if (candidatos.length === 0) { alert('No hay nada en estatus "Pendiente" sin tomar.'); return; }
-    if (!confirm(`Se moverán ${candidatos.length} pedimento(s) de vuelta al catálogo.\n¿Continuar?`)) return;
+    if (candidatos.length === 0) { alert('No hay nada sin tomar.'); return; }
+    if (!confirm(`Se moverán ${candidatos.length} pedimento(s) al catálogo.`)) return;
     let moved = 0;
     candidatos.forEach(t => {
       set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
       remove(ref(db, 'pendientes_ayc/' + t.id)); moved++;
     });
-    alert(`Listo: se movieron ${moved} pedimentos al catálogo.`);
+    alert(`Listo: se movieron ${moved} pedimentos.`);
   });
 
   document.getElementById('setCorteMtyBtn').addEventListener('click', () => {
@@ -2052,7 +2059,7 @@
             count++;
           });
         });
-        alert(`Se cargaron ${count} pedimentos al catálogo.`); playSparkle(document.getElementById('uploadLayoutBtn'));
+        alert(`Se cargaron ${count} pedimentos.`); playSparkle(document.getElementById('uploadLayoutBtn'));
       } catch (err) { alert('Error al procesar el Excel.'); }
       e.target.value = '';
     };
@@ -2076,7 +2083,7 @@
 
   window.openModal = function(id) {
     editingId = id || null;
-    document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pedimento';
+    document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pendiente';
     document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"], #modalOverlay input[type="hidden"]').forEach(el => el.value = '');
     
     fConsolidado.checked = false;
@@ -2104,7 +2111,6 @@
 
       fConsolidado.checked = t.consolidado || false;
       document.getElementById('d-remesas').value = t.remesas || '';
-      
       fCorresponsal.checked = t.isCorresponsal || (t.corresponsal && t.corresponsal.trim() !== '') || false;
       
       document.getElementById('d-guia').value = t.guia || '';
@@ -2147,7 +2153,6 @@
     fDepto.dispatchEvent(new Event('change'));
     fConsolidado.dispatchEvent(new Event('change'));
     fCorresponsal.dispatchEvent(new Event('change'));
-    
     overlay.classList.add('open');
   };
 
@@ -2173,10 +2178,8 @@
       prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
       enlace: document.getElementById('f-enlace').value.trim(), notas: document.getElementById('f-notas').value.trim(),
-      
       consolidado: fConsolidado.checked, remesas: document.getElementById('d-remesas').value || 0,
       isCorresponsal: fCorresponsal.checked,
-      
       guia: document.getElementById('d-guia').value.trim(), aerolinea: document.getElementById('d-aerolinea').value.trim(),
       almacen: document.getElementById('d-almacen').value.trim(),
       cartaPorte: document.getElementById('d-cartaPorte').value.trim(), lineaTransportista: document.getElementById('d-linea').value.trim(),
@@ -2186,9 +2189,7 @@
       demoras: document.getElementById('d-demoras').value,
       pedOrigen: document.getElementById('d-pedOrigen').value.trim(), claveV: document.getElementById('d-claveV').value.trim(),
       empresaTransfiere: document.getElementById('d-transfiere').value.trim(),
-      empresaRecibe: document.getElementById('d-recibe') ? document.getElementById('d-recibe').value.trim() : '',
       facturas: document.getElementById('d-facturas').value.trim(), 
-      
       corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
       aduanaCorr: document.getElementById('d-aduanaCorr').value.trim(), claveC: document.getElementById('d-claveC').value.trim(),
       eta: etaValue, lastModifiedBy: currentUser
@@ -2201,7 +2202,6 @@
     overlay.classList.remove('open');
   });
 
-  // AUTOCOMPLETADO DE CLIENTES
   const fClienteInput = document.getElementById('f-cliente');
   const fClienteIdInput = document.getElementById('f-cliente-id');
   const autoList = document.getElementById('cliente-autocomplete-list');
@@ -2211,13 +2211,8 @@
       autoList.innerHTML = '';
       fClienteIdInput.value = '';
       if (!val) { autoList.style.display = 'none'; return; }
-      
       const valLower = val.toLowerCase();
-      const matches = clientesCatalogo.filter(c => 
-          (c.nombre || '').toLowerCase().includes(valLower) || 
-          (c.rfc || '').toLowerCase().includes(valLower)
-      );
-      
+      const matches = clientesCatalogo.filter(c => (c.nombre || '').toLowerCase().includes(valLower) || (c.rfc || '').toLowerCase().includes(valLower));
       if (matches.length > 0) {
           autoList.style.display = 'block';
           matches.forEach(c => {
@@ -2231,12 +2226,9 @@
               });
               autoList.appendChild(div);
           });
-      } else {
-          autoList.style.display = 'none';
-      }
+      } else { autoList.style.display = 'none'; }
   });
 
-  // AUTOCOMPLETADO DE CORRESPONSALES
   const dCorresponsalInput = document.getElementById('d-corresponsal');
   const correspAutoList = document.getElementById('corresp-autocomplete-list');
 
@@ -2245,13 +2237,8 @@
           const val = this.value;
           correspAutoList.innerHTML = '';
           if (!val) { correspAutoList.style.display = 'none'; return; }
-          
           const valLower = val.toLowerCase();
-          const matches = corresponsalesCatalogo.filter(c => 
-              (c.nombre || '').toLowerCase().includes(valLower) || 
-              (c.ciudad || '').toLowerCase().includes(valLower)
-          );
-          
+          const matches = corresponsalesCatalogo.filter(c => (c.nombre || '').toLowerCase().includes(valLower) || (c.ciudad || '').toLowerCase().includes(valLower));
           if (matches.length > 0) {
               correspAutoList.style.display = 'block';
               matches.forEach(c => {
@@ -2264,9 +2251,7 @@
                   });
                   correspAutoList.appendChild(div);
               });
-          } else {
-              correspAutoList.style.display = 'none';
-          }
+          } else { correspAutoList.style.display = 'none'; }
       });
   }
 
@@ -2280,26 +2265,10 @@
       if (!input) return;
       const texto = input.value.trim();
       if (!texto) return;
-
       input.disabled = true;
-
-      const isClientMessage = currentUserProfile && currentUserProfile.rol === 'cliente';
-      const isInternal = currentUserProfile && currentUserProfile.rol === 'ejecutivo' || currentUserProfile.rol === 'admin';
-
       push(ref(db, `pendientes_ayc/${taskId}/chat`), {
-          texto: texto,
-          usuario: currentUser || 'Usuario',
-          timestamp: Date.now(),
-          isClient: isClientMessage,
-          isInternal: isInternal
-      }).then(() => {
-          input.value = '';
-          input.disabled = false;
-          input.focus();
-      }).catch(err => {
-          console.error("Error de Firebase:", err);
-          input.disabled = false;
-      });
+          texto: texto, usuario: currentUser || 'Usuario', timestamp: Date.now()
+      }).then(() => { input.value = ''; input.disabled = false; input.focus(); });
   };
 </script>
 </body>
