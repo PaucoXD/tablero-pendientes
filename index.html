@@ -31,8 +31,6 @@
      ========================================= */
   * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
   body { margin: 0; background-color: var(--bg); background-image: var(--bg-image); color: var(--text-main); font-family: var(--font-main); min-height: 100vh; padding: 20px; }
-  
-  /* CAMBIO: Se remueve overflow: hidden del .board para permitir que los menús flotantes se salgan visualmente si es necesario */
   .board { max-width: 1200px; margin: 0 auto; background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); position: relative; }
 
   body.view-only .row-actions, body.view-only #openModalBtn, body.view-only .edit-only { display: none !important; }
@@ -117,8 +115,8 @@
   .th-filter:hover { color: var(--primary); }
   .th-filter.filtered { color: var(--primary); }
 
-  /* CAMBIO: z-index elevado a 9999 para que siempre quede por encima de todo */
-  .excel-dropdown-menu { position: absolute; background: var(--panel); border: 1px solid var(--divider); box-shadow: 0 15px 35px rgba(0,0,0,0.5); border-radius: 8px; width: 240px; z-index: 9999; padding: 10px; display: none; font-family: var(--font-main); text-transform: none; font-weight: normal; }
+  /* CAMBIO: position: fixed para que el menú use la ventana del navegador directamente y no falle con el zoom ni el scroll */
+  .excel-dropdown-menu { position: fixed; background: var(--panel); border: 1px solid var(--divider); box-shadow: 0 15px 35px rgba(0,0,0,0.5); border-radius: 8px; width: 240px; z-index: 9999; padding: 10px; display: none; font-family: var(--font-main); text-transform: none; font-weight: normal; }
   .excel-dropdown-menu.open { display: block; animation: fadeIn 0.15s ease; }
   .excel-menu-item { padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
   .excel-menu-item:hover { background: var(--panel-alt); color: var(--primary); }
@@ -389,7 +387,7 @@
     <div style="text-align:right;" class="edit-only">ACCIONES</div>
   </div>
 
-  <!-- MENÚ FLOTANTE EXCEL CON Z-INDEX MÁS ALTO -->
+  <!-- MENÚ FLOTANTE EXCEL CON POSICIONAMIENTO FIXED CORREGIDO PARA ZOOM -->
   <div id="excelDropdown" class="excel-dropdown-menu">
     <div class="excel-menu-item" data-action="sort-asc">⬆️ Ordenar A a Z</div>
     <div class="excel-menu-item" data-action="sort-desc">⬇️ Ordenar Z a A</div>
@@ -1792,7 +1790,8 @@
           activeMenuCol = th.getAttribute('data-col');
           
           const rect = th.getBoundingClientRect();
-          dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+          // CAMBIO: Usar getBoundingClientRect directo sin sumar window.scrollY porque position: fixed es relativo a la ventana del navegador
+          dropdown.style.top = (rect.bottom + 4) + 'px';
           dropdown.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
           dropdown.classList.add('open');
           
