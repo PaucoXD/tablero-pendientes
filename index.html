@@ -180,6 +180,13 @@
   .due-chip.soon { background: var(--amber-soft); color: var(--amber); }
   .due-chip.late { background: var(--red-soft); color: var(--red); }
 
+  /* ESTILOS AUTOCOMPLETADO (NUEVO) */
+  .autocomplete-container { position: relative; width: 100%; }
+  .autocomplete-items { position: absolute; border: 1px solid var(--divider); border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: var(--panel); border-radius: 0 0 var(--radius-btn) var(--radius-btn); max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+  .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--divider); color: var(--text-main); font-size: 12.5px; display: flex; justify-content: space-between; align-items: center; }
+  .autocomplete-item:hover { background-color: var(--panel-alt); }
+  .autocomplete-item strong { color: var(--primary); font-family: var(--font-heading); font-size: 11px; }
+
   /* MODALES Y UTILIDADES */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
   .modal-overlay.open { display: flex; }
@@ -330,6 +337,8 @@
       
       <div style="width: 1px; height: 20px; background: var(--divider); margin: 0 10px;"></div>
       
+      <!-- NUEVO BOTÓN PARA CATÁLOGO DE CLIENTES -->
+      <button class="btn-mini edit-only admin-only" id="manageClientesBtn" style="border-color: var(--accent); color: var(--accent);">🏢 Catálogo Clientes</button>
       <button class="btn-mini edit-only admin-only" id="manageExecBtn">👤 Usuarios y Cuentas</button>
       <button class="btn-mini edit-only" id="viewChartBtn">📊 Carga de trabajo</button>
       <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla CSV</button>
@@ -395,7 +404,16 @@
     <div class="field-row">
       <div class="field"><label>Pedimento / Referencia</label><input type="text" id="f-ref" placeholder="Ej. 26 43 1234 5000123"></div>
       <div class="field"><label>Patente / A.A.</label><input type="text" id="f-patente" placeholder="Ej. 1234 (Informativo)"></div>
-      <div class="field"><label>Cliente / Empresa</label><input type="text" id="f-cliente" placeholder="Nombre exacto del cliente"></div>
+      
+      <!-- CAMPO DE CLIENTE CON AUTOCOMPLETADO -->
+      <div class="field">
+        <label>Cliente / Empresa</label>
+        <div class="autocomplete-container">
+            <input type="text" id="f-cliente" placeholder="Escribe para buscar..." autocomplete="off">
+            <input type="hidden" id="f-cliente-id">
+            <div id="cliente-autocomplete-list" class="autocomplete-items"></div>
+        </div>
+      </div>
     </div>
     <div class="field-row">
       <div class="field">
@@ -552,6 +570,32 @@
   </div>
 </div>
 
+<!-- NUEVO MODAL: ADMINISTRACIÓN DE CATÁLOGO DE CLIENTES -->
+<div class="modal-overlay" id="clientesOverlay">
+  <div class="modal" style="max-width: 500px;">
+    <h2 style="color: var(--accent);">🏢 Catálogo Maestro de Clientes</h2>
+    
+    <div class="exec-list" id="catClientesList" style="max-height: 250px; margin-bottom: 15px; border: 1px solid var(--divider); padding: 5px; border-radius: 6px;">
+      <!-- Se llenará dinámicamente -->
+    </div>
+
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
+      <div style="font-family: var(--font-heading); font-size: 12px; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;">
+        ➕ Dar de Alta Nuevo Cliente
+      </div>
+      <div class="field"><input type="text" id="newCatClienteNombre" placeholder="Nombre Comercial (ej. RESONAC BY DECKAMMEX)"></div>
+      <div class="field"><input type="text" id="newCatClienteRazon" placeholder="Razón Social (Opcional)"></div>
+      <div class="field"><input type="text" id="newCatClienteRFC" placeholder="RFC (Opcional)"></div>
+      
+      <button class="btn-add" id="saveCatClienteBtn" style="width: 100%; background: var(--accent); color: var(--bg);">Guardar en Catálogo</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="closeClientesBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="chartOverlay">
   <div class="modal" style="max-width: 600px;">
     <h2>Carga de Trabajo Activa</h2>
@@ -607,9 +651,8 @@
       </div>
 
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 10px; border-radius: 6px; border: 1px solid var(--divider);">
-        <label style="color: var(--accent);">Empresa(s) Asociada(s) (Exacta)</label>
-        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX, FLUIDMASTER, OMPI">
-        <p style="font-size: 10.5px; color: var(--text-sub); margin: 4px 0 0;">Si es un corresponsal que capturas para varios clientes, escribe los nombres tal cual aparecen en "Cliente", separados por coma.</p>
+        <label style="color: var(--accent);">Empresa Asociada (Exacta)</label>
+        <input type="text" id="newAccEmpresa" placeholder="Ej. RESONAC BY DECKAMMEX">
         
         <!-- MATRIZ DE PERMISOS -->
         <div id="wrap-permisosCliente" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--divider);">
@@ -699,6 +742,9 @@
   const catalogoRef = ref(db, 'catalogo_ayc');
   const configRef = ref(db, 'config_ayc');
   
+  // NUEVA REFERENCIA PARA CATÁLOGO MAESTRO DE CLIENTES
+  const clientesRef = ref(db, 'clientes_ayc');
+  
   let generalPage = 1;
   const GENERAL_PAGE_SIZE = 150;
   const urlParams = new URLSearchParams(window.location.search);
@@ -745,13 +791,6 @@
   }
 
   function normKey(name) { return (name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
-  // Compatible con cuentas viejas que solo tenían "empresaAsociada" (una sola empresa)
-  function getEmpresasDe(u) {
-    if (!u) return [];
-    if (Array.isArray(u.empresasAsociadas)) return u.empresasAsociadas;
-    if (u.empresaAsociada) return [u.empresaAsociada];
-    return [];
-  }
   function canonicalExecName(name) {
     const key = normKey(name);
     if (!key) return '';
@@ -775,7 +814,6 @@
     applyProfileForUser(authUser);
   }
 
-  // Actualiza la lista visual de Usuarios en el modal de Cuentas
   function updateUsersListUi() {
     const container = document.getElementById('usersListUi');
     if (!container) return;
@@ -821,7 +859,7 @@
     document.body.classList.toggle('is-client', isClient);
     
     if (isClient) {
-        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${getEmpresasDe(currentUserProfile).join(', ')}`;
+        document.getElementById('boardMainTitle').textContent = `Portal de Cliente: ${currentUserProfile.empresaAsociada}`;
     } else {
         document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
     }
@@ -871,7 +909,6 @@
       document.getElementById('newAccEmpresa').value = '';
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
       document.getElementById('createAccMsg').textContent = '';
-      // Reset checkboxes
       document.querySelectorAll('#wrap-permisosCliente input[type="checkbox"]').forEach(cb => cb.checked = true);
   };
 
@@ -883,9 +920,9 @@
       document.getElementById('newAccName').value = u.nombre || '';
       document.getElementById('newAccUser').value = u.email.split('@')[0] || '';
       document.getElementById('newAccUser').disabled = true; 
-      document.getElementById('newAccPass').style.display = 'none'; // Hide password on edit
+      document.getElementById('newAccPass').style.display = 'none'; 
       document.getElementById('newAccRole').value = u.rol || 'cliente';
-      document.getElementById('newAccEmpresa').value = getEmpresasDe(u).join(', ');
+      document.getElementById('newAccEmpresa').value = u.empresaAsociada || '';
       
       document.getElementById('newAccRole').dispatchEvent(new Event('change'));
       
@@ -906,9 +943,7 @@
     const rawUser = document.getElementById('newAccUser').value.trim().toLowerCase();
     const pass = document.getElementById('newAccPass').value;
     const rol = document.getElementById('newAccRole').value;
-    const empresasAsociadas = rol === 'cliente'
-      ? document.getElementById('newAccEmpresa').value.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
+    const empresaAsociada = rol === 'cliente' ? document.getElementById('newAccEmpresa').value.trim() : '';
     
     const msgEl = document.getElementById('createAccMsg');
     const email = rawUser ? rawUser + DUMMY_DOMAIN : '';
@@ -916,7 +951,7 @@
     
     if (!nombre || !rawUser) { msgEl.textContent = 'Completa nombre y usuario.'; return; }
     if (mode === 'create' && pass.length < 6) { msgEl.textContent = 'La contraseña debe tener mínimo 6 letras.'; return; }
-    if (rol === 'cliente' && empresasAsociadas.length === 0) { msgEl.textContent = 'Debes escribir al menos una empresa exacta para el cliente.'; return; }
+    if (rol === 'cliente' && !empresaAsociada) { msgEl.textContent = 'Debes escribir la empresa exacta para el cliente.'; return; }
 
     const aduanasPerm = Array.from(document.querySelectorAll('#perm-aduanas input:checked')).map(cb => cb.value);
     const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
@@ -926,7 +961,7 @@
         nombre, 
         email: mode === 'edit' ? usersCache[editingUserUid].email : email, 
         rol, 
-        empresasAsociadas 
+        empresaAsociada 
     };
     
     if (rol === 'cliente') {
@@ -954,6 +989,107 @@
     }
   });
 
+  // ==========================================
+  // LÓGICA DE CATÁLOGO MAESTRO DE CLIENTES
+  // ==========================================
+  let clientesCatalogo = [];
+  
+  onValue(clientesRef, (snapshot) => {
+      clientesCatalogo = [];
+      snapshot.forEach(child => { clientesCatalogo.push({ id: child.key, ...child.val() }); });
+      // Ordenar alfabéticamente
+      clientesCatalogo.sort((a,b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      renderCatClientesList();
+  });
+
+  const clientesOverlay = document.getElementById('clientesOverlay');
+  document.getElementById('manageClientesBtn').addEventListener('click', () => clientesOverlay.classList.add('open'));
+  document.getElementById('closeClientesBtn').addEventListener('click', () => clientesOverlay.classList.remove('open'));
+
+  function renderCatClientesList() {
+      const container = document.getElementById('catClientesList');
+      if (!container) return;
+      if (clientesCatalogo.length === 0) {
+          container.innerHTML = '<div class="empty-state">No hay clientes registrados en el catálogo.</div>';
+          return;
+      }
+      container.innerHTML = clientesCatalogo.map(c => `
+          <div class="exec-item">
+              <div>
+                  <strong style="color:var(--accent);">${c.nombre}</strong><br>
+                  <span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'} - ${c.razonSocial || 'Sin Razón Social'}</span>
+              </div>
+              <button class="icon-btn del" onclick="window.deleteCatCliente('${c.id}')" title="Eliminar de catálogo">✖</button>
+          </div>
+      `).join('');
+  }
+
+  document.getElementById('saveCatClienteBtn').addEventListener('click', () => {
+      const nombre = document.getElementById('newCatClienteNombre').value.trim();
+      const razon = document.getElementById('newCatClienteRazon').value.trim();
+      const rfc = document.getElementById('newCatClienteRFC').value.trim();
+
+      if (!nombre) { alert("El nombre comercial es obligatorio."); return; }
+      
+      const dup = clientesCatalogo.find(c => normKey(c.nombre) === normKey(nombre));
+      if (dup) { alert("Ya existe un cliente con ese nombre en el catálogo."); return; }
+
+      set(push(clientesRef), { nombre: nombre, razonSocial: razon, rfc: rfc, fechaRegistro: Date.now(), registradoPor: currentUser });
+      
+      document.getElementById('newCatClienteNombre').value = '';
+      document.getElementById('newCatClienteRazon').value = '';
+      document.getElementById('newCatClienteRFC').value = '';
+  });
+
+  window.deleteCatCliente = function(id) {
+      if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?\n(No borrará los pedimentos que ya lo tengan).")) {
+          remove(ref(db, 'clientes_ayc/' + id));
+      }
+  };
+
+  // AUTOCOMPLETADO EN MODAL
+  const fClienteInput = document.getElementById('f-cliente');
+  const fClienteIdInput = document.getElementById('f-cliente-id');
+  const autoList = document.getElementById('cliente-autocomplete-list');
+
+  fClienteInput.addEventListener('input', function() {
+      const val = this.value;
+      autoList.innerHTML = '';
+      fClienteIdInput.value = ''; // Resetea ID si escribes algo nuevo
+      
+      if (!val) { autoList.style.display = 'none'; return; }
+      
+      const valLower = val.toLowerCase();
+      const matches = clientesCatalogo.filter(c => 
+          (c.nombre || '').toLowerCase().includes(valLower) || 
+          (c.rfc || '').toLowerCase().includes(valLower)
+      );
+      
+      if (matches.length > 0) {
+          autoList.style.display = 'block';
+          matches.forEach(c => {
+              const div = document.createElement('div');
+              div.className = 'autocomplete-item';
+              div.innerHTML = `<div><strong>${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'}</span></div>`;
+              div.addEventListener('click', () => {
+                  fClienteInput.value = c.nombre;
+                  fClienteIdInput.value = c.id;
+                  autoList.style.display = 'none';
+              });
+              autoList.appendChild(div);
+          });
+      } else {
+          autoList.style.display = 'none';
+      }
+  });
+
+  // Ocultar lista de autocompletado si hacen clic afuera
+  document.addEventListener('click', (e) => {
+      if (e.target !== fClienteInput) autoList.style.display = 'none';
+  });
+  // ==========================================
+
+
   function realignCurrentUserCasing() {
     if (!currentUser) return;
     const canon = canonicalExecName(currentUser);
@@ -980,6 +1116,7 @@
       if (confirmOverlay.classList.contains('open')) closeConfirmDelete();
       if (document.getElementById('modalOverlay').classList.contains('open')) closeModal();
       if (document.getElementById('taskModalOverlay').classList.contains('open')) closeTaskModal();
+      if (clientesOverlay.classList.contains('open')) clientesOverlay.classList.remove('open');
     }
   });
 
@@ -1241,8 +1378,7 @@
       const hasPerms = !!currentUserProfile.permisos;
       
       activePedimentos = activePedimentos.filter(t => {
-          const empresasCliente = getEmpresasDe(currentUserProfile);
-          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
@@ -1357,8 +1493,7 @@
       const hasPerms = !!currentUserProfile.permisos;
       
       filtered = filtered.filter(t => {
-          const empresasCliente = getEmpresasDe(currentUserProfile);
-          const matchEmpresa = empresasCliente.some(e => normKey(e) === normKey(t.cliente));
+          const matchEmpresa = normKey(t.cliente) === normKey(currentUserProfile.empresaAsociada);
           if (!hasPerms) return matchEmpresa;
           const matchAduana = p.aduanas ? p.aduanas.includes(t.aduana) : false;
           const matchTipo = p.tipos ? p.tipos.includes(t.tipo) : false;
@@ -1675,7 +1810,6 @@
     });
   }
 
-  // TAREAS PERSONALES
   const taskModal = document.getElementById('taskModalOverlay');
   let editingTaskId = null;
   window.openTaskModal = function(id) {
@@ -1716,7 +1850,6 @@
     if (card) { card.classList.add('completing'); setTimeout(finish, 320); } else { finish(); }
   };
 
-  // TOMAR POR LOTE / INDIVIDUAL
   const aduanaChoiceOverlay = document.getElementById('aduanaChoiceOverlay');
   let pendingTakeAction = null; 
   function openAduanaChoice(action) { pendingTakeAction = action; aduanaChoiceOverlay.classList.add('open'); }
@@ -1737,7 +1870,7 @@
       libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
       const lote = libres.slice(0, cantidad);
       lote.forEach(next => {
-        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
+        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
         remove(ref(db, 'catalogo_ayc/' + next.id));
       });
       playSparkle(document.getElementById('takeBatchBtn'));
@@ -1751,7 +1884,7 @@
     const next = libres[0];
     if(confirm(`Siguiente de ${aduana}:\n${next.ref}\n¿Asignártelo?`)) {
       const newRef = push(ref(db, 'pendientes_ayc'));
-      set(newRef, { ref: next.ref, cliente: next.cliente || '', aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
+      set(newRef, { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
         remove(ref(db, 'catalogo_ayc/' + next.id)); touchRef(next.ref); playSparkle(document.getElementById('takePedimentoBtn')); openModal(newRef.key); 
       });
     }
@@ -1791,7 +1924,7 @@
     if (!confirm(`Se moverán ${candidatos.length} pedimento(s) de vuelta al catálogo.\n¿Continuar?`)) return;
     let moved = 0;
     candidatos.forEach(t => {
-      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
+      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
       remove(ref(db, 'pendientes_ayc/' + t.id)); moved++;
     });
     alert(`Listo: se movieron ${moved} pedimentos al catálogo.`);
@@ -1855,7 +1988,7 @@
   window.openModal = function(id) {
     editingId = id || null;
     document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pedimento';
-    document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"]').forEach(el => el.value = '');
+    document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"], #modalOverlay input[type="hidden"]').forEach(el => el.value = '');
     fConsolidado.checked = false;
 
     if (id) {
@@ -1863,6 +1996,7 @@
       document.getElementById('f-ref').value = t.ref || '';
       document.getElementById('f-patente').value = t.patente || '';
       document.getElementById('f-cliente').value = t.cliente || '';
+      document.getElementById('f-cliente-id').value = t.cliente_id || '';
       document.getElementById('f-aduana').value = t.aduana || 'Laredo';
       fDepto.value = t.depto || 'Terrestre';
       document.getElementById('f-tipo').value = t.tipo || 'Importación';
@@ -1933,10 +2067,12 @@
     const execField = document.getElementById('f-ejecutivo');
     const selectedExec = execField.disabled ? currentUser : execField.value;
 
+    // AÑADIDO cliente_id AL OBJETO DE GUARDADO
     const data = {
       ref: document.getElementById('f-ref').value.trim(),
       patente: document.getElementById('f-patente').value.trim(),
       cliente: document.getElementById('f-cliente').value.trim(), 
+      cliente_id: document.getElementById('f-cliente-id').value.trim() || null, 
       aduana: document.getElementById('f-aduana').value, depto: depto, tipo: document.getElementById('f-tipo').value, 
       prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
