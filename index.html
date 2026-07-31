@@ -519,11 +519,17 @@
       </div>
     </div>
 
-    <!-- BLOQUE INDEPENDIENTE: CORRESPONSALÍAS -->
+    <!-- BLOQUE INDEPENDIENTE: CORRESPONSALÍAS (CON AUTOCOMPLETADO CONECTADO) -->
     <div id="wrap-corresponsalia" style="display:none; background: rgba(255,179,0,0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--amber); margin-bottom: 15px;">
       <h4 style="margin:0 0 10px; color:var(--amber); font-size:12px; font-family:var(--font-heading); text-transform:uppercase;">Datos del Corresponsal</h4>
       <div class="field-row">
-        <div class="field"><label>Agente Corresponsal</label><input type="text" id="d-corresponsal"></div>
+        <div class="field">
+          <label>Agente Corresponsal</label>
+          <div class="autocomplete-container">
+            <input type="text" id="d-corresponsal" placeholder="Escribe para buscar..." autocomplete="off">
+            <div id="corresp-autocomplete-list" class="autocomplete-items"></div>
+          </div>
+        </div>
         <div class="field"><label>Ref. Corresponsal</label><input type="text" id="d-refCorr"></div>
       </div>
       <div class="field-row">
@@ -904,7 +910,7 @@
     updateUsersListUi();
     tryApplyProfile();
   }, (error) => {
-    console.error("Error leyendo usuarios (probablemente bloqueado hasta iniciar sesión):", error);
+    console.error("Error leyendo usuarios:", error);
     usersLoaded = true;
     tryApplyProfile();
   });
@@ -1152,44 +1158,6 @@
       if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, 'corresponsales_ayc/' + id));
   };
 
-  const fClienteInput = document.getElementById('f-cliente');
-  const fClienteIdInput = document.getElementById('f-cliente-id');
-  const autoList = document.getElementById('cliente-autocomplete-list');
-
-  fClienteInput.addEventListener('input', function() {
-      const val = this.value;
-      autoList.innerHTML = '';
-      fClienteIdInput.value = '';
-      if (!val) { autoList.style.display = 'none'; return; }
-      
-      const valLower = val.toLowerCase();
-      const matches = clientesCatalogo.filter(c => 
-          (c.nombre || '').toLowerCase().includes(valLower) || 
-          (c.rfc || '').toLowerCase().includes(valLower)
-      );
-      
-      if (matches.length > 0) {
-          autoList.style.display = 'block';
-          matches.forEach(c => {
-              const div = document.createElement('div');
-              div.className = 'autocomplete-item';
-              div.innerHTML = `<div><strong>${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'}</span></div>`;
-              div.addEventListener('click', () => {
-                  fClienteInput.value = c.nombre;
-                  fClienteIdInput.value = c.id;
-                  autoList.style.display = 'none';
-              });
-              autoList.appendChild(div);
-          });
-      } else {
-          autoList.style.display = 'none';
-      }
-  });
-
-  document.addEventListener('click', (e) => {
-      if (e.target !== fClienteInput) autoList.style.display = 'none';
-  });
-
   function realignCurrentUserCasing() {
     if (!currentUser) return;
     const canon = canonicalExecName(currentUser);
@@ -1249,7 +1217,6 @@
   let currentFilter = 'todos';
   let generalAduanaFilter = 'Monterrey'; 
   
-  // ¡CORRECCIÓN AQUÍ! Se quitó "Corresponsalías" de los departamentos principales
   const DEPTOS = ['Aéreo', 'Terrestre', 'Marítimo', 'Virtual']; 
 
   const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
@@ -1296,7 +1263,6 @@
     snapshot.forEach((childSnapshot) => {
       let t = { id: childSnapshot.key, ...childSnapshot.val() };
       
-      // MIGRACIÓN DE DATOS: Convierte registros viejos de "Corresponsalías"
       if (t.depto === 'Corresponsalías') {
           t.depto = 'Marítimo';
           t.isCorresponsal = true;
@@ -1693,7 +1659,6 @@
                        <div class="dyn-data-item"><span class="dyn-data-lbl">Facturas</span><span class="dyn-data-val">${t.facturas || '—'}</span></div>`;
         }
         
-        // Muestra datos del corresponsal si la casilla está activada, sin importar el depto
         if (t.isCorresponsal || (t.corresponsal && t.corresponsal.trim() !== '')) {
             dynHtml += `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--amber);">Agente Corresp.</span><span class="dyn-data-val">${t.corresponsal || '—'}</span></div>
                        <div class="dyn-data-item"><span class="dyn-data-lbl">Ref. Corresp.</span><span class="dyn-data-val">${t.refCorr || '—'}</span></div>
@@ -2096,11 +2061,8 @@
 
   const overlay = document.getElementById('modalOverlay');
   const fDepto = document.getElementById('f-depto');
-  
-  // ¡NUEVO! Referencias a las casillas
   const fConsolidado = document.getElementById('f-isConsolidado');
   const fCorresponsal = document.getElementById('f-isCorresponsal');
-  
   let editingId = null;
 
   fDepto.addEventListener('change', () => {
@@ -2110,8 +2072,6 @@
   });
   
   fConsolidado.addEventListener('change', () => { document.getElementById('wrap-remesas').style.display = fConsolidado.checked ? 'block' : 'none'; });
-  
-  // ¡NUEVO! Mostrar bloque de corresponsalía sin importar el departamento principal
   fCorresponsal.addEventListener('change', () => { document.getElementById('wrap-corresponsalia').style.display = fCorresponsal.checked ? 'block' : 'none'; });
 
   window.openModal = function(id) {
@@ -2145,7 +2105,6 @@
       fConsolidado.checked = t.consolidado || false;
       document.getElementById('d-remesas').value = t.remesas || '';
       
-      // Activa casilla de corresponsal si la traía activada o si traía nombre asignado
       fCorresponsal.checked = t.isCorresponsal || (t.corresponsal && t.corresponsal.trim() !== '') || false;
       
       document.getElementById('d-guia').value = t.guia || '';
@@ -2185,7 +2144,6 @@
       if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true; else execField.disabled = false;
     }
     
-    // Dispara los eventos para que se muestren u oculten los bloques correctamente al abrir el modal
     fDepto.dispatchEvent(new Event('change'));
     fConsolidado.dispatchEvent(new Event('change'));
     fCorresponsal.dispatchEvent(new Event('change'));
@@ -2216,7 +2174,6 @@
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
       enlace: document.getElementById('f-enlace').value.trim(), notas: document.getElementById('f-notas').value.trim(),
       
-      // Se guarda el estado de los dos checks
       consolidado: fConsolidado.checked, remesas: document.getElementById('d-remesas').value || 0,
       isCorresponsal: fCorresponsal.checked,
       
@@ -2232,7 +2189,6 @@
       empresaRecibe: document.getElementById('d-recibe') ? document.getElementById('d-recibe').value.trim() : '',
       facturas: document.getElementById('d-facturas').value.trim(), 
       
-      // Datos del corresponsal
       corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
       aduanaCorr: document.getElementById('d-aduanaCorr').value.trim(), claveC: document.getElementById('d-claveC').value.trim(),
       eta: etaValue, lastModifiedBy: currentUser
@@ -2243,6 +2199,80 @@
     
     touchRef(document.getElementById('f-ref').value.trim());
     overlay.classList.remove('open');
+  });
+
+  // AUTOCOMPLETADO DE CLIENTES
+  const fClienteInput = document.getElementById('f-cliente');
+  const fClienteIdInput = document.getElementById('f-cliente-id');
+  const autoList = document.getElementById('cliente-autocomplete-list');
+
+  fClienteInput.addEventListener('input', function() {
+      const val = this.value;
+      autoList.innerHTML = '';
+      fClienteIdInput.value = '';
+      if (!val) { autoList.style.display = 'none'; return; }
+      
+      const valLower = val.toLowerCase();
+      const matches = clientesCatalogo.filter(c => 
+          (c.nombre || '').toLowerCase().includes(valLower) || 
+          (c.rfc || '').toLowerCase().includes(valLower)
+      );
+      
+      if (matches.length > 0) {
+          autoList.style.display = 'block';
+          matches.forEach(c => {
+              const div = document.createElement('div');
+              div.className = 'autocomplete-item';
+              div.innerHTML = `<div><strong>${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'}</span></div>`;
+              div.addEventListener('click', () => {
+                  fClienteInput.value = c.nombre;
+                  fClienteIdInput.value = c.id;
+                  autoList.style.display = 'none';
+              });
+              autoList.appendChild(div);
+          });
+      } else {
+          autoList.style.display = 'none';
+      }
+  });
+
+  // AUTOCOMPLETADO DE CORRESPONSALES
+  const dCorresponsalInput = document.getElementById('d-corresponsal');
+  const correspAutoList = document.getElementById('corresp-autocomplete-list');
+
+  if (dCorresponsalInput && correspAutoList) {
+      dCorresponsalInput.addEventListener('input', function() {
+          const val = this.value;
+          correspAutoList.innerHTML = '';
+          if (!val) { correspAutoList.style.display = 'none'; return; }
+          
+          const valLower = val.toLowerCase();
+          const matches = corresponsalesCatalogo.filter(c => 
+              (c.nombre || '').toLowerCase().includes(valLower) || 
+              (c.ciudad || '').toLowerCase().includes(valLower)
+          );
+          
+          if (matches.length > 0) {
+              correspAutoList.style.display = 'block';
+              matches.forEach(c => {
+                  const div = document.createElement('div');
+                  div.className = 'autocomplete-item';
+                  div.innerHTML = `<div><strong style="color:var(--amber);">${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.ciudad || 'Genérico'}</span></div>`;
+                  div.addEventListener('click', () => {
+                      dCorresponsalInput.value = c.nombre;
+                      correspAutoList.style.display = 'none';
+                  });
+                  correspAutoList.appendChild(div);
+              });
+          } else {
+              correspAutoList.style.display = 'none';
+          }
+      });
+  }
+
+  document.addEventListener('click', (e) => {
+      if (e.target !== fClienteInput) autoList.style.display = 'none';
+      if (dCorresponsalInput && e.target !== dCorresponsalInput && correspAutoList) correspAutoList.style.display = 'none';
   });
 
   window.sendChatMessage = function(taskId) {
