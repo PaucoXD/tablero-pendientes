@@ -436,23 +436,28 @@
           <option value="Terrestre">Terrestre</option>
           <option value="Marítimo">Marítimo</option>
           <option value="Virtual">Virtual</option>
-          <option value="Corresponsalías">Corresponsalías</option>
         </select>
       </div>
     </div>
+    
     <div class="field-row">
       <div class="field">
         <label>Tipo</label>
         <select id="f-tipo"><option>Importación</option><option>Exportación</option></select>
       </div>
-      <div class="field">
-        <label style="display:flex; align-items:center; gap:8px; margin-top:20px; cursor:pointer;">
-          <input type="checkbox" id="f-isConsolidado" style="width:16px; height:16px; margin:0; accent-color: var(--primary);"> Es Consolidado
+      <div class="field" style="display:flex; flex-direction:column; justify-content:center; gap:10px; margin-top:8px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="f-isConsolidado" style="width:16px; height:16px; margin:0; accent-color: var(--primary);"> 
+          <span style="font-size:12px; font-weight:700;">Es Consolidado</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="f-isCorresponsal" style="width:16px; height:16px; margin:0; accent-color: var(--amber);"> 
+          <span style="font-size:12px; font-weight:700; color:var(--amber);">Con Corresponsal</span>
         </label>
       </div>
     </div>
 
-    <!-- BLOQUE 2: DINÁMICO -->
+    <!-- BLOQUE 2: DINÁMICO (DEPARTAMENTOS) -->
     <div class="dynamic-section-container">
       <!-- Campos para Aéreo -->
       <div id="dyn-Aéreo" class="dynamic-block active">
@@ -507,22 +512,23 @@
         </div>
       </div>
       
-      <!-- Campos para Corresponsalías -->
-      <div id="dyn-Corresponsalías" class="dynamic-block">
-        <div class="field-row">
-          <div class="field"><label>Agente Corresponsal</label><input type="text" id="d-corresponsal"></div>
-          <div class="field"><label>Ref. Corresponsal</label><input type="text" id="d-refCorr"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Aduana de Despacho</label><input type="text" id="d-aduanaCorr"></div>
-          <div class="field"><label>Clave Pedimento</label><input type="text" id="d-claveC"></div>
-        </div>
-      </div>
-      
       <!-- Remesas -->
       <div class="field" id="wrap-remesas" style="display:none; border-top: 1px dashed var(--divider); padding-top: 15px; margin-top: 15px;">
         <label style="color:var(--accent);">Número de Remesas / Guías hijas</label>
         <input type="number" id="d-remesas" placeholder="Ej. 3">
+      </div>
+    </div>
+
+    <!-- BLOQUE INDEPENDIENTE: CORRESPONSALÍAS -->
+    <div id="wrap-corresponsalia" style="display:none; background: rgba(255,179,0,0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--amber); margin-bottom: 15px;">
+      <h4 style="margin:0 0 10px; color:var(--amber); font-size:12px; font-family:var(--font-heading); text-transform:uppercase;">Datos del Corresponsal</h4>
+      <div class="field-row">
+        <div class="field"><label>Agente Corresponsal</label><input type="text" id="d-corresponsal"></div>
+        <div class="field"><label>Ref. Corresponsal</label><input type="text" id="d-refCorr"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Aduana de Despacho</label><input type="text" id="d-aduanaCorr"></div>
+        <div class="field"><label>Clave Pedimento</label><input type="text" id="d-claveC"></div>
       </div>
     </div>
 
@@ -707,7 +713,6 @@
             <label><input type="checkbox" value="Terrestre" checked> Terrestre</label>
             <label><input type="checkbox" value="Marítimo" checked> Marítimo</label>
             <label><input type="checkbox" value="Virtual" checked> Virtual</label>
-            <label><input type="checkbox" value="Corresponsalías" checked> Corresponsalías</label>
           </div>
         </div>
       </div>
@@ -893,7 +898,6 @@
     }).join('');
   }
 
-  // --- [BLOQUE DE CÓDIGO CORREGIDO] ---
   onValue(usersRef, (snapshot) => {
     usersCache = snapshot.val() || {};
     usersLoaded = true;
@@ -911,7 +915,6 @@
       loginOverlay.classList.add('open');
     }
   }, 1500);
-  // ------------------------------------
 
   async function applyProfileForUser(user) {
     let profile = usersCache[user.uid];
@@ -1072,6 +1075,15 @@
       msgEl.textContent = map[e.code] || ('Error: ' + e.message);
     }
   });
+
+  const clientesOverlay = document.getElementById('clientesOverlay');
+  const corresponsalesOverlay = document.getElementById('corresponsalesOverlay');
+
+  document.getElementById('manageClientesBtn').addEventListener('click', () => clientesOverlay.classList.add('open'));
+  document.getElementById('closeClientesBtn').addEventListener('click', () => clientesOverlay.classList.remove('open'));
+
+  document.getElementById('manageCorresponsalesBtn').addEventListener('click', () => corresponsalesOverlay.classList.add('open'));
+  document.getElementById('closeCorrespBtn').addEventListener('click', () => corresponsalesOverlay.classList.remove('open'));
 
   function renderCatClientesList() {
       const container = document.getElementById('catClientesList');
@@ -1236,7 +1248,9 @@
   function touchRef(r) { if (!r) return; lastTouchedRef = r; localStorage.setItem('ayc-last-touched-ref', r); }
   let currentFilter = 'todos';
   let generalAduanaFilter = 'Monterrey'; 
-  const DEPTOS = ['Aéreo', 'Terrestre', 'Corresponsalías', 'Marítimo', 'Virtual'];
+  
+  // ¡CORRECCIÓN AQUÍ! Se quitó "Corresponsalías" de los departamentos principales
+  const DEPTOS = ['Aéreo', 'Terrestre', 'Marítimo', 'Virtual']; 
 
   const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
   
@@ -1281,6 +1295,13 @@
     const now = Date.now();
     snapshot.forEach((childSnapshot) => {
       let t = { id: childSnapshot.key, ...childSnapshot.val() };
+      
+      // MIGRACIÓN DE DATOS: Convierte registros viejos de "Corresponsalías"
+      if (t.depto === 'Corresponsalías') {
+          t.depto = 'Marítimo';
+          t.isCorresponsal = true;
+      }
+
       if (t.status === 'Eliminado' && t.deletedAt) {
         const daysInTrash = (now - new Date(t.deletedAt).getTime()) / (1000 * 3600 * 24);
         if (daysInTrash > 7) { remove(ref(db, 'pendientes_ayc/' + t.id)); return; }
@@ -1294,7 +1315,11 @@
 
   onValue(catalogoRef, (snapshot) => {
     catalogo = [];
-    snapshot.forEach((childSnapshot) => { catalogo.push({ id: childSnapshot.key, ...childSnapshot.val() }); });
+    snapshot.forEach((childSnapshot) => { 
+        let c = { id: childSnapshot.key, ...childSnapshot.val() };
+        if (c.depto === 'Corresponsalías') { c.depto = 'Marítimo'; c.isCorresponsal = true; }
+        catalogo.push(c); 
+    });
     if(currentUserProfile) render();
   });
 
@@ -1400,14 +1425,6 @@
   const execOverlay = document.getElementById('execOverlay');
   document.getElementById('manageExecBtn').addEventListener('click', () => execOverlay.classList.add('open'));
   document.getElementById('closeExecBtn').addEventListener('click', () => { execOverlay.classList.remove('open'); resetUserForm(); });
-  const clientesOverlay = document.getElementById('clientesOverlay');
-  const corresponsalesOverlay = document.getElementById('corresponsalesOverlay');
-
-  document.getElementById('manageClientesBtn').addEventListener('click', () => clientesOverlay.classList.add('open'));
-  document.getElementById('closeClientesBtn').addEventListener('click', () => clientesOverlay.classList.remove('open'));
-
-  document.getElementById('manageCorresponsalesBtn').addEventListener('click', () => corresponsalesOverlay.classList.add('open'));
-  document.getElementById('closeCorrespBtn').addEventListener('click', () => corresponsalesOverlay.classList.remove('open'));
   document.getElementById('addExecBtn').addEventListener('click', () => {
     const input = document.getElementById('newExecInput'); const name = input.value.trim();
     if (!name) return;
@@ -1674,11 +1691,14 @@
                        <div class="dyn-data-item"><span class="dyn-data-lbl">Clave</span><span class="dyn-data-val">${t.claveV || '—'}</span></div>
                        <div class="dyn-data-item"><span class="dyn-data-lbl">Transfiere</span><span class="dyn-data-val">${t.empresaTransfiere || '—'}</span></div>
                        <div class="dyn-data-item"><span class="dyn-data-lbl">Facturas</span><span class="dyn-data-val">${t.facturas || '—'}</span></div>`;
-        } else {
-            dynHtml = `<div class="dyn-data-item"><span class="dyn-data-lbl">Corresponsal</span><span class="dyn-data-val">${t.corresponsal || '—'}</span></div>
-                       <div class="dyn-data-item"><span class="dyn-data-lbl">Ref. Corresponsal</span><span class="dyn-data-val">${t.refCorr || '—'}</span></div>
-                       <div class="dyn-data-item"><span class="dyn-data-lbl">Aduana</span><span class="dyn-data-val">${t.aduanaCorr || '—'}</span></div>
-                       <div class="dyn-data-item"><span class="dyn-data-lbl">Clave</span><span class="dyn-data-val">${t.claveC || '—'}</span></div>`;
+        }
+        
+        // Muestra datos del corresponsal si la casilla está activada, sin importar el depto
+        if (t.isCorresponsal || (t.corresponsal && t.corresponsal.trim() !== '')) {
+            dynHtml += `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--amber);">Agente Corresp.</span><span class="dyn-data-val">${t.corresponsal || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Ref. Corresp.</span><span class="dyn-data-val">${t.refCorr || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Aduana Corresp.</span><span class="dyn-data-val">${t.aduanaCorr || '—'}</span></div>
+                       <div class="dyn-data-item"><span class="dyn-data-lbl">Clave Corresp.</span><span class="dyn-data-val">${t.claveC || '—'}</span></div>`;
         }
         
         let consHtml = t.consolidado ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--accent)">📦 Consolidado</span><span class="dyn-data-val">${t.remesas || 0} Remesas</span></div>` : '';
@@ -2076,7 +2096,11 @@
 
   const overlay = document.getElementById('modalOverlay');
   const fDepto = document.getElementById('f-depto');
+  
+  // ¡NUEVO! Referencias a las casillas
   const fConsolidado = document.getElementById('f-isConsolidado');
+  const fCorresponsal = document.getElementById('f-isCorresponsal');
+  
   let editingId = null;
 
   fDepto.addEventListener('change', () => {
@@ -2084,13 +2108,19 @@
       const activeBlock = document.getElementById('dyn-' + fDepto.value);
       if (activeBlock) activeBlock.classList.add('active');
   });
+  
   fConsolidado.addEventListener('change', () => { document.getElementById('wrap-remesas').style.display = fConsolidado.checked ? 'block' : 'none'; });
+  
+  // ¡NUEVO! Mostrar bloque de corresponsalía sin importar el departamento principal
+  fCorresponsal.addEventListener('change', () => { document.getElementById('wrap-corresponsalia').style.display = fCorresponsal.checked ? 'block' : 'none'; });
 
   window.openModal = function(id) {
     editingId = id || null;
     document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pedimento';
     document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"], #modalOverlay input[type="hidden"]').forEach(el => el.value = '');
+    
     fConsolidado.checked = false;
+    fCorresponsal.checked = false;
 
     if (id) {
       const t = tasks.find(x => x.id === id);
@@ -2114,6 +2144,10 @@
 
       fConsolidado.checked = t.consolidado || false;
       document.getElementById('d-remesas').value = t.remesas || '';
+      
+      // Activa casilla de corresponsal si la traía activada o si traía nombre asignado
+      fCorresponsal.checked = t.isCorresponsal || (t.corresponsal && t.corresponsal.trim() !== '') || false;
+      
       document.getElementById('d-guia').value = t.guia || '';
       document.getElementById('d-aerolinea').value = t.aerolinea || '';
       document.getElementById('d-almacen').value = t.almacen || '';
@@ -2150,8 +2184,12 @@
       execField.value = currentUser || '';
       if (currentUserProfile && currentUserProfile.rol !== 'admin') execField.disabled = true; else execField.disabled = false;
     }
+    
+    // Dispara los eventos para que se muestren u oculten los bloques correctamente al abrir el modal
     fDepto.dispatchEvent(new Event('change'));
     fConsolidado.dispatchEvent(new Event('change'));
+    fCorresponsal.dispatchEvent(new Event('change'));
+    
     overlay.classList.add('open');
   };
 
@@ -2177,7 +2215,10 @@
       prioridad: document.getElementById('f-prioridad').value, status: document.getElementById('f-status').value, 
       limite: document.getElementById('f-limite').value || null, ejecutivo: selectedExec, 
       enlace: document.getElementById('f-enlace').value.trim(), notas: document.getElementById('f-notas').value.trim(),
+      
+      // Se guarda el estado de los dos checks
       consolidado: fConsolidado.checked, remesas: document.getElementById('d-remesas').value || 0,
+      isCorresponsal: fCorresponsal.checked,
       
       guia: document.getElementById('d-guia').value.trim(), aerolinea: document.getElementById('d-aerolinea').value.trim(),
       almacen: document.getElementById('d-almacen').value.trim(),
@@ -2190,6 +2231,8 @@
       empresaTransfiere: document.getElementById('d-transfiere').value.trim(),
       empresaRecibe: document.getElementById('d-recibe') ? document.getElementById('d-recibe').value.trim() : '',
       facturas: document.getElementById('d-facturas').value.trim(), 
+      
+      // Datos del corresponsal
       corresponsal: document.getElementById('d-corresponsal').value.trim(), refCorr: document.getElementById('d-refCorr').value.trim(),
       aduanaCorr: document.getElementById('d-aduanaCorr').value.trim(), claveC: document.getElementById('d-claveC').value.trim(),
       eta: etaValue, lastModifiedBy: currentUser
