@@ -314,6 +314,7 @@
         <option value="girly-light">🌸 Girly Pop Claro</option>
         <option value="girly-dark">🌙 Girly Pop Oscuro</option>
       </select>
+      <button class="btn-quiet" id="openPersonalizarBtn" title="Personalizar colores y fondo (se guarda en tu cuenta)">🎨 Personalizar</button>
 
       <div class="header-divider"></div>
 
@@ -663,6 +664,38 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="personalizarOverlay">
+  <div class="modal" style="max-width: 420px;">
+    <h2>🎨 Personalizar mi apariencia</h2>
+    <p style="font-size: 12.5px; color: var(--text-sub); margin: -8px 0 16px;">Esto se guarda en tu cuenta: te va a acompañar aunque entres desde otro dispositivo.</p>
+
+    <div class="field">
+      <label>Color principal (botones, acentos)</label>
+      <input type="color" id="pColorPrimary" style="width: 100%; height: 40px; border: 1px solid var(--divider); border-radius: var(--radius-btn); cursor: pointer; padding: 3px;">
+    </div>
+    <div class="field">
+      <label>Color secundario (links, detalles)</label>
+      <input type="color" id="pColorAccent" style="width: 100%; height: 40px; border: 1px solid var(--divider); border-radius: var(--radius-btn); cursor: pointer; padding: 3px;">
+    </div>
+    <div class="field">
+      <label>Fondo del tablero</label>
+      <select id="pFondo">
+        <option value="default">Predeterminado del tema</option>
+        <option value="solido">Sólido plano (sin degradado)</option>
+        <option value="oscuro-suave">Oscuro con viñeta suave</option>
+      </select>
+    </div>
+
+    <div class="modal-actions" style="justify-content: space-between;">
+      <button class="btn-secondary" id="resetPersonalizarBtn">Restablecer al tema</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-secondary" id="cancelPersonalizarBtn">Cancelar</button>
+        <button class="btn-add" id="savePersonalizarBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="execOverlay">
   <div class="modal" style="max-width: 460px;">
     <h2>Usuarios y Cuentas</h2>
@@ -770,6 +803,8 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
   const dbRef = ref(db, 'pendientes_ayc');
+  let misTareasPrivadas = [];
+  let misTareasListenerUid = null; // evita re-enganchar el listener si el perfil se refresca varias veces
   const execRef = ref(db, 'ejecutivos_ayc');
   const usersRef = ref(db, 'usuarios_ayc');
   const catalogoRef = ref(db, 'catalogo_ayc');
@@ -930,6 +965,9 @@
     const isAdmin = currentUserProfile.rol === 'admin';
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
     const isCorresp = currentUserProfile.rol === 'corresponsal';
+
+    applyPersonalizacion(currentUserProfile.personalizacion);
+    attachMisTareasPrivadasListener(user.uid);
     
     document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isCorresp ? ' (Corresponsal)' : (isClient ? ' (Cliente)' : '')));
     
@@ -1165,6 +1203,79 @@
     if (newTheme.includes('girly')) playSparkle(themeSelector);
   });
 
+  // ---------- Personalización visual guardada por usuario (te sigue a cualquier dispositivo) ----------
+  function applyPersonalizacion(p) {
+    const root = document.documentElement.style;
+    if (p && p.primary) root.setProperty('--primary', p.primary); else root.removeProperty('--primary');
+    if (p && p.accent) root.setProperty('--accent', p.accent); else root.removeProperty('--accent');
+    if (p && p.fondo === 'solido') root.setProperty('--bg-image', 'none');
+    else if (p && p.fondo === 'oscuro-suave') root.setProperty('--bg-image', 'radial-gradient(ellipse at top, rgba(0,0,0,.35) 0%, transparent 65%)');
+    else root.removeProperty('--bg-image');
+  }
+
+  const personalizarOverlay = document.getElementById('personalizarOverlay');
+  document.getElementById('openPersonalizarBtn').addEventListener('click', () => {
+    const p = (currentUserProfile && currentUserProfile.personalizacion) || {};
+    const computed = getComputedStyle(document.documentElement);
+    document.getElementById('pColorPrimary').value = p.primary || rgbToHex(computed.getPropertyValue('--primary'));
+    document.getElementById('pColorAccent').value = p.accent || rgbToHex(computed.getPropertyValue('--accent'));
+    document.getElementById('pFondo').value = p.fondo || 'default';
+    personalizarOverlay.classList.add('open');
+  });
+  document.getElementById('cancelPersonalizarBtn').addEventListener('click', () => personalizarOverlay.classList.remove('open'));
+  personalizarOverlay.addEventListener('click', (e) => { if (e.target === personalizarOverlay) personalizarOverlay.classList.remove('open'); });
+
+  function rgbToHex(colorStr) {
+    colorStr = (colorStr || '').trim();
+    if (colorStr.startsWith('#')) return colorStr;
+    const m = colorStr.match(/\d+/g);
+    if (!m) return '#FFB300';
+    return '#' + m.slice(0, 3).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('');
+  }
+
+  document.getElementById('savePersonalizarBtn').addEventListener('click', async () => {
+    if (!currentUserProfile) return;
+    const personalizacion = {
+      primary: document.getElementById('pColorPrimary').value,
+      accent: document.getElementById('pColorAccent').value,
+      fondo: document.getElementById('pFondo').value
+    };
+    await update(ref(db, 'usuarios_ayc/' + currentUserProfile.uid), { personalizacion });
+    currentUserProfile.personalizacion = personalizacion;
+    applyPersonalizacion(personalizacion);
+    personalizarOverlay.classList.remove('open');
+  });
+
+  document.getElementById('resetPersonalizarBtn').addEventListener('click', async () => {
+    if (!currentUserProfile) return;
+    await update(ref(db, 'usuarios_ayc/' + currentUserProfile.uid), { personalizacion: null });
+    currentUserProfile.personalizacion = null;
+    applyPersonalizacion(null);
+    personalizarOverlay.classList.remove('open');
+  });
+
+  // ---------- Tareas personales PRIVADAS (solo el propio usuario las puede leer/escribir) ----------
+  function attachMisTareasPrivadasListener(uid) {
+    if (misTareasListenerUid === uid) return; // ya está enganchado para este usuario, no duplicar
+    misTareasListenerUid = uid;
+    onValue(ref(db, 'tareas_privadas_ayc/' + uid), (snapshot) => {
+      misTareasPrivadas = [];
+      snapshot.forEach((childSnapshot) => { misTareasPrivadas.push({ id: childSnapshot.key, ...childSnapshot.val() }); });
+      render();
+    });
+  }
+
+  // Migración de una sola vez: si el usuario tenía tareas guardadas a la manera vieja
+  // (mezcladas en pendientes_ayc con isTask:true), las mueve a su espacio privado.
+  function migrarTareasPrivadasViejas(uid) {
+    const viejas = tasks.filter(t => t.isTask && normKey(t.ejecutivo) === normKey(currentUser) && t.status !== 'Eliminado');
+    viejas.forEach(t => {
+      const { id: _oldId, isTask, ejecutivo, ...rest } = t;
+      set(push(ref(db, 'tareas_privadas_ayc/' + uid)), rest);
+      remove(ref(db, 'pendientes_ayc/' + t.id));
+    });
+  }
+
   const toggleToolsBtn = document.getElementById('toggleToolsBtn');
   const toolbarContent = document.getElementById('toolbarContent');
   toggleToolsBtn.addEventListener('click', () => {
@@ -1221,6 +1332,7 @@
     extractExecutives();
   });
 
+  let migracionTareasPrivadasHecha = false;
   onValue(dbRef, (snapshot) => {
     tasks = [];
     const now = Date.now();
@@ -1236,6 +1348,10 @@
     extractExecutives();
     if(currentUserProfile) render();
     checkOverdueNotifications();
+    if (!migracionTareasPrivadasHecha && currentUserProfile) {
+      migracionTareasPrivadasHecha = true;
+      migrarTareasPrivadasViejas(currentUserProfile.uid);
+    }
   });
 
   onValue(catalogoRef, (snapshot) => {
@@ -1359,7 +1475,7 @@
   function renderTabs() {
     let activePedimentos = tasks.filter(t => t.status !== 'Eliminado' && !t.isTask);
     let trashPedimentos = tasks.filter(t => t.status === 'Eliminado' && !t.isTask);
-    let activeMisTareas = tasks.filter(t => t.status !== 'Eliminado' && t.isTask && t.ejecutivo === currentUser);
+    let activeMisTareas = misTareasPrivadas.filter(t => t.status !== 'Eliminado');
     
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
 
@@ -1452,7 +1568,7 @@
 
     if (currentFilter === 'mis_tareas' && !isClient) {
       colHeader.style.display = 'none';
-      let misFiltered = tasks.filter(t => t.isTask && t.ejecutivo === currentUser && t.status !== 'Eliminado');
+      let misFiltered = misTareasPrivadas.filter(t => t.status !== 'Eliminado');
       if (search) misFiltered = misFiltered.filter(t => (t.titulo || '').toLowerCase().includes(search));
       misFiltered.sort((a,b) => {
         if (a.status === 'Completado' && b.status !== 'Completado') return 1;
@@ -1529,7 +1645,7 @@
       filtered = filtered.filter(t => t.status !== 'Completado' && t.status !== 'Expediente');
     }
 
-    if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search) || (t.patente || '').toLowerCase().includes(search));
+    if (search) filtered = filtered.filter(t => (t.ref || '').toLowerCase().includes(search) || (t.cliente || '').toLowerCase().includes(search) || (t.patente || '').toLowerCase().includes(search) || (t.guia || '').toLowerCase().includes(search) || (t.bl || '').toLowerCase().includes(search));
 
     Object.keys(window.activeColumnFilters).forEach(col => {
         const valSet = window.activeColumnFilters[col];
@@ -1613,12 +1729,16 @@
         let consHtml = t.consolidado ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--accent)">📦 Consolidado</span><span class="dyn-data-val">${t.remesas || 0} Remesas</span></div>` : '';
         let patenteHtml = t.patente ? `<div class="dyn-data-item"><span class="dyn-data-lbl" style="color:var(--primary)">Patente / A.A.</span><span class="dyn-data-val">${t.patente}</span></div>` : '';
 
+        let extraDocHtml = '';
+        if (t.guia) extraDocHtml = `<div class="cell-sub" style="font-size: 10px; color: var(--accent); margin-top: 2px;">Guía: ${t.guia}</div>`;
+        else if (t.bl) extraDocHtml = `<div class="cell-sub" style="font-size: 10px; color: var(--accent); margin-top: 2px;">B/L: ${t.bl}</div>`;
+
         return `
         <div class="row-wrapper" data-id="${t.id}">
           <div class="row-main">
             <button class="expand-btn" data-action="toggle" data-id="${t.id}">❯</button>
             <div class="prio-dot ${prioClass(t.prioridad)}"></div>
-            <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div></div>
+            <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div>${extraDocHtml}</div>
             <div data-label="Cliente"><div class="cell-client">${t.cliente || '—'}</div>${!isClient && t.ejecutivo ? `<div class="cell-sub" style="margin-top: 3px;">👤 ${t.ejecutivo}</div>` : ''}</div>
             <div class="cell small" data-label="Aduana">${t.aduana}</div>
             <div class="cell small" data-label="Depto">${t.depto}</div>
@@ -1908,7 +2028,7 @@
     editingTaskId = id || null;
     document.getElementById('taskModalTitle').textContent = id ? 'Editar Tarea' : 'Nueva Tarea Personal';
     if (id) {
-      const t = tasks.find(x => x.id === id);
+      const t = misTareasPrivadas.find(x => x.id === id);
       document.getElementById('t-titulo').value = t.titulo || '';
       document.getElementById('t-prioridad').value = t.prioridad || 'Media';
       document.getElementById('t-limite').value = t.limite || '';
@@ -1928,16 +2048,18 @@
   document.getElementById('saveTaskBtn').addEventListener('click', () => {
     const titulo = document.getElementById('t-titulo').value.trim();
     if (!titulo) { alert("Escribe qué necesitas hacer."); return; }
-    const data = { isTask: true, titulo: titulo, prioridad: document.getElementById('t-prioridad').value, limite: document.getElementById('t-limite').value || null, notas: document.getElementById('t-notas').value.trim(), status: editingTaskId ? tasks.find(x => x.id === editingTaskId).status : 'Pendiente', ejecutivo: currentUser, lastModifiedBy: currentUser };
-    if (editingTaskId) { update(ref(db, 'pendientes_ayc/' + editingTaskId), data); } else { set(push(ref(db, 'pendientes_ayc')), data); }
+    const uid = currentUserProfile.uid;
+    const data = { titulo: titulo, prioridad: document.getElementById('t-prioridad').value, limite: document.getElementById('t-limite').value || null, notas: document.getElementById('t-notas').value.trim(), status: editingTaskId ? misTareasPrivadas.find(x => x.id === editingTaskId).status : 'Pendiente' };
+    if (editingTaskId) { update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + editingTaskId), data); } else { set(push(ref(db, 'tareas_privadas_ayc/' + uid)), data); }
     closeTaskModal();
   });
 
   window.actionTask = function(id, action) {
     const card = document.querySelector(`.task-card[data-task-id="${id}"]`);
+    const uid = currentUserProfile.uid;
     const finish = () => {
-      if (action === 'done') update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser });
-      if (action === 'del') update(ref(db, 'pendientes_ayc/' + id), { status: 'Eliminado', deletedAt: new Date().toISOString(), lastModifiedBy: currentUser });
+      if (action === 'done') update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { status: 'Completado' });
+      if (action === 'del') remove(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id));
     };
     if (card) { card.classList.add('completing'); setTimeout(finish, 320); } else { finish(); }
   };
