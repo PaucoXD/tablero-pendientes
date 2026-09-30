@@ -56,6 +56,13 @@
   .tram-check { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 6px; cursor: pointer; }
   .tram-count { font-size: 12px; color: var(--text-sub); margin-left: auto; }
   .tram-hint { font-size: 12px; color: var(--text-sub); margin-bottom: 10px; }
+  .tram-form { background: var(--panel-alt); border: 1px solid var(--divider); border-radius: var(--radius-board); padding: 14px; margin-bottom: 12px; }
+  .tram-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .tram-form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
+  .tram-form input, .tram-form select, .tram-form textarea { background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); border-radius: var(--radius-btn); padding: 7px 9px; font: 13px var(--font-main); text-transform: none; }
+  .tram-form textarea { width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-size: 12px; margin: 6px 0; }
+  .tram-form-acciones { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 10px; }
+  .tram-form-msg { margin-right: auto; font-size: 12px; }
   .tram-tabla-wrap { overflow-x: auto; border: 1px solid var(--divider); border-radius: var(--radius-board); }
   .tram-tabla { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px; }
   .tram-tabla th { background: var(--green-soft); color: var(--text-main); font-family: var(--font-heading); font-size: 12px; letter-spacing: .5px; padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--divider); white-space: nowrap; }
@@ -2062,8 +2069,10 @@
           <select id="tramEjecutivo"><option value="todos">Todos los ejecutivos</option>${ejecutivos.map(e => `<option ${normKey(e) === normKey(tramEjecutivo) ? 'selected' : ''}>${tramEsc(e)}</option>`).join('')}</select>
           ${puedeEditar ? `<label class="tram-check"><input type="checkbox" id="tramSinEstatus" ${tramSoloSinEstatus ? 'checked' : ''}> Solo sin estatus</label>` : ''}
           <span class="tram-count">${filas.length} guía(s)</span>
+          ${esTramitador() ? '' : `<button class="btn-mini" id="tramNuevaBtn">➕ Nueva guía</button><button class="btn-mini" id="tramPegarBtn">📋 Pegar desde Excel</button>`}
           <button class="btn-add" id="tramImagenBtn">🖼️ Generar imagen</button>
         </div>
+        ${tramFormHtml()}
         ${puedeEditar ? '<div class="tram-hint">✏️ Escribe el estatus directo en la tabla; se guarda solo al salir de la celda. Almacén y fecha de arribo se editan en el pedimento.</div>' : ''}
         <div class="tram-tabla-wrap">
           <table class="tram-tabla">
@@ -2093,6 +2102,10 @@
     const sinEst = document.getElementById('tramSinEstatus');
     if (sinEst) sinEst.addEventListener('change', (e) => { tramSoloSinEstatus = e.target.checked; renderTramitadoresTab(); });
     document.getElementById('tramImagenBtn').addEventListener('click', () => tramGenerarImagen(filas));
+    const nuevaBtn = document.getElementById('tramNuevaBtn'), pegarBtn = document.getElementById('tramPegarBtn');
+    if (nuevaBtn) nuevaBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'una' ? null : 'una'; renderTramitadoresTab(); });
+    if (pegarBtn) pegarBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'pegar' ? null : 'pegar'; renderTramitadoresTab(); });
+    tramConectarForm();
     rowsEl.querySelectorAll('.tram-estatus').forEach(inp => {
       const guardar = () => {
         const t = tasks.find(x => x.id === inp.dataset.id);
@@ -2170,6 +2183,139 @@
     try { if (navigator.clipboard && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); copiada = true; } } catch (e) {}
     const btn = document.getElementById('tramImagenBtn');
     if (btn) { const txt = btn.textContent; btn.textContent = copiada ? '✅ Descargada y copiada (pega con Ctrl+V)' : '✅ Imagen descargada'; setTimeout(() => { btn.textContent = txt; }, 3000); }
+  }
+
+
+  // ----- Meter guías nuevas desde Tramitadores (una por una o pegando filas del Excel) -----
+  let tramFormAbierto = null; // null | 'una' | 'pegar'
+  function tramNormGuia(g) { return String(g || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function tramGuiaExistente(guia) {
+    const n = tramNormGuia(guia);
+    return n ? tasks.find(t => !t.isTask && t.status !== 'Eliminado' && tramNormGuia(t.guia) === n) : null;
+  }
+  // "22-sep", "22/09", "2026-09-22", "-" → "YYYY-MM-DD" o ''
+  function tramParseFecha(txt) {
+    const s = String(txt || '').trim().toLowerCase();
+    if (!s || s === '-' || s === '—') return '';
+    let m;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    const hoy = new Date();
+    const armar = (d, mes, anio) => {
+      let y = anio ? (+anio < 100 ? 2000 + +anio : +anio) : hoy.getFullYear();
+      if (!anio && mes - 1 - hoy.getMonth() > 6) y--;          // "15-dic" capturado en enero → año pasado
+      if (!anio && hoy.getMonth() - (mes - 1) > 6) y++;        // "5-ene" capturado en diciembre → año siguiente
+      return `${y}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    };
+    if ((m = s.match(/^(\d{1,2})[-\/\s]([a-zé]{3,})\.?(?:[-\/\s](\d{2,4}))?$/))) {
+      const idx = TRAM_MESES.findIndex(x => m[2].startsWith(x) || (x === 'sep' && m[2].startsWith('set')));
+      return idx >= 0 ? armar(+m[1], idx + 1, m[3]) : '';
+    }
+    if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?$/))) return armar(+m[1], +m[2], m[3]);
+    return '';
+  }
+  function tramNuevoPendiente(d) {
+    const cli = clientesCatalogo.find(c => normKey(c.nombre) === normKey(d.cliente));
+    return {
+      ref: '', cliente: cli ? cli.nombre : d.cliente.toUpperCase(), cliente_id: cli ? cli.id : null,
+      aduana: 'Monterrey', depto: 'Aéreo', tipo: 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
+      ejecutivo: d.ejecutivo || currentUser, enlace: '', notas: '',
+      guia: d.guia.trim(), almacen: (d.almacen || '').toUpperCase(), eta: d.eta || '',
+      estatusTramite: d.estatus || '', estatusTramitePor: d.estatus ? currentUser : null, estatusTramiteEn: d.estatus ? new Date().toISOString() : null,
+      lastModifiedBy: currentUser
+    };
+  }
+  function tramGuardarGuias(lista) {
+    return Promise.all(lista.map(d => set(push(ref(db, 'pendientes_ayc')), tramNuevoPendiente(d))));
+  }
+  function tramEjecutivosLista() {
+    const m = new Map();
+    (executives || []).forEach(e => e && e.nombre && m.set(normKey(e.nombre), e.nombre));
+    tasks.forEach(t => { if (!t.isTask && t.ejecutivo && t.ejecutivo !== 'Sin asignar' && !m.has(normKey(t.ejecutivo))) m.set(normKey(t.ejecutivo), t.ejecutivo); });
+    return [...m.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  function tramFormHtml() {
+    if (!tramFormAbierto) return '';
+    const execs = tramEjecutivosLista();
+    if (tramFormAbierto === 'una') return `
+      <div class="tram-form">
+        <div class="tram-form-grid">
+          <label>Cliente<input id="tfCliente" list="tramClientes" placeholder="Ej. RONAHE"></label>
+          <label>Guía<input id="tfGuia" placeholder="Ej. 877170716938"></label>
+          <label>Almacén<input id="tfAlmacen" list="tramAlmacenes" placeholder="Ej. FEDEX, OMA 158"></label>
+          <label>Fecha de arribo<input id="tfEta" type="date"></label>
+          <label>Estatus<input id="tfEstatus" list="tramSugeridos" placeholder="Ej. pendiente previo" ${currentUserProfile.rol === 'admin' ? '' : 'disabled title="Solo admins ponen estatus"'}></label>
+          <label>Ejecutivo<select id="tfEjecutivo">${execs.map(e => `<option ${normKey(e) === normKey(currentUser) ? 'selected' : ''}>${tramEsc(e)}</option>`).join('')}</select></label>
+        </div>
+        <div class="tram-form-acciones"><span id="tfMsg" class="tram-form-msg"></span><button class="btn-mini" id="tfCancelar">Cancelar</button><button class="btn-add" id="tfGuardar">Guardar guía</button></div>
+        <datalist id="tramClientes">${clientesCatalogo.map(c => `<option value="${tramEsc(c.nombre)}">`).join('')}</datalist>
+        <datalist id="tramAlmacenes">${[...new Set(tasks.map(t => (t.almacen || '').trim().toUpperCase()).filter(Boolean))].map(a => `<option value="${tramEsc(a)}">`).join('')}</datalist>
+      </div>`;
+    return `
+      <div class="tram-form">
+        <div class="tram-hint">Copia las filas en Excel (sin el encabezado) y pégalas aquí. Columnas en este orden: <b>CLIENTE · GUÍA · ALMACÉN · FECHA DE ARRIBO · ESTATUS · EJECUTIVO</b>. Las guías que ya existen se saltan.</div>
+        <textarea id="tfPegar" rows="6" placeholder="RONAHE&#9;877170716938&#9;FEDEX&#9;28-sep&#9;pendiente previo&#9;PAULO"></textarea>
+        <div id="tfVista" class="tram-hint"></div>
+        <div class="tram-form-acciones"><span id="tfMsg" class="tram-form-msg"></span><button class="btn-mini" id="tfCancelar">Cancelar</button><button class="btn-add" id="tfGuardar" disabled>Agregar guías</button></div>
+      </div>`;
+  }
+
+  function tramParsePegado(texto) {
+    const esAdmin = currentUserProfile.rol === 'admin';
+    const execs = tramEjecutivosLista();
+    const filas = [], saltadas = [];
+    const vistas = new Set();
+    texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(l => {
+      const c = l.split('\t').map(x => x.trim());
+      if (c.length < 2 || /^cliente$/i.test(c[0])) return;
+      const [cliente, guia, almacen, fecha, estatus, ejecutivo] = c;
+      if (!guia) return;
+      const n = tramNormGuia(guia);
+      if (tramGuiaExistente(guia) || vistas.has(n)) { saltadas.push(guia); return; }
+      vistas.add(n);
+      const ej = execs.find(e => normKey(e) === normKey(ejecutivo)) || (ejecutivo ? ejecutivo.toUpperCase() : currentUser);
+      filas.push({ cliente: cliente || '', guia, almacen: almacen || '', eta: tramParseFecha(fecha), estatus: esAdmin ? (estatus || '') : '', ejecutivo: ej });
+    });
+    return { filas, saltadas };
+  }
+
+  function tramConectarForm() {
+    const msg = (t, ok) => { const el = document.getElementById('tfMsg'); if (el) { el.textContent = t; el.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
+    const cancelar = document.getElementById('tfCancelar');
+    if (!cancelar) return;
+    cancelar.addEventListener('click', () => { tramFormAbierto = null; renderTramitadoresTab(); });
+    const guardarBtn = document.getElementById('tfGuardar');
+    if (tramFormAbierto === 'una') {
+      document.getElementById('tfCliente').focus();
+      guardarBtn.addEventListener('click', () => {
+        const d = { cliente: document.getElementById('tfCliente').value.trim(), guia: document.getElementById('tfGuia').value.trim(), almacen: document.getElementById('tfAlmacen').value.trim(), eta: document.getElementById('tfEta').value, estatus: document.getElementById('tfEstatus').value.trim(), ejecutivo: document.getElementById('tfEjecutivo').value };
+        if (!d.cliente || !d.guia) { msg('Falta cliente o guía.'); return; }
+        const ya = tramGuiaExistente(d.guia);
+        if (ya) { msg(`Esa guía ya está en el tablero (${ya.cliente || 'sin cliente'}, ${ya.ejecutivo || 'sin asignar'}).`); return; }
+        guardarBtn.disabled = true;
+        tramGuardarGuias([d]).then(() => { tramFormAbierto = null; renderTramitadoresTab(); })
+          .catch(err => { guardarBtn.disabled = false; msg('No se pudo guardar: ' + (err.code || err.message)); });
+      });
+    } else {
+      const ta = document.getElementById('tfPegar');
+      ta.focus();
+      let parse = { filas: [], saltadas: [] };
+      ta.addEventListener('input', () => {
+        parse = tramParsePegado(ta.value);
+        const sinFecha = parse.filas.filter(f => !f.eta).length;
+        document.getElementById('tfVista').innerHTML = parse.filas.length || parse.saltadas.length
+          ? `✅ ${parse.filas.length} guía(s) nueva(s)` + (parse.saltadas.length ? ` · ⏭️ ${parse.saltadas.length} ya existían` : '') + (sinFecha ? ` · ${sinFecha} sin fecha` : '')
+            + (parse.filas.length ? '<br>' + parse.filas.slice(0, 5).map(f => `• ${tramEsc(f.cliente)} — ${tramEsc(f.guia)} — ${tramEsc(tramFecha(f.eta))} — ${tramEsc(f.ejecutivo)}`).join('<br>') + (parse.filas.length > 5 ? `<br>…y ${parse.filas.length - 5} más` : '') : '')
+          : '';
+        guardarBtn.disabled = !parse.filas.length;
+      });
+      guardarBtn.addEventListener('click', () => {
+        if (!parse.filas.length) return;
+        guardarBtn.disabled = true;
+        tramGuardarGuias(parse.filas).then(() => { tramFormAbierto = null; renderTramitadoresTab(); })
+          .catch(err => { guardarBtn.disabled = false; msg('No se pudieron guardar: ' + (err.code || err.message)); });
+      });
+    }
   }
 
   function renderCatalogTab() {
@@ -3191,6 +3337,61 @@
     return true;
   }
 
+
+  // ----- Estatus de trámite de guías desde Gelo ("ponle pendiente de arribo a la guía 877546120242") -----
+  function geloBuscarGuiaEnTexto(q) {
+    const conGuia = tasks.filter(t => !t.isTask && t.status !== 'Eliminado' && (t.guia || '').trim());
+    const tokens = q.split(/\s+/).map(tok => tok.replace(/[^a-z0-9]/g, '')).filter(tok => tok.length >= 4 && /\d/.test(tok));
+    for (const tok of tokens) {
+      const exactas = conGuia.filter(t => tramNormGuia(t.guia) === tok);
+      if (exactas.length) return { tok, arr: exactas };
+      const parciales = conGuia.filter(t => tramNormGuia(t.guia).endsWith(tok));
+      if (parciales.length) return { tok, arr: parciales };
+    }
+    return null;
+  }
+  function geloTramite(q) {
+    // Consultas: "guías pendientes", "guías sin estatus"
+    if (/^(que |cuales )?(guias?)( pendientes?| sin (estatus|status))\b/.test(q)) {
+      let arr = tasks.filter(t => !t.isTask && !['Completado', 'Expediente', 'Eliminado'].includes(t.status) && (t.guia || '').trim()).sort((a, b) => tramTs(a.eta) - tramTs(b.eta));
+      const sinEst = /sin (estatus|status)/.test(q);
+      if (sinEst) arr = arr.filter(t => !(t.estatusTramite || '').trim());
+      if (!arr.length) return sinEst ? 'Todas las guías ya tienen estatus 👌' : 'No hay guías pendientes 🎉';
+      return `🚚 ${arr.length} guía(s)${sinEst ? ' sin estatus' : ' pendientes'}:\n` + arr.slice(0, 8).map(t => `<span class="gelo-li" data-voz="${geloEsc(geloRefHablada(t.guia) + ' de ' + (t.cliente || '').toLowerCase() + ', ' + (t.estatusTramite || 'sin estatus'))}">• <b>${geloEsc(t.cliente || '—')}</b> · ${geloEsc(t.guia)} · ${geloEsc(tramFecha(t.eta))} · ${geloEsc(t.estatusTramite || 'sin estatus')}</span>`).join('\n') + (arr.length > 8 ? `\n…y ${arr.length - 8} más.` : '');
+    }
+    if (/^(cual|que|como)\b.*\b(estatus|status|guia)\b/.test(q)) {
+      const h = geloBuscarGuiaEnTexto(q);
+      if (!h) return null;
+      return h.arr.slice(0, 5).map(t => `🚚 Guía <b>${geloEsc(t.guia)}</b> — ${geloEsc(t.cliente || '')}\n${geloEsc((t.almacen || '—').toUpperCase())} · arribo ${geloEsc(tramFecha(t.eta))} · 👤 ${geloEsc(t.ejecutivo || 'sin asignar')}\nEstatus: <b>${geloEsc(t.estatusTramite || 'sin estatus')}</b>`).join('\n\n');
+    }
+    const esCambio = /\b(estatus|status)\b/.test(q) || (/^(ponle|ponerle|pon|cambiale|actualizale)\b/.test(q) && /\bguias?\b/.test(q));
+    if (!esCambio) return null;
+    const hit = geloBuscarGuiaEnTexto(q);
+    if (!hit) return /\bguias?\b/.test(q) ? 'No encontré esa guía en el tablero 🤔. Revisa el número o agrégala en la pestaña 🚚 Tramitadores.' : null;
+    if (currentUserProfile.rol !== 'admin') return 'Por ahora solo los admins ponen el estatus de las guías 🙅';
+    if (hit.arr.length > 1) return `Hay ${hit.arr.length} guías que terminan en ${geloEsc(hit.tok)}:\n${hit.arr.slice(0, 6).map(t => `• ${geloEsc(t.guia)} — ${geloEsc(t.cliente || '')}`).join('\n')}\nEscríbeme la guía completa.`;
+    const t = hit.arr[0];
+    // lo que queda al quitar verbos, la guía y conectores es el estatus
+    // quitar "a la guía 877…" (solo la mención junto al número; "guia rev" dentro del estatus se respeta)
+    const palabraGuia = q.split(/\s+/).find(w => w.replace(/[^a-z0-9]/g, '') === hit.tok) || hit.tok;
+    const escRe = palabraGuia.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let estatus = q.replace(new RegExp('(?:\\b(?:a|de|en|para)\\s+)?(?:(?:la|el)\\s+)?(?:guias?\\s+)?' + escRe + '[:,]?'), ' ')
+      .replace(/^\s*(ponle|ponerle|pon|cambiale|cambia|actualizale|actualiza|marca|marcale)\b/, '')
+      .replace(/\b(el |al )?(estatus|status)( de tramite| del tramite)?\b/g, ' ')
+      .replace(/^\s*(a|como|en|:|-)\s+/, '').replace(/\s+(a|como|en)\s*$/, '')
+      .replace(/[:¿?¡!]/g, ' ').replace(/\s+/g, ' ').trim();
+    estatus = estatus.replace(/^(a|como|en|de)\s+/, '').trim();
+    if (!estatus) return `¿Qué estatus le pongo a la guía ${geloEsc(t.guia)} (${geloEsc(t.cliente || '')})? Ej: "ponle pendiente previo a la guía ${geloEsc(t.guia)}".`;
+    if (/^(borra|quita|quitale|ninguno|vacio|nada)$/.test(estatus)) estatus = '';
+    const previo = t.estatusTramite || '';
+    geloPendienteAccion = { run: () => update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: estatus, estatusTramitePor: currentUser, estatusTramiteEn: new Date().toISOString(), lastModifiedBy: currentUser })
+      .then(() => {
+        geloRegistrar(`la guía ${geloEsc(t.guia)} regresó a "${geloEsc(previo || 'sin estatus')}"`, () => update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: previo, lastModifiedBy: currentUser }));
+        return `¡Listo! Guía <b>${geloEsc(t.guia)}</b> (${geloEsc(t.cliente || '')}) → "${geloEsc(estatus || 'sin estatus')}" 🚚`;
+      }) };
+    return `¿Le pongo a la guía <b>${geloEsc(t.guia)}</b> (${geloEsc(t.cliente || '')}) el estatus "<b>${geloEsc(estatus || 'sin estatus')}</b>"?${previo ? `\n(Ahora tiene: "${geloEsc(previo)}")` : ''}\n<span class="gelo-confirm"><button data-gelo-confirm="si">✅ Sí</button><button data-gelo-confirm="no">No</button></span>`;
+  }
+
   // ----- Tomar libres ("dame 3 libres de Monterrey") -----
   function geloTomarLibres(q) {
     const m = q.match(/^(?:dame|toma|tomar|asigname|asignarme|quiero|pasame|agarra|agarro|tomo)\s+(?:(\d+|un|una|uno|dos|tres|cuatro|cinco|diez)\s+)?(?:pedimentos?\s+)?libres?\b(.*)$/);
@@ -3539,6 +3740,8 @@
     const cmdVoz = geloComandoVoz(q);
     if (cmdVoz) return cmdVoz;
     if (/^(deshaz|deshacer|deshazlo|undo|regresalo|regresa(lo)? como estaba|me equivoque|ups deshaz)\b/.test(q)) return geloDeshacer();
+    const tramite = geloTramite(q.replace(/[¿?]/g, '').trim());
+    if (tramite) return tramite;
     const libres = geloTomarLibres(q);
     if (libres) return libres;
     const equipo = geloEquipo(q.replace(/[¿?]/g, '').trim());
@@ -3553,7 +3756,7 @@
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "Ponle pendiente previo a la guía 877546120242" / "guías sin estatus"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
