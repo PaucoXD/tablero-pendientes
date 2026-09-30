@@ -856,6 +856,8 @@
       <button data-q="¿Qué está retrasado?">⏰ Retrasados</button>
       <button data-q="¿Qué vence hoy?">📅 Hoy</button>
       <button data-q="Mis tareas">✅ Tareas</button>
+      <button data-fill="Recuérdame ">⏰ Recordatorio</button>
+      <button data-fill="Anota en ">📝 Nota</button>
       <button data-q="Ayuda">❓</button>
     </div>
     <form class="gelo-input" id="geloForm" autocomplete="off">
@@ -2508,6 +2510,7 @@
   let geloKnownIds = null;
   let geloBubbleTimer = null;
   let geloUltimos = [];        // lo último que Gelo listó (para "márcalo como completado")
+  let geloBubbleRecordatorio = false; // el globo actual es un recordatorio (al tocarlo no preguntar pendientes)
   let geloPendienteAccion = null; // acción esperando confirmación Sí/No
 
   function geloEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
@@ -2556,6 +2559,7 @@
   function geloSay(html, ms = 12000) {
     if (geloHidden || geloChat.classList.contains('open')) return;
     document.getElementById('geloBubbleText').innerHTML = html;
+    geloBubbleRecordatorio = false;
     geloBubble.classList.add('show');
     geloEl.classList.remove('gelo-jump'); void geloEl.offsetWidth; geloEl.classList.add('gelo-jump');
     clearTimeout(geloBubbleTimer);
@@ -2577,6 +2581,7 @@
     if (!currentUserProfile || (geloMuted && !force)) return;
     geloLastRemind = Date.now();
     geloSay(geloResumenCorto() + ' ¡Tócame para ver!');
+    geloNotificar('🍮 Gelo: tus pendientes', geloStripHtml(geloResumenCorto()));
   }
 
   // Se llama en cada render() del tablero
@@ -2587,9 +2592,13 @@
     const ids = new Set(geloActivos(false).map(t => t.id));
     if (geloKnownIds) {
       const nuevos = geloActivos(false).filter(t => !geloKnownIds.has(t.id));
-      if (nuevos.length && !geloMuted) geloSay(`¡Te llegó ${nuevos.length === 1 ? 'un pendiente nuevo' : nuevos.length + ' pendientes nuevos'}!\n${nuevos.slice(0, 3).map(geloLinea).join('\n')}`);
+      if (nuevos.length && !geloMuted) {
+        geloSay(`¡Te llegó ${nuevos.length === 1 ? 'un pendiente nuevo' : nuevos.length + ' pendientes nuevos'}!\n${nuevos.slice(0, 3).map(geloLinea).join('\n')}`);
+        geloNotificar('📥 Pendiente nuevo', nuevos.slice(0, 3).map(t => `${t.ref || t.guia || 'S/REF'} — ${t.cliente || 'sin cliente'}`).join('\n'));
+      }
     }
     geloKnownIds = ids;
+    geloRevisarRecordatorios();
     if (!geloGreeted) {
       geloGreeted = true;
       const h = new Date().getHours();
@@ -2619,6 +2628,168 @@
     return tasks.filter(t => !t.isTask && t.status !== 'Eliminado' && [t.ref, t.guia, t.bl, t.cliente, t.patente, t.notas, t.ejecutivo, t.corresponsal].some(v => geloNorm(v).includes(nq)));
   }
 
+
+
+  // ----- Avisos de Windows (notificaciones del sistema) -----
+  const geloTituloBase = document.title;
+  function geloStripHtml(html) { const d = document.createElement('div'); d.innerHTML = html; d.querySelectorAll('button').forEach(b => b.remove()); return d.textContent.replace(/\s+\n/g, '\n').trim(); }
+  function geloPedirPermisoAvisos() {
+    if (!('Notification' in window) || Notification.permission !== 'default') return Promise.resolve(window.Notification ? Notification.permission : 'denied');
+    return Notification.requestPermission();
+  }
+  function geloNotificar(titulo, cuerpo) {
+    const enPantalla = document.visibilityState === 'visible' && document.hasFocus();
+    if (enPantalla) return;
+    document.title = '⏰ ' + geloTituloBase;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(titulo, { body: cuerpo, tag: 'gelo-' + titulo, renotify: true });
+      n.onclick = () => { window.focus(); geloOpen(); n.close(); };
+    } catch (e) {}
+  }
+  const geloRestaurarTitulo = () => { if (document.visibilityState === 'visible') document.title = geloTituloBase; };
+  document.addEventListener('visibilitychange', geloRestaurarTitulo);
+  window.addEventListener('focus', geloRestaurarTitulo);
+
+  // ----- Recordatorios con hora ("recuérdame llamar a X a las 4") -----
+  function geloFechaLocal(d) { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+  function geloFormatoCuando(d) {
+    const hoy = new Date(); const man = new Date(); man.setDate(hoy.getDate() + 1);
+    const hora = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (d.toDateString() === hoy.toDateString()) return 'hoy a las ' + hora;
+    if (d.toDateString() === man.toDateString()) return 'mañana a las ' + hora;
+    return d.toLocaleDateString('es-MX', { weekday: 'long', day: '2-digit', month: '2-digit' }) + ' a las ' + hora;
+  }
+
+  function geloParseRecordatorio(texto) {
+    const orig = texto.normalize('NFC').trim();
+    let low = orig.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const src = low.length === orig.length ? orig : low; // mismas posiciones para recortar el título
+    const m0 = low.match(/^(?:gelo,?\s*)?(?:(?:por favor|porfa),?\s*)?(?:recuerdame|recordarme|avisame|ponme un recordatorio(?:\s+(?:de|para))?)\b/);
+    if (!m0 || /\bcada\s+\d+/.test(low)) return null;
+    let rest = low;
+    const cortes = [];
+    const cortar = (re) => { const m = re.exec(rest); if (m) { cortes.push([m.index, m.index + m[0].length]); rest = rest.slice(0, m.index) + ' '.repeat(m[0].length) + rest.slice(m.index + m[0].length); } return m; };
+    cortar(new RegExp('^' + m0[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+
+    const cuando = new Date(); cuando.setSeconds(0, 0);
+    let tieneHora = false, dia = null, r;
+    if ((r = cortar(/\ben\s+(\d+|media|un|una)\s*(minutos?|mins?|m|horas?|hrs?|h)\b/))) {
+      const n = r[1] === 'media' ? 0.5 : (r[1] === 'un' || r[1] === 'una') ? 1 : parseInt(r[1], 10);
+      const mins = /^h/.test(r[2]) ? n * 60 : (r[1] === 'media' ? 30 : n);
+      cuando.setTime(Date.now() + mins * 60000); cuando.setSeconds(0, 0);
+      tieneHora = true; dia = 'rel';
+    } else {
+      if ((r = cortar(/\b(?:a|para)\s+las?\s+(\d{1,2})(?:(?::|\.)(\d{2})|\s+y\s+(media|cuarto))?\s*(a\.?\s?m\.?|p\.?\s?m\.?|am|pm|de la manana|de la tarde|de la noche|hrs|horas)?(?=\s|$|[.,!?])/))) {
+        let h = parseInt(r[1], 10), min = r[2] ? parseInt(r[2], 10) : r[3] === 'media' ? 30 : r[3] === 'cuarto' ? 15 : 0;
+        const suf = (r[4] || '').replace(/[.\s]/g, '');
+        if (/^(pm|delatarde|delanoche)$/.test(suf) && h < 12) h += 12;
+        else if (/^(am|delamanana)$/.test(suf) && h === 12) h = 0;
+        else if (!suf && h >= 1 && h <= 7) h += 12; // "a las 4" en horario de oficina = 4 de la tarde
+        if (h <= 23 && min <= 59) { cuando.setHours(h, min, 0, 0); tieneHora = true; }
+      } else if (cortar(/\b(?:a|al)\s+medio\s?dia\b/)) { cuando.setHours(12, 0, 0, 0); tieneHora = true; }
+      if (cortar(/\bpasado manana\b/)) dia = 2;
+      else if (cortar(/\bmanana\b/)) dia = 1;
+      else if (cortar(/\bhoy\b/)) dia = 0;
+      if (dia !== null) {
+        const base = new Date(); base.setDate(base.getDate() + dia);
+        cuando.setFullYear(base.getFullYear(), base.getMonth(), base.getDate());
+        if (!tieneHora) { cuando.setHours(9, 0, 0, 0); tieneHora = true; }
+      } else if (tieneHora && cuando.getTime() <= Date.now()) {
+        cuando.setDate(cuando.getDate() + 1); // esa hora ya pasó hoy → mañana
+      }
+    }
+
+    let titulo = src.split('');
+    cortes.forEach(([a, b]) => { for (let i = a; i < b; i++) titulo[i] = ' '; });
+    titulo = titulo.join('').replace(/\s+/g, ' ').trim()
+      .replace(/^(que|de|para|a)\s+/i, '').replace(/\s+(a|para|de|el|la)$/i, '').replace(/^[,:\-\s]+|[,:\-\s.!?]+$/g, '');
+    titulo = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+    return { titulo, cuando: tieneHora ? cuando : null };
+  }
+
+  function geloCrearRecordatorio(texto) {
+    const p = geloParseRecordatorio(texto);
+    if (!p) return null;
+    if (!p.titulo) return '¿Qué te recuerdo? Ej: "recuérdame llamar a DECKAMMEX a las 4".';
+    if (!p.cuando) return `¿A qué hora te recuerdo "${geloEsc(p.titulo)}"? Ej: "recuérdame ${geloEsc(p.titulo.toLowerCase())} a las 4" o "en 30 min".`;
+    const data = { titulo: p.titulo, prioridad: 'Media', limite: geloFechaLocal(p.cuando), notas: 'Recordatorio creado con Gelo', status: 'Pendiente' };
+    set(push(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid)), data)
+      .catch(err => geloAdd(`Ups, no pude guardar el recordatorio 😣 (${geloEsc(err.message || err)})`, 'bot'));
+    geloPedirPermisoAvisos();
+    return `⏰ ¡Anotado! Te recuerdo "<b>${geloEsc(p.titulo)}</b>" ${geloFormatoCuando(p.cuando)} 👍\n(Quedó en Mis Tareas.)`;
+  }
+
+  // Revisa tareas personales con hora cumplida y avisa una sola vez por cada hora programada
+  let geloAvisados = new Set();
+  try { geloAvisados = new Set(JSON.parse(localStorage.getItem('ayc-gelo-avisados') || '[]')); } catch (e) {}
+  function geloRevisarRecordatorios() {
+    if (!currentUserProfile || currentUserProfile.rol === 'cliente') return;
+    const ahora = Date.now();
+    let cambio = false;
+    geloMisTareas().forEach(t => {
+      if (!t.limite) return;
+      const ts = new Date(t.limite).getTime();
+      const clave = t.id + '|' + t.limite;
+      if (isNaN(ts) || ts > ahora || geloAvisados.has(clave)) return;
+      geloAvisados.add(clave); cambio = true;
+      if (ahora - ts < 12 * 3600000) geloAvisarRecordatorio(t); // no revivir avisos viejos al abrir el tablero
+    });
+    if (cambio) { try { localStorage.setItem('ayc-gelo-avisados', JSON.stringify([...geloAvisados].slice(-300))); } catch (e) {} }
+  }
+  setInterval(geloRevisarRecordatorios, 20000);
+
+  function geloAvisarRecordatorio(t) {
+    geloAdd(`⏰ <b>Recordatorio:</b> ${geloEsc(t.titulo)}\n<span class="gelo-confirm"><button data-gelo-rem="done" data-id="${geloEsc(t.id)}">✅ Hecho</button><button data-gelo-rem="snooze" data-id="${geloEsc(t.id)}">⏰ 10 min más</button></span>`, 'bot');
+    if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); }
+    geloSay(`⏰ <b>¡Oye!</b> ${geloEsc(t.titulo)}\nTócame para marcarlo o posponerlo.`, 60000);
+    geloBubbleRecordatorio = true;
+    geloNotificar('⏰ Recordatorio de Gelo', t.titulo);
+  }
+
+  function geloAccionRecordatorio(btn) {
+    const id = btn.dataset.id, uid = currentUserProfile.uid;
+    btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+    if (btn.dataset.geloRem === 'done') {
+      update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { status: 'Completado' })
+        .then(() => { playSparkle(btn); geloAdd('¡Bien! Recordatorio completado ✨', 'bot'); });
+    } else {
+      const d = new Date(Date.now() + 10 * 60000);
+      update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { limite: geloFechaLocal(d) })
+        .then(() => geloAdd(`Ok, te vuelvo a avisar ${geloFormatoCuando(d)} 😴`, 'bot'));
+    }
+  }
+
+  // ----- Notas en la bitácora del pedimento ("anota en AYC26-7929: falta factura") -----
+  function geloResolverPedimento(objetivo) {
+    objetivo = geloNorm(objetivo).replace(/\b(el|la|pendiente|pedimento|operacion|referencia|ref|guia|bl)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    let candidatos;
+    if (!objetivo) candidatos = geloUltimos.filter(t => !t._privada);
+    else {
+      const activos = tasks.filter(t => !t.isTask && t.status !== 'Eliminado');
+      const exactos = activos.filter(t => [t.ref, t.guia, t.bl].some(v => geloNorm(v) === objetivo));
+      candidatos = exactos.length ? exactos : geloBuscar(objetivo);
+      if (candidatos.length > 1) { const abiertos = candidatos.filter(t => !GELO_CERRADOS.includes(t.status)); if (abiertos.length) candidatos = abiertos; }
+    }
+    if (!candidatos.length) return { error: objetivo ? `No encontré "${geloEsc(objetivo)}" 🤔` : '¿En cuál pedimento? Ej: "anota en AYC26-7929: falta factura".' };
+    if (candidatos.length > 1) return { error: `Encontré ${candidatos.length}, ¿en cuál?\n${candidatos.slice(0, 8).map(geloLinea).join('\n')}\n\nEscríbeme la referencia exacta.` };
+    return { t: candidatos[0] };
+  }
+
+  function geloAnotar(texto) {
+    const orig = texto.trim();
+    const m = orig.match(/^(?:gelo,?\s*)?(?:anota(?:le)?|ap[uú]nta(?:le)?|nota|agr[eé]ga(?:le)?\s+(?:una\s+)?nota|com[eé]nta(?:le)?|escr[ií]be(?:le)?\s+(?:una\s+)?nota)\b\s*(?:(?:en|a|para|al)\s+)?(.*?)\s*(?::|-\s|\bque\s)\s*(.+)$/is);
+    if (!m) return null;
+    const res = geloResolverPedimento(m[1]);
+    if (res.error) return res.error;
+    const t = res.t;
+    const nota = m[2].trim();
+    if (!nota) return '¿Qué anoto? Ej: "anota en AYC26-7929: falta factura".';
+    push(ref(db, `pendientes_ayc/${t.id}/chat`), { texto: geloEsc(nota), usuario: currentUser || 'Usuario', timestamp: Date.now(), isInternal: true })
+      .then(() => { touchRef(t.ref); geloAdd(`📝 Anotado en la bitácora de <b>${geloEsc(t.ref || t.guia || 'S/REF')}</b>: "${geloEsc(nota)}"\n(Nota interna: el cliente no la ve.)`, 'bot'); })
+      .catch(err => geloAdd(`Ups, no pude guardar la nota 😣 (${geloEsc(err.message || err)})`, 'bot'));
+    return 'Anotando… ✍️';
+  }
 
   // ----- Acciones: cambiar status desde el chat -----
   const GELO_STATUS_MAP = [
@@ -2707,13 +2878,17 @@
       if (/^(no|nel|cancela|mejor no)\b/.test(q)) { geloPendienteAccion = null; return 'Ok, no toco nada 👌'; }
       geloPendienteAccion = null;
     }
+    const rec = geloCrearRecordatorio(texto);
+    if (rec) return rec;
+    const nota = geloAnotar(texto);
+    if (nota) return nota;
     const acc = geloDetectarAccion(q);
     if (acc) return acc.error || geloPedirConfirmacion(acc);
 
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
@@ -2724,6 +2899,12 @@
     if (/(silencio|callate|cállate|no me recuerdes|desactiva|mute|shh)/.test(q)) {
       geloMuted = true; localStorage.setItem('ayc-gelo-muted', '1'); geloUpdateMuteBtn();
       return 'Ok, me quedo calladito 🤐 (sigo aquí si me preguntas). Di "activa recordatorios" para volver.';
+    }
+    if (/(notificacion|windows|escritorio)/.test(q)) {
+      if (!('Notification' in window)) return 'Tu navegador no soporta avisos de Windows 😕';
+      if (Notification.permission === 'denied') return 'Los avisos están bloqueados 🔕. Da clic en el candado 🔒 junto a la dirección de la página → Notificaciones → Permitir, y recarga.';
+      geloPedirPermisoAvisos().then(p => geloAdd(p === 'granted' ? '¡Listo! Te aviso en Windows aunque estés en otra ventana 🔔' : 'No me diste permiso 😢. Puedes activarlo desde el candado 🔒 de la barra de direcciones.', 'bot'));
+      return 'Pidiendo permiso al navegador… acepta el aviso de arriba 👆';
     }
     if (/(activa|enciende|vuelve).*(recordatorio|aviso)/.test(q)) {
       geloMuted = false; localStorage.setItem('ayc-gelo-muted', '0'); geloUpdateMuteBtn();
@@ -2794,17 +2975,27 @@
     if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); return; }
     geloChat.classList.contains('open') ? geloChat.classList.remove('open') : geloOpen();
   });
-  geloBubble.addEventListener('click', (e) => { if (e.target.id === 'geloBubbleX') { geloBubble.classList.remove('show'); return; } geloOpen(); geloAsk('¿Qué tengo pendiente?'); });
+  geloBubble.addEventListener('click', (e) => {
+    if (e.target.id === 'geloBubbleX') { geloBubble.classList.remove('show'); return; }
+    geloOpen();
+    if (geloBubbleRecordatorio) geloBubbleRecordatorio = false; else geloAsk('¿Qué tengo pendiente?');
+  });
   document.getElementById('geloCloseBtn').addEventListener('click', () => geloChat.classList.remove('open'));
   document.getElementById('geloHideBtn').addEventListener('click', () => { geloHidden = true; localStorage.setItem('ayc-gelo-hidden', '1'); geloChat.classList.remove('open'); geloSetMood(); });
   document.getElementById('geloMuteBtn').addEventListener('click', () => {
     geloMuted = !geloMuted; localStorage.setItem('ayc-gelo-muted', geloMuted ? '1' : '0'); geloUpdateMuteBtn();
     geloAdd(geloMuted ? 'Recordatorios en silencio 🔕' : `Recordatorios activos cada ${geloIntervalMin} min 🔔`, 'bot');
   });
-  document.getElementById('geloChips').addEventListener('click', (e) => { const q = e.target.closest('button')?.dataset.q; if (q) geloAsk(q); });
+  document.getElementById('geloChips').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.fill) { geloInput.value = b.dataset.fill; geloInput.focus(); return; }
+    if (b.dataset.q) geloAsk(b.dataset.q);
+  });
   document.getElementById('geloForm').addEventListener('submit', (e) => { e.preventDefault(); const v = geloInput.value; geloInput.value = ''; geloAsk(v); });
   const geloBody = document.getElementById('geloBody');
   geloMsgs.addEventListener('click', (e) => {
+    const rb = e.target.closest('[data-gelo-rem]');
+    if (rb) { geloAccionRecordatorio(rb); return; }
     const c = e.target.closest('[data-gelo-confirm]');
     if (c) {
       if (c.dataset.geloConfirm === 'si') geloEjecutarAccion(c);
