@@ -317,6 +317,11 @@
   .gelo-msg { max-width: 88%; padding: 8px 11px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
   .gelo-msg.bot { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; }
   .gelo-msg.me { background: var(--primary); color: var(--panel); align-self: flex-end; border-bottom-right-radius: 4px; }
+  #gelo, #gelo * { box-sizing: border-box; }
+  .gelo-confirm { display: flex; gap: 6px; margin-top: 6px; white-space: normal; }
+  .gelo-confirm button { border: 1px solid var(--divider); background: var(--panel); color: var(--text-main); border-radius: var(--radius-btn); padding: 5px 12px; cursor: pointer; font-weight: 600; font-family: var(--font-main); }
+  .gelo-confirm button[data-gelo-confirm="si"] { background: var(--green); border-color: var(--green); color: #fff; }
+  .gelo-confirm button:disabled { opacity: .4; cursor: default; }
   .gelo-ref { color: var(--accent); cursor: pointer; text-decoration: underline; font-weight: 600; }
   .gelo-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px 0; }
   .gelo-chips button { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-sub); border-radius: 14px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: var(--font-main); }
@@ -2502,6 +2507,8 @@
   let geloGreeted = false;
   let geloKnownIds = null;
   let geloBubbleTimer = null;
+  let geloUltimos = [];        // lo último que Gelo listó (para "márcalo como completado")
+  let geloPendienteAccion = null; // acción esperando confirmación Sí/No
 
   function geloEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
   function geloNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
@@ -2524,6 +2531,7 @@
   function geloLista(arr, max = 8) {
     const ts = t => t.limite ? new Date(t.limite).getTime() : Number.MAX_SAFE_INTEGER;
     const orden = [...arr].sort((a, b) => (isOverdue(b) - isOverdue(a)) || (ts(a) - ts(b)));
+    geloUltimos = orden;
     let out = orden.slice(0, max).map(geloLinea).join('\n');
     if (arr.length > max) out += `\n…y ${arr.length - max} más.`;
     return out;
@@ -2611,16 +2619,101 @@
     return tasks.filter(t => !t.isTask && t.status !== 'Eliminado' && [t.ref, t.guia, t.bl, t.cliente, t.patente, t.notas, t.ejecutivo, t.corresponsal].some(v => geloNorm(v).includes(nq)));
   }
 
+
+  // ----- Acciones: cambiar status desde el chat -----
+  const GELO_STATUS_MAP = [
+    [/documentacion incompleta|incomplet/, 'Documentación incompleta'],
+    [/(complet|termin|finaliz|listo|lista|hecho|cerr)/, 'Completado'],
+    [/expediente|archiv/, 'Expediente'],
+    [/en proceso|proceso/, 'En proceso'],
+    [/revision/, 'Revisión'],
+    [/validad|pagad/, 'Validado / Pagado'],
+    [/modulacion|modulad/, 'Modulación'],
+    [/reconocimiento/, 'Reconocimiento'],
+    [/despachad/, 'Despachado'],
+    [/pendiente/, 'Pendiente'],
+  ];
+  const GELO_VERBO_ACCION = /^(marca(r|lo|la)?|pon(er|lo|la)?|pasa(r|lo|la)?|cambia(r|lo|la)?|mueve(lo|la)?|mover|actualiza(r|lo|la)?|complet(a|ar|alo|ala)|termin(a|ar|alo|ala)|cierra(lo|la)?|cerrar|finaliza(r|lo|la)?|archiva(r|lo|la)?)\b/;
+
+  function geloPuedeEditar(t) { return geloIsAdmin() || geloMine(t); }
+
+  function geloDetectarAccion(q) {
+    q = q.replace(/[¿?¡!]/g, ' ').trim();
+    let prev;
+    do { prev = q; q = q.replace(/^(gelo|oye|porfa|por favor|puedes|podrias|me puedes|me podrias|quiero que|ayudame a|necesito)\s+/, ''); } while (q !== prev);
+    if (!GELO_VERBO_ACCION.test(q)) return null;
+    // el status va después de "como/a/en" si existe; si no, el propio verbo (completa, termina, archiva…)
+    const m = q.match(/\b(como|a|en|con status|al status)\s+(.+)$/);
+    const zonaStatus = m ? m[2] : q.split(/\s+/)[0];
+    const hit = GELO_STATUS_MAP.find(([re]) => re.test(zonaStatus)) || GELO_STATUS_MAP.find(([re]) => re.test(q.split(/\s+/)[0]));
+    if (!hit) return { error: 'No entendí a qué status lo quieres pasar. Ej: "marca AYC26-7929 como completado" o "pasa 3001234 a en proceso".' };
+    const status = hit[1];
+    // lo que queda al quitar verbo y status es el identificador (ref, guía, cliente o título de tarea)
+    let objetivo = (m ? q.slice(0, m.index) : q).replace(GELO_VERBO_ACCION, '')
+      .replace(/\b(el|la|lo|los|las|mi|mis|este|esta|ese|esa|pendiente|pedimento|operacion|referencia|ref|guia|bl|tarea|status|estado|de|del)\b/g, ' ')
+      .replace(/[¿?¡!.,]/g, ' ').replace(/\s+/g, ' ').trim();
+    const esTarea = /\btarea/.test(q);
+    let candidatos;
+    if (!objetivo) {
+      candidatos = geloUltimos;
+      if (!candidatos.length) return { error: '¿Cuál? Dime la referencia, guía o cliente. Ej: "marca AYC26-7929 como completado".' };
+    } else if (esTarea) {
+      candidatos = geloMisTareas().filter(t => geloNorm(t.titulo).includes(objetivo)).map(t => ({ ...t, _privada: true }));
+    } else {
+      const activos = tasks.filter(t => !t.isTask && t.status !== 'Eliminado');
+      const exactos = activos.filter(t => [t.ref, t.guia, t.bl].some(v => geloNorm(v) === objetivo));
+      candidatos = exactos.length ? exactos : geloBuscar(objetivo).filter(t => !GELO_CERRADOS.includes(t.status));
+      if (!candidatos.length) candidatos = geloMisTareas().filter(t => geloNorm(t.titulo).includes(objetivo)).map(t => ({ ...t, _privada: true }));
+    }
+    if (!candidatos.length) return { error: `No encontré "${geloEsc(objetivo)}" 🤔` };
+    if (candidatos.length > 1) return { error: `Encontré ${candidatos.length}, ¿cuál de estos?\n${candidatos.slice(0, 8).map(t => t._privada ? '• ' + geloEsc(t.titulo) : geloLinea(t)).join('\n')}\n\nEscríbeme la referencia exacta.` };
+    const t = candidatos[0];
+    if (!t._privada && !t.isTask && !geloPuedeEditar(t)) return { error: `${geloEsc(t.ref || 'Ese pendiente')} es de ${geloEsc(t.ejecutivo || 'otra persona')}; solo puedes cambiar los tuyos 🙅` };
+    if (t.status === status) return { error: `${geloEsc(t.ref || t.titulo)} ya está en "${geloEsc(status)}" 👍` };
+    return { t, status };
+  }
+
+  function geloPedirConfirmacion(acc) {
+    geloPendienteAccion = acc;
+    const nombre = acc.t._privada ? `la tarea "${geloEsc(acc.t.titulo)}"` : `<b>${geloEsc(acc.t.ref || acc.t.guia || 'S/REF')}</b> (${geloEsc(acc.t.cliente || 'sin cliente')})`;
+    return `¿Paso ${nombre} de "${geloEsc(acc.t.status || 'Pendiente')}" a <b>${geloEsc(acc.status)}</b>?\n<span class="gelo-confirm"><button data-gelo-confirm="si">✅ Sí</button><button data-gelo-confirm="no">No</button></span>`;
+  }
+
+  function geloEjecutarAccion(anchor) {
+    const acc = geloPendienteAccion; geloPendienteAccion = null;
+    geloMsgs.querySelectorAll('[data-gelo-confirm]').forEach(b => b.disabled = true);
+    if (!acc) return;
+    const { t, status } = acc;
+    const p = t._privada
+      ? update(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid + '/' + t.id), { status })
+      : update(ref(db, 'pendientes_ayc/' + t.id), { status, lastModifiedBy: currentUser });
+    p.then(() => {
+      if (!t._privada) touchRef(t.ref);
+      if (status === 'Completado' || status === 'Expediente') playSparkle(anchor);
+      geloUltimos = [];
+      geloAdd(status === 'Completado' ? `¡Listo! ${geloEsc(t.ref || t.titulo)} completado 🎉 Uno menos.` : `¡Hecho! ${geloEsc(t.ref || t.titulo)} ahora está en "${geloEsc(status)}" ✨`, 'bot');
+      geloEl.classList.remove('gelo-jump'); void geloEl.offsetWidth; geloEl.classList.add('gelo-jump');
+    }).catch(err => geloAdd(`Ups, no pude guardarlo 😣 (${geloEsc(err.message || err)})`, 'bot'));
+  }
+
   function geloResponder(texto) {
     const q = geloNorm(texto);
     const todos = geloIsAdmin() && /\b(todos|equipo|general|todo el mundo)\b/.test(q);
     const quien = todos ? 'el equipo' : 'ti';
     let m;
 
+    if (geloPendienteAccion) {
+      if (/^(si|sí|simon|va|dale|ok|claro|confirmo|hazlo)\b/.test(q)) { setTimeout(() => geloEjecutarAccion(geloBody), 0); return 'Va… 🍮'; }
+      if (/^(no|nel|cancela|mejor no)\b/.test(q)) { geloPendienteAccion = null; return 'Ok, no toco nada 👌'; }
+      geloPendienteAccion = null;
+    }
+    const acc = geloDetectarAccion(q);
+    if (acc) return acc.error || geloPedirConfirmacion(acc);
+
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
@@ -2710,7 +2803,14 @@
   });
   document.getElementById('geloChips').addEventListener('click', (e) => { const q = e.target.closest('button')?.dataset.q; if (q) geloAsk(q); });
   document.getElementById('geloForm').addEventListener('submit', (e) => { e.preventDefault(); const v = geloInput.value; geloInput.value = ''; geloAsk(v); });
+  const geloBody = document.getElementById('geloBody');
   geloMsgs.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-gelo-confirm]');
+    if (c) {
+      if (c.dataset.geloConfirm === 'si') geloEjecutarAccion(c);
+      else { geloPendienteAccion = null; geloMsgs.querySelectorAll('[data-gelo-confirm]').forEach(b => b.disabled = true); geloAdd('Ok, no toco nada 👌', 'bot'); }
+      return;
+    }
     const r = e.target.closest('.gelo-ref')?.dataset.ref;
     if (!r) return;
     const si = document.getElementById('searchInput');
