@@ -45,6 +45,35 @@
   body.is-client .header-actions { margin-left: auto; }
   body.is-corresponsal .client-only-field { display: none !important; }
 
+  /* MODO TRAMITADOR: solo ve la tabla de guías pendientes */
+  body.is-tramitador .edit-only, body.is-tramitador .admin-only, body.is-tramitador .header-quick-actions, body.is-tramitador #openModalBtn, body.is-tramitador .toolbar, body.is-tramitador .ticker-wrap, body.is-tramitador #gelo { display: none !important; }
+
+  /* TABLA DE TRAMITADORES */
+  .tram-wrap { padding: 18px 24px 28px; }
+  .tram-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .tram-bar input[type=text], .tram-bar select { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-main); border-radius: var(--radius-btn); padding: 8px 10px; font-family: var(--font-main); font-size: 13px; }
+  .tram-bar input[type=text] { min-width: 240px; }
+  .tram-check { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .tram-count { font-size: 12px; color: var(--text-sub); margin-left: auto; }
+  .tram-hint { font-size: 12px; color: var(--text-sub); margin-bottom: 10px; }
+  .tram-tabla-wrap { overflow-x: auto; border: 1px solid var(--divider); border-radius: var(--radius-board); }
+  .tram-tabla { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px; }
+  .tram-tabla th { background: var(--green-soft); color: var(--text-main); font-family: var(--font-heading); font-size: 12px; letter-spacing: .5px; padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--divider); white-space: nowrap; }
+  .tram-tabla td { padding: 8px 12px; border-bottom: 1px solid var(--divider); color: var(--text-main); }
+  .tram-tabla tbody tr:nth-child(odd) td { background: var(--details-bg); }
+  .tram-tabla tbody tr:hover td { background: var(--amber-soft); }
+  .tram-tabla tr.tram-atrasada td:nth-child(4) { color: var(--red); font-weight: 700; }
+  .tram-cliente { font-weight: 800; }
+  .tram-mono { font-family: var(--font-mono); font-size: 13px; }
+  .tram-centro { text-align: center; }
+  .tram-vacio { text-align: center; color: var(--text-sub); padding: 30px !important; }
+  .tram-estatus { width: 100%; min-width: 220px; background: transparent; border: 1px dashed transparent; color: var(--text-main); padding: 5px 6px; border-radius: 4px; font: inherit; }
+  .tram-estatus:hover { border-color: var(--divider); }
+  .tram-estatus:focus { outline: none; border-color: var(--primary); background: var(--panel); }
+  .tram-estatus::placeholder { color: var(--text-sub); font-style: italic; }
+  .tram-estatus.guardando { border-color: var(--amber); }
+  .tram-estatus.guardado { border-color: var(--green); background: var(--green-soft); }
+
   /* MODO KIOSCO */
   body.kiosk-mode .header-actions, body.kiosk-mode .toolbar, body.kiosk-mode .tabs { display: none !important; }
   body.kiosk-mode .board { max-width: 100%; border-radius: 0; border: none; box-shadow: none; }
@@ -830,6 +859,7 @@
           <option value="admin">Administrador</option>
           <option value="cliente">Cliente (Portal Restringido)</option>
           <option value="corresponsal">Corresponsal Externo</option>
+          <option value="tramitador">Tramitador (solo ve guías pendientes)</option>
         </select>
       </div>
       <div class="field" id="wrap-empresaCliente" style="display: none; background: var(--panel-alt); padding: 12px; border-radius: 6px; border: 1px solid var(--divider);">
@@ -1101,7 +1131,7 @@
     if (!container) return;
     container.innerHTML = Object.keys(usersCache).map(uid => {
         let u = usersCache[uid];
-        let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'corresponsal' ? '🚢 Corresponsal' : (u.rol === 'admin' ? '👑 Admin' : '👤 Staff'));
+        let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'corresponsal' ? '🚢 Corresponsal' : (u.rol === 'admin' ? '👑 Admin' : (u.rol === 'tramitador' ? '🚚 Tramitador' : '👤 Staff')));
         let editBtn = (u.rol === 'cliente' || u.rol === 'corresponsal') ? `<button class="btn-mini" onclick="window.editClientPerms('${uid}')">⚙️ Editar</button>` : '';
         return `<div class="exec-item">
                   <div><strong>${u.nombre}</strong> <span style="font-size:10px; color:var(--text-sub);">(${u.email.split('@')[0]})</span></div>
@@ -1149,13 +1179,17 @@
     applyPersonalizacion(currentUserProfile.personalizacion);
     attachMisTareasPrivadasListener(user.uid);
     
-    document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isCorresp ? ' (Corresponsal)' : (isClient ? ' (Cliente)' : '')));
+    const isTram = currentUserProfile.rol === 'tramitador';
+    document.getElementById('userGreeting').textContent = `Hola, ${currentUser}` + (isAdmin ? ' (Admin)' : (isCorresp ? ' (Corresponsal)' : (isClient ? ' (Cliente)' : (isTram ? ' (Tramitador)' : ''))));
+    document.body.classList.toggle('is-tramitador', isTram);
     
     document.body.classList.toggle('is-admin', isAdmin);
     document.body.classList.toggle('is-client', isClient);
     document.body.classList.toggle('is-corresponsal', isCorresp);
     
-    if (isClient) {
+    if (isTram) {
+        document.getElementById('boardMainTitle').textContent = 'Guías pendientes';
+    } else if (isClient) {
         document.getElementById('boardMainTitle').textContent = `Portal: ${currentUserProfile.empresaAsociada || 'Operativo'}`;
     } else {
         document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
@@ -1169,7 +1203,7 @@
 
   onAuthStateChanged(auth, (user) => {
     if (user) { authUser = user; tryApplyProfile(); } 
-    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client', 'is-corresponsal'); loginOverlay.classList.add('open'); }
+    else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client', 'is-corresponsal', 'is-tramitador'); loginOverlay.classList.add('open'); }
   });
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -1685,12 +1719,14 @@
     DEPTOS.forEach(d => counts[d] = activePedimentos.filter(t => t.depto === d && (!isLibre(t) || isClient) && t.status !== 'Completado' && t.status !== 'Expediente').length); 
     counts['papelera'] = trashPedimentos.length;
     counts['mis_tareas'] = activeMisTareas.filter(t => t.status !== 'Completado').length;
+    counts['tramitadores'] = tasks.filter(t => !t.isTask && !['Completado', 'Expediente', 'Eliminado'].includes(t.status) && (t.guia || '').trim()).length;
 
-    const mainLabels = [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
+    const mainLabels = esTramitador() ? [] : [['todos', 'Todos'], ...DEPTOS.map(d => [d, d])];
     
     let secondaryLabels = [];
     if (!isClient) {
-       secondaryLabels = [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
+       secondaryLabels = esTramitador() ? [['tramitadores', '🚚 Guías pendientes']]
+         : [['mis_tareas', '📝 Mis Tareas'], ['libres', '🆓 Libres'], ['tramitadores', '🚚 Tramitadores'], ['expediente', '📁 Expediente'], ['completados', '✅ Completados'], ['papelera', '🗑️ Papelera']];
        if (currentUserProfile && currentUserProfile.rol === 'admin') secondaryLabels.push(['general', '📊 Vista General ↗']);
     } else {
        secondaryLabels = [['completados', '✅ Historial de Entregados']];
@@ -1775,6 +1811,8 @@
       return; 
     }
 
+    if (esTramitador()) currentFilter = 'tramitadores';
+    if (currentFilter === 'tramitadores' && !isClient) { renderTramitadoresTab(); return; }
     if (currentFilter === 'libres' && !isClient) { renderCatalogTab(); return; }
     if (currentFilter === 'general' && !isClient) { renderGeneralTab(); return; }
 
@@ -1979,6 +2017,159 @@
       }).join('');
     }
     attachRowEvents();
+  }
+
+
+  // =========================================
+  // TRAMITADORES: guías pendientes con el estatus de lo que les falta
+  // =========================================
+  const TRAM_ESTATUS_SUGERIDOS = ['pendiente previo', 'pendiente previo y guia rev', 'pendiente de arribo', 'pendiente revalidación', 'pendiente documentos', 'pendiente pago', 'listo para despacho', 'en reconocimiento', 'despachado'];
+  const TRAM_MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  let tramBusqueda = '';
+  let tramEjecutivo = 'todos';
+  let tramSoloSinEstatus = false;
+
+  function esTramitador() { return currentUserProfile && currentUserProfile.rol === 'tramitador'; }
+  function tramEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function tramFecha(eta) {
+    if (!eta) return '-';
+    const m = String(eta).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(eta);
+    return isNaN(d) ? String(eta) : `${d.getDate()}-${TRAM_MESES[d.getMonth()]}`;
+  }
+  function tramTs(eta) { if (!eta) return Infinity; const d = new Date(String(eta).length === 10 ? eta + 'T00:00' : eta); return isNaN(d) ? Infinity : d.getTime(); }
+
+  function tramFilas() {
+    let arr = tasks.filter(t => !t.isTask && !['Completado', 'Expediente', 'Eliminado'].includes(t.status) && (t.guia || '').trim());
+    if (tramEjecutivo !== 'todos') arr = arr.filter(t => normKey(t.ejecutivo) === normKey(tramEjecutivo));
+    if (tramSoloSinEstatus) arr = arr.filter(t => !(t.estatusTramite || '').trim());
+    const q = normKey(tramBusqueda);
+    if (q) arr = arr.filter(t => [t.cliente, t.guia, t.almacen, t.estatusTramite, t.ejecutivo, t.ref].some(v => normKey(v).includes(q)));
+    return arr.sort((a, b) => (tramTs(a.eta) - tramTs(b.eta)) || String(a.cliente || '').localeCompare(String(b.cliente || '')));
+  }
+
+  function renderTramitadoresTab() {
+    document.getElementById('colHeader').style.display = 'none';
+    const rowsEl = document.getElementById('rows');
+    const puedeEditar = currentUserProfile.rol === 'admin';
+    const filas = tramFilas();
+    const ejecutivos = [...new Set(tasks.filter(t => !t.isTask && (t.guia || '').trim() && t.ejecutivo && t.status !== 'Eliminado').map(t => t.ejecutivo.trim().toUpperCase()))].sort();
+    const hoyTs = new Date().setHours(0, 0, 0, 0);
+    rowsEl.innerHTML = `
+      <div class="tram-wrap">
+        <div class="tram-bar">
+          <input type="text" id="tramBuscar" placeholder="🔎 Buscar cliente, guía, almacén…" value="${tramEsc(tramBusqueda)}">
+          <select id="tramEjecutivo"><option value="todos">Todos los ejecutivos</option>${ejecutivos.map(e => `<option ${normKey(e) === normKey(tramEjecutivo) ? 'selected' : ''}>${tramEsc(e)}</option>`).join('')}</select>
+          ${puedeEditar ? `<label class="tram-check"><input type="checkbox" id="tramSinEstatus" ${tramSoloSinEstatus ? 'checked' : ''}> Solo sin estatus</label>` : ''}
+          <span class="tram-count">${filas.length} guía(s)</span>
+          <button class="btn-add" id="tramImagenBtn">🖼️ Generar imagen</button>
+        </div>
+        ${puedeEditar ? '<div class="tram-hint">✏️ Escribe el estatus directo en la tabla; se guarda solo al salir de la celda. Almacén y fecha de arribo se editan en el pedimento.</div>' : ''}
+        <div class="tram-tabla-wrap">
+          <table class="tram-tabla">
+            <thead><tr><th>CLIENTE</th><th>GUÍA</th><th>ALMACÉN</th><th>FECHA DE ARRIBO</th><th>ESTATUS</th><th>EJECUTIVO</th></tr></thead>
+            <tbody>${filas.length ? filas.map(t => {
+              const llegoTs = tramTs(t.eta);
+              const cls = llegoTs !== Infinity && llegoTs < hoyTs ? 'tram-atrasada' : '';
+              return `<tr class="${cls}">
+                <td class="tram-cliente">${tramEsc((t.cliente || '—').toUpperCase())}</td>
+                <td class="tram-mono">${tramEsc(t.guia)}</td>
+                <td>${tramEsc((t.almacen || '—').toUpperCase())}</td>
+                <td class="tram-centro">${tramEsc(tramFecha(t.eta))}</td>
+                <td>${puedeEditar
+                  ? `<input class="tram-estatus" list="tramSugeridos" data-id="${tramEsc(t.id)}" value="${tramEsc(t.estatusTramite || '')}" placeholder="— sin estatus —">`
+                  : tramEsc(t.estatusTramite || '—')}</td>
+                <td>${tramEsc((t.ejecutivo || 'Sin asignar').toUpperCase())}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="6" class="tram-vacio">No hay guías pendientes con estos filtros 🎉</td></tr>'}</tbody>
+          </table>
+          <datalist id="tramSugeridos">${TRAM_ESTATUS_SUGERIDOS.map(s => `<option value="${tramEsc(s)}">`).join('')}</datalist>
+        </div>
+      </div>`;
+
+    const buscar = document.getElementById('tramBuscar');
+    buscar.addEventListener('input', () => { tramBusqueda = buscar.value; const pos = buscar.selectionStart; renderTramitadoresTab(); const b = document.getElementById('tramBuscar'); b.focus(); b.setSelectionRange(pos, pos); });
+    document.getElementById('tramEjecutivo').addEventListener('change', (e) => { tramEjecutivo = e.target.value; renderTramitadoresTab(); });
+    const sinEst = document.getElementById('tramSinEstatus');
+    if (sinEst) sinEst.addEventListener('change', (e) => { tramSoloSinEstatus = e.target.checked; renderTramitadoresTab(); });
+    document.getElementById('tramImagenBtn').addEventListener('click', () => tramGenerarImagen(filas));
+    rowsEl.querySelectorAll('.tram-estatus').forEach(inp => {
+      const guardar = () => {
+        const t = tasks.find(x => x.id === inp.dataset.id);
+        const val = inp.value.trim();
+        if (!t || (t.estatusTramite || '') === val) return;
+        inp.classList.add('guardando');
+        update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: val, estatusTramitePor: currentUser, estatusTramiteEn: new Date().toISOString(), lastModifiedBy: currentUser })
+          .then(() => { inp.classList.remove('guardando'); inp.classList.add('guardado'); setTimeout(() => inp.classList.remove('guardado'), 1200); })
+          .catch(err => { inp.classList.remove('guardando'); alert('No se pudo guardar el estatus: ' + (err.code || err.message)); });
+      };
+      inp.addEventListener('change', guardar);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    });
+  }
+
+  // Dibuja la tabla estilo Excel en un canvas → descarga PNG y la copia al portapapeles (para pegar en WhatsApp)
+  async function tramGenerarImagen(filas) {
+    if (!filas.length) { alert('No hay guías para generar la imagen.'); return; }
+    const cols = [
+      { t: 'CLIENTE', w: 250, f: t => (t.cliente || '—').toUpperCase(), bold: true },
+      { t: 'GUIA', w: 250, f: t => t.guia || '' },
+      { t: 'ALMACEN', w: 150, f: t => (t.almacen || '—').toUpperCase() },
+      { t: 'FECHA DE ARRIBO', w: 175, f: t => tramFecha(t.eta), centro: true },
+      { t: 'ESTATUS', w: 330, f: t => t.estatusTramite || '' },
+      { t: 'EJECUTIVO', w: 170, f: t => (t.ejecutivo || 'SIN ASIGNAR').toUpperCase() },
+    ];
+    const esc = 2, filaH = 34, headH = 38, tituloH = 44, pad = 16;
+    const W = cols.reduce((s, c) => s + c.w, 0) + pad * 2;
+    const H = tituloH + headH + filas.length * filaH + pad * 2;
+    const cv = document.createElement('canvas');
+    cv.width = W * esc; cv.height = H * esc;
+    const g = cv.getContext('2d');
+    g.scale(esc, esc);
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1f2937'; g.font = 'bold 18px Calibri, Arial, sans-serif'; g.textBaseline = 'middle';
+    const hoy = new Date();
+    g.fillText(`GUÍAS PENDIENTES — ${hoy.getDate()}-${TRAM_MESES[hoy.getMonth()]}-${hoy.getFullYear()}`, pad, pad + tituloH / 2 - 4);
+    let y = pad + tituloH;
+    // encabezado verde como en Excel
+    let x = pad;
+    g.fillStyle = '#d9ead3'; g.fillRect(pad, y, W - pad * 2, headH);
+    g.fillStyle = '#1f2937'; g.font = 'bold 16px Calibri, Arial, sans-serif';
+    cols.forEach(c => { g.textAlign = 'center'; g.fillText(c.t, x + c.w / 2, y + headH / 2); x += c.w; });
+    y += headH;
+    filas.forEach((t, i) => {
+      g.fillStyle = i % 2 === 0 ? '#d9d9d9' : '#ffffff';
+      g.fillRect(pad, y, W - pad * 2, filaH);
+      x = pad;
+      cols.forEach(c => {
+        g.fillStyle = '#111111';
+        g.font = `${c.bold ? 'bold ' : ''}16px Calibri, Arial, sans-serif`;
+        g.textAlign = c.centro ? 'center' : 'left';
+        let txt = String(c.f(t));
+        while (txt.length > 1 && g.measureText(txt).width > c.w - 12) txt = txt.slice(0, -2) + '…';
+        g.fillText(txt, c.centro ? x + c.w / 2 : x + 6, y + filaH / 2 + 1);
+        x += c.w;
+      });
+      y += filaH;
+    });
+    // cuadrícula
+    g.strokeStyle = '#000000'; g.lineWidth = 1;
+    const top = pad + tituloH;
+    const lineaH = (yy) => { g.beginPath(); g.moveTo(pad, yy + .5); g.lineTo(W - pad, yy + .5); g.stroke(); };
+    lineaH(top);
+    for (let i = 0; i <= filas.length; i++) lineaH(top + headH + i * filaH);
+    x = pad;
+    [...cols, null].forEach(c => { g.beginPath(); g.moveTo(x + .5, top); g.lineTo(x + .5, y); g.stroke(); if (c) x += c.w; });
+    g.lineWidth = 2; g.beginPath(); g.moveTo(pad, top + headH); g.lineTo(W - pad, top + headH); g.stroke();
+
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const nombre = `guias-pendientes-${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}.png`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    let copiada = false;
+    try { if (navigator.clipboard && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); copiada = true; } } catch (e) {}
+    const btn = document.getElementById('tramImagenBtn');
+    if (btn) { const txt = btn.textContent; btn.textContent = copiada ? '✅ Descargada y copiada (pega con Ctrl+V)' : '✅ Imagen descargada'; setTimeout(() => { btn.textContent = txt; }, 3000); }
   }
 
   function renderCatalogTab() {
@@ -2678,7 +2869,7 @@
 
   // Se llama en cada render() del tablero
   function geloRefresh() {
-    if (!currentUserProfile || currentUserProfile.rol === 'cliente') return;
+    if (!currentUserProfile || currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'tramitador') return;
     if (!document.body.classList.contains('gelo-on')) { document.body.classList.add('gelo-on'); geloAnimar('gelo-entrada', 1200); setTimeout(geloSaludar, 1300); }
     geloSetMood();
     const ids = new Set(geloActivos(false).map(t => t.id));
