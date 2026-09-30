@@ -281,7 +281,11 @@
   #gelo { position: fixed; right: 22px; bottom: 22px; z-index: 900; display: none; font-family: var(--font-main); }
   body.gelo-on #gelo { display: block; }
   body.is-client #gelo { display: none !important; }
-  #gelo.gelo-hidden .gelo-body-wrap { transform: translateX(120px); opacity: .35; }
+  /* Escondido: se asoma por la orilla derecha; al pasar el mouse sale un poco más */
+  #gelo.gelo-hidden { right: 0; }
+  #gelo.gelo-hidden .gelo-body-wrap { transform: translateX(58%) rotate(-12deg); opacity: .85; }
+  #gelo.gelo-hidden .gelo-body-wrap:hover { transform: translateX(35%) rotate(-6deg); opacity: 1; }
+  #gelo.gelo-hidden .gelo-badge { right: auto; left: 2px; }
   .gelo-body-wrap { width: 84px; height: 84px; cursor: pointer; position: relative; transition: transform .3s, opacity .3s; filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
   .gelo-body-wrap:hover { transform: scale(1.06); }
   .gelo-svg { width: 100%; height: 100%; overflow: visible; }
@@ -3453,7 +3457,7 @@
 
   document.getElementById('geloBody').addEventListener('click', () => {
     geloAnimar('gelo-boing', 650);
-    if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); return; }
+    if (geloHidden) { geloEsconder(false); return; }
     geloChat.classList.contains('open') ? geloChat.classList.remove('open') : geloOpen();
   });
   geloBubble.addEventListener('click', (e) => {
@@ -3462,7 +3466,22 @@
     if (geloBubbleRecordatorio) geloBubbleRecordatorio = false; else geloAsk('¿Qué tengo pendiente?');
   });
   document.getElementById('geloCloseBtn').addEventListener('click', () => geloChat.classList.remove('open'));
-  document.getElementById('geloHideBtn').addEventListener('click', () => { geloHidden = true; localStorage.setItem('ayc-gelo-hidden', '1'); geloChat.classList.remove('open'); geloSetMood(); });
+  function geloEsconder(esconder) {
+    geloHidden = esconder; localStorage.setItem('ayc-gelo-hidden', esconder ? '1' : '0');
+    if (esconder) { geloChat.classList.remove('open'); geloBubble.classList.remove('show'); }
+    document.getElementById('geloBody').title = esconder ? 'Clic para sacar a Gelo (o Alt + G)' : '¡Hola! Soy Gelo';
+    geloSetMood();
+  }
+  document.getElementById('geloHideBtn').addEventListener('click', () => geloEsconder(true));
+  if (geloHidden) document.getElementById('geloBody').title = 'Clic para sacar a Gelo (o Alt + G)';
+  // Alt + G: mostrar/esconder a Gelo desde cualquier parte del tablero
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'g' || e.key === 'G')) {
+      e.preventDefault();
+      if (!document.body.classList.contains('gelo-on')) return;
+      if (geloHidden) { geloEsconder(false); geloAnimar('gelo-rebote', 1300); } else geloEsconder(true);
+    }
+  });
   document.getElementById('geloMuteBtn').addEventListener('click', () => {
     geloMuted = !geloMuted; localStorage.setItem('ayc-gelo-muted', geloMuted ? '1' : '0'); geloUpdateMuteBtn();
     geloAdd(geloMuted ? 'Recordatorios en silencio 🔕' : `Recordatorios activos cada ${geloIntervalMin} min 🔔`, 'bot');
