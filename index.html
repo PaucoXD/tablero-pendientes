@@ -296,6 +296,11 @@
   #gelo.mood-worried .gelo-blob { animation: gelo-shiver .5s ease-in-out infinite; }
   #gelo.mood-sleepy .gelo-blob { animation: gelo-breathe 4s ease-in-out infinite; }
   #gelo.mood-sleepy .gelo-eye { transform: scaleY(.15); animation: none; }
+  #gelo.gelo-hablando .gelo-mouth { animation: gelo-hablar .28s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+  @keyframes gelo-hablar { from { transform: scaleY(1); } to { transform: scaleY(2.2); } }
+  .gelo-voces { flex-wrap: wrap; }
+  .gelo-voces button { font-weight: 500; font-size: 12px; }
+  .gelo-voces button.activa { background: var(--primary); border-color: var(--primary); color: var(--panel); }
   #gelo.gelo-jump .gelo-blob { animation: gelo-jump .7s ease-out 2; }
   @keyframes gelo-wobble { 0%,100% { transform: scale(1,1); } 25% { transform: scale(1.07,.93); } 50% { transform: scale(.95,1.06); } 75% { transform: scale(1.03,.97); } }
   @keyframes gelo-shiver { 0%,100% { transform: translateX(0) scale(1,1); } 25% { transform: translateX(-2px) scale(1.03,.97); } 75% { transform: translateX(2px) scale(.97,1.03); } }
@@ -2545,7 +2550,7 @@
   function geloLinea(t) {
     const r = t.ref || t.guia || t.bl || 'S/REF';
     const extra = [t.cliente, t.status || 'Pendiente', t.limite ? '⏱ ' + formatLimite(t.limite) : ''].filter(Boolean).join(' · ');
-    return `• <span class="gelo-ref" data-ref="${geloEsc(r)}">${geloEsc(r)}</span> — ${geloEsc(extra)}${isOverdue(t) ? ' ⚠️' : ''}`;
+    return `<span class="gelo-li" data-voz="${geloEsc(geloLineaHablada(t))}">• <span class="gelo-ref" data-ref="${geloEsc(r)}">${geloEsc(r)}</span> — ${geloEsc(extra)}${isOverdue(t) ? ' ⚠️' : ''}</span>`;
   }
   function geloLista(arr, max = 8) {
     const ts = t => t.limite ? new Date(t.limite).getTime() : Number.MAX_SAFE_INTEGER;
@@ -2946,17 +2951,141 @@
   let geloVozOn = localStorage.getItem('ayc-gelo-voz') === '1';
   let geloUltimaPorVoz = false;
   let geloEscuchando = null;
-  function geloHablar(html) {
-    if (!('speechSynthesis' in window)) return;
-    const txt = geloStripHtml(html).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/•/g, '. ').replace(/\s+/g, ' ').trim();
-    if (!txt || /^(guardando|anotando|deshaciendo|va…)/i.test(txt)) return;
-    const u = new SpeechSynthesisUtterance(txt.slice(0, 400));
-    u.lang = 'es-MX';
-    const voz = speechSynthesis.getVoices().find(v => v.lang === 'es-MX') || speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('es'));
-    if (voz) u.voice = voz;
-    u.rate = 1.05;
-    speechSynthesis.speak(u);
+  // ----- Voz natural: convertir lo que Gelo escribe a cómo lo diría una persona -----
+  const GELO_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  function geloHoraHablada(h, m) {
+    const h12 = h % 12 || 12;
+    const art = h12 === 1 ? 'la' : 'las';
+    const min = m === 0 ? '' : m === 15 ? ' y cuarto' : m === 30 ? ' y media' : m === 45 ? ' y cuarenta y cinco' : ' y ' + m;
+    const parte = h === 12 ? 'del mediodía' : h < 6 ? 'de la madrugada' : h < 12 ? 'de la mañana' : h < 19 ? 'de la tarde' : 'de la noche';
+    return `${art} ${h12}${min} ${parte}`;
   }
+  function geloFechaHablada(d, conHora = true) {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dia = new Date(d); dia.setHours(0, 0, 0, 0);
+    const dif = Math.round((dia - hoy) / 86400000);
+    const txtDia = dif === 0 ? 'hoy' : dif === 1 ? 'mañana' : dif === -1 ? 'ayer' : dif === 2 ? 'pasado mañana'
+      : `el ${d.getDate()} de ${GELO_MESES[d.getMonth()]}`;
+    return conHora ? `${txtDia} a ${geloHoraHablada(d.getHours(), d.getMinutes())}` : txtDia;
+  }
+  // "AYC26-7929 / 6107929" → "la 79 29"; "MNZ2814/26" → "la 28 14"; guía larga → "terminación 18 52"
+  function geloRefHablada(ref) {
+    if (!ref || ref === 'S/REF') return 'una sin referencia';
+    const nums = String(ref).match(/\d+/g) || [];
+    const principal = nums.find(n => n.length >= 4 && n.length <= 5) || nums.find(n => n.length >= 4) || nums[0];
+    if (!principal) return String(ref).toLowerCase();
+    const dig = principal.length > 5 ? principal.slice(-4) : principal;
+    const pares = dig.length === 4 ? dig.slice(0, 2) + ' ' + dig.slice(2) : dig.length === 5 ? dig.slice(0, 2) + ' ' + dig.slice(2) : dig;
+    return (principal.length > 7 ? 'la terminación ' : 'la ') + pares;
+  }
+  function geloLineaHablada(t) {
+    const partes = [geloRefHablada(t.ref || t.guia || t.bl || 'S/REF')];
+    if (t.cliente) partes[0] += ' de ' + t.cliente.toLowerCase();
+    else if (t.titulo) partes[0] = t.titulo;
+    if (isOverdue(t)) partes.push('ya está retrasada');
+    else if (t.limite) partes.push('vence ' + geloFechaHablada(new Date(t.limite)));
+    else if (t.status) partes.push('en ' + t.status.toLowerCase());
+    return partes.join(', ');
+  }
+
+  function geloTextoParaVoz(html) {
+    const d = document.createElement('div'); d.innerHTML = html;
+    d.querySelectorAll('button').forEach(b => b.remove());
+    // Listas: solo las primeras 3, lo demás se resume
+    const items = [...d.querySelectorAll('.gelo-li')];
+    let extra = 0;
+    const mMas = d.textContent.match(/…y (\d+) más\./);
+    if (mMas) extra += parseInt(mMas[1], 10);
+    items.forEach((li, i) => {
+      if (i < 3) li.textContent = (i === 0 ? '' : '. ') + (li.dataset.voz || li.textContent);
+      else { li.remove(); extra++; }
+    });
+    let t = d.textContent;
+    if (extra) t = t.replace(/…y \d+ más\./, '') + `. Y ${extra} más.`;
+    // "2 retrasado(s)" → "2 retrasados"; "1 tarea(s) personal(es)" → "1 tarea personal"
+    let ultimo = 1;
+    t = t.replace(/(\d+)|([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\((s|es|n)\)/g, (m, num, w, suf) => { if (num) { ultimo = +num; return m; } return ultimo === 1 ? w : w + suf; });
+    t = t
+      .replace(/→\s*👤/g, ', la tiene')
+      .replace(/(^|\n)\s*\d+\.\s+/g, '$1')                                // "1. Dany" → "Dany"
+      .replace(/\((?!\d)[^)]{12,}\)/g, '')                                   // aclaraciones largas entre paréntesis
+      .replace(/\s*\((\d+[^)]*)\)/g, ', $1')                            // "(4 activos)" → ", 4 activos"
+      .replace(/\(([^)]*)\)/g, ', $1')
+      .replace(/→/g, ',')
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, '')
+      .replace(/\bS\/REF\b/g, 'sin referencia')
+      .replace(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g, (m, dd, mm, yy) => geloFechaHablada(new Date(+yy, +mm - 1, +dd), false))
+      .replace(/\b(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})\b/g, (m, dd, mm, h, mi) => { const x = new Date(); x.setMonth(+mm - 1, +dd); x.setHours(+h, +mi); return geloFechaHablada(x); })
+      .replace(/\b(\d{1,2}):(\d{2})\s*([ap])\.?\s?m\.?/gi, (m, h, mi, ap) => { let hh = +h % 12; if (ap.toLowerCase() === 'p') hh += 12; return geloHoraHablada(hh, +mi).replace(/^las? /, ''); })
+      .replace(/\ba las? las? /g, (m) => m.startsWith('a la ') ? 'a la ' : 'a las ')
+      .replace(/\b[A-Z]{2,5}\d{2}[-\/]?\d{3,}(?:\s*\/\s*\d{2,})?\b|\b\d{7,}\b/g, (m) => geloRefHablada(m));
+    t = t.replace(/\b[A-ZÁÉÍÓÚÑ]{4,}\b/g, w => w.toLowerCase());          // DECKAMMEX → deckammex (si no, algunas voces deletrean)
+    return t.replace(/\s*[•·—]\s*/g, ', ').replace(/"/g, '').replace(/\s*\n+\s*/g, '. ').replace(/\s+/g, ' ').replace(/\s*:\s*[.,]/g, '.').replace(/\s+([,.:!?])/g, '$1').replace(/([.,!?])\s*[.,]+/g, '$1').trim();
+  }
+
+  // Elegir la voz más natural disponible (Edge trae voces "Natural" muy buenas; Chrome, las de Google)
+  let geloVoces = [];
+  function geloCargarVoces() { geloVoces = ('speechSynthesis' in window) ? speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang)) : []; }
+  if ('speechSynthesis' in window) { geloCargarVoces(); speechSynthesis.addEventListener('voiceschanged', geloCargarVoces); }
+  function geloPuntajeVoz(v) {
+    let p = 0;
+    if (/natural|neural/i.test(v.name)) p += 50;
+    if (/online/i.test(v.name)) p += 20;
+    if (/google/i.test(v.name)) p += 15;
+    if (v.lang === 'es-MX') p += 10; else if (v.lang === 'es-US') p += 6; else if (v.lang === 'es-419') p += 5;
+    if (/dalia|paloma|elena|helena|monica|mónica|sabina|lupe|paulina|female|mujer/i.test(v.name)) p += 3; // voz aguda va mejor con Gelo
+    return p;
+  }
+  function geloVozElegida() {
+    if (!geloVoces.length) geloCargarVoces();
+    const guardada = localStorage.getItem('ayc-gelo-voz-nombre');
+    return geloVoces.find(v => v.name === guardada) || [...geloVoces].sort((a, b) => geloPuntajeVoz(b) - geloPuntajeVoz(a))[0] || null;
+  }
+  let geloTono = parseFloat(localStorage.getItem('ayc-gelo-tono') || '1.25');     // un poco más agudo: voz de gelatina
+  let geloVelocidad = parseFloat(localStorage.getItem('ayc-gelo-velocidad') || '1.05');
+
+  function geloHablarTexto(txt) {
+    if (!('speechSynthesis' in window) || !txt) return;
+    speechSynthesis.cancel();
+    const voz = geloVozElegida();
+    // Chrome corta frases largas: se dicen por oraciones
+    const frases = txt.match(/[^.!?]+[.!?]*/g) || [txt];
+    frases.slice(0, 12).forEach(f => {
+      const u = new SpeechSynthesisUtterance(f.trim());
+      u.lang = voz ? voz.lang : 'es-MX';
+      if (voz) u.voice = voz;
+      u.pitch = geloTono; u.rate = geloVelocidad;
+      u.onstart = () => { geloEl.classList.add('gelo-hablando'); };
+      u.onend = () => { if (!speechSynthesis.speaking) geloEl.classList.remove('gelo-hablando'); };
+      speechSynthesis.speak(u);
+    });
+  }
+  function geloHablar(html) {
+    const plano = geloStripHtml(html);
+    if (!plano || /^(guardando|anotando|deshaciendo|va…)/i.test(plano)) return;
+    geloHablarTexto(geloTextoParaVoz(html));
+  }
+
+  function geloComandoVoz(q) {
+    if (/^(cambia(r)?|elige|escoge|otra|que otras?|cuales)\b.*\bvoz(es)?\b|^voces$/.test(q)) {
+      geloCargarVoces();
+      if (!geloVoces.length) return 'Tu navegador no tiene voces en español instaladas 😕. En Edge vienen voces muy naturales (Dalia, Jorge).';
+      const actual = geloVozElegida();
+      const lista = [...geloVoces].sort((a, b) => geloPuntajeVoz(b) - geloPuntajeVoz(a)).slice(0, 12);
+      return `Estas son las voces en español de tu compu. Toca una para escucharla${actual ? ` (ahora uso <b>${geloEsc(actual.name)}</b>)` : ''}:\n<span class="gelo-confirm gelo-voces">${lista.map(v => `<button data-gelo-voz="${geloEsc(v.name)}">${geloEsc(v.name.replace(/^(Microsoft|Google)\s+/, '').replace(/\s*-\s*Spanish.*$/i, '').replace(/\s*\(Natural\)/i, ' ✨'))} · ${geloEsc(v.lang)}</button>`).join('')}</span>\nTambién: "voz más aguda", "más grave", "habla más rápido" o "más lento".`;
+    }
+    const ajuste = (k, v, min, max) => { const n = Math.min(max, Math.max(min, Math.round(v * 100) / 100)); localStorage.setItem(k, n); return n; };
+    if (/voz mas aguda|mas agud|mas chillon/.test(q)) { geloTono = ajuste('ayc-gelo-tono', geloTono + 0.15, 0.5, 2); return 'Así, ¿más agudita? 🎶'; }
+    if (/voz mas grave|mas grave|mas gruesa/.test(q)) { geloTono = ajuste('ayc-gelo-tono', geloTono - 0.15, 0.5, 2); return 'Ok, voz más grave 🎵'; }
+    if (/(habla )?mas rapido/.test(q)) { geloVelocidad = ajuste('ayc-gelo-velocidad', geloVelocidad + 0.1, 0.6, 1.6); return '¡Voy más rápido! 🏃'; }
+    if (/(habla )?mas (lento|despacio)/.test(q)) { geloVelocidad = ajuste('ayc-gelo-velocidad', geloVelocidad - 0.1, 0.6, 1.6); return 'Ok, más despacito 🐢'; }
+    if (/voz normal|restablece(r)? (la )?voz/.test(q)) {
+      ['ayc-gelo-tono', 'ayc-gelo-velocidad', 'ayc-gelo-voz-nombre'].forEach(k => localStorage.removeItem(k));
+      geloTono = 1.25; geloVelocidad = 1.05; return 'Regresé a mi voz de siempre 🍮';
+    }
+    return null;
+  }
+
   function geloUpdateVozBtn() {
     const b = document.getElementById('geloVozBtn');
     b.textContent = geloVozOn ? '🔊' : '🔈';
@@ -3086,6 +3215,8 @@
       if (/^(no|nel|cancela|mejor no)\b/.test(q)) { geloPendienteAccion = null; return 'Ok, no toco nada 👌'; }
       geloPendienteAccion = null;
     }
+    const cmdVoz = geloComandoVoz(q);
+    if (cmdVoz) return cmdVoz;
     if (/^(deshaz|deshacer|deshazlo|undo|regresalo|regresa(lo)? como estaba|me equivoque|ups deshaz)\b/.test(q)) return geloDeshacer();
     const libres = geloTomarLibres(q);
     if (libres) return libres;
@@ -3101,7 +3232,7 @@
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
@@ -3216,6 +3347,13 @@
   document.getElementById('geloForm').addEventListener('submit', (e) => { e.preventDefault(); const v = geloInput.value; geloInput.value = ''; geloAsk(v); });
   const geloBody = document.getElementById('geloBody');
   geloMsgs.addEventListener('click', (e) => {
+    const vb = e.target.closest('[data-gelo-voz]');
+    if (vb) {
+      localStorage.setItem('ayc-gelo-voz-nombre', vb.dataset.geloVoz);
+      geloMsgs.querySelectorAll('[data-gelo-voz]').forEach(b => b.classList.toggle('activa', b === vb));
+      geloHablarTexto('¡Hola! Así sueno yo. Soy Gelo, tu gelatina de pendientes.');
+      return;
+    }
     const rb = e.target.closest('[data-gelo-rem]');
     if (rb) { geloAccionRecordatorio(rb); return; }
     const c = e.target.closest('[data-gelo-confirm]');
