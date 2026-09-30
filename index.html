@@ -74,6 +74,16 @@
   .tram-mono { font-family: var(--font-mono); font-size: 13px; }
   .tram-centro { text-align: center; }
   .tram-vacio { text-align: center; color: var(--text-sub); padding: 30px !important; }
+  .tram-in { width: 100%; min-width: 90px; box-sizing: border-box; background: transparent; border: 1px dashed transparent; color: var(--text-main); padding: 5px 6px; border-radius: 4px; font: inherit; }
+  select.tram-in { cursor: pointer; appearance: none; -webkit-appearance: none; }
+  .tram-in-cliente { font-weight: 800; }
+  .tram-in[data-campo="cliente"], .tram-in[data-campo="almacen"] { text-transform: uppercase; }
+  .tram-in-fecha { text-align: center; min-width: 140px; }
+  .tram-in:hover { border-color: var(--divider); }
+  .tram-in:focus { outline: none; border-color: var(--primary); background: var(--panel); }
+  .tram-in.guardando { border-color: var(--amber); }
+  .tram-in.guardado { border-color: var(--green); background: var(--green-soft); }
+  .tram-tabla tr.tram-atrasada .tram-in-fecha { color: var(--red); font-weight: 700; }
   .tram-estatus { width: 100%; min-width: 220px; background: transparent; border: 1px dashed transparent; color: var(--text-main); padding: 5px 6px; border-radius: 4px; font: inherit; }
   .tram-estatus:hover { border-color: var(--divider); }
   .tram-estatus:focus { outline: none; border-color: var(--primary); background: var(--panel); }
@@ -2055,10 +2065,26 @@
     return arr.sort((a, b) => (tramTs(a.eta) - tramTs(b.eta)) || String(a.cliente || '').localeCompare(String(b.cliente || '')));
   }
 
-  function renderTramitadoresTab() {
+  // Si el usuario está escribiendo en la tabla o en el formulario, no redibujar (se perdería lo escrito);
+  // se redibuja al salir de la celda o al cerrar el formulario.
+  let tramRenderPendiente = false;
+  function tramEditando() {
+    const a = document.activeElement;
+    return !!(tramFormAbierto || (a && a.closest && a.closest('.tram-wrap') && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)));
+  }
+  document.addEventListener('focusout', (e) => {
+    if (!tramRenderPendiente || !e.target.closest || !e.target.closest('.tram-wrap')) return;
+    setTimeout(() => { if (tramRenderPendiente && currentFilter === 'tramitadores' && !tramEditando()) renderTramitadoresTab(true); }, 150);
+  });
+
+  function renderTramitadoresTab(forzar) {
+    if (!forzar && tramEditando() && document.querySelector('.tram-wrap')) { tramRenderPendiente = true; return; }
+    tramRenderPendiente = false;
     document.getElementById('colHeader').style.display = 'none';
     const rowsEl = document.getElementById('rows');
     const puedeEditar = currentUserProfile.rol === 'admin';
+    const puedeEditarFila = t => !esTramitador() && (puedeEditar || normKey(t.ejecutivo) === normKey(currentUser));
+    const execsLista = tramEjecutivosLista();
     const filas = tramFilas();
     const ejecutivos = [...new Set(tasks.filter(t => !t.isTask && (t.guia || '').trim() && t.ejecutivo && t.status !== 'Eliminado').map(t => t.ejecutivo.trim().toUpperCase()))].sort();
     const hoyTs = new Date().setHours(0, 0, 0, 0);
@@ -2073,51 +2099,75 @@
           <button class="btn-add" id="tramImagenBtn">🖼️ Generar imagen</button>
         </div>
         ${tramFormHtml()}
-        ${puedeEditar ? '<div class="tram-hint">✏️ Escribe el estatus directo en la tabla; se guarda solo al salir de la celda. Almacén y fecha de arribo se editan en el pedimento.</div>' : ''}
+        ${esTramitador() ? '' : `<div class="tram-hint">✏️ Da clic en cualquier celda para editarla; se guarda al salir de la celda o con Enter.${puedeEditar ? '' : ' Puedes editar tus guías; el estatus lo ponen los admins.'}</div>`}
         <div class="tram-tabla-wrap">
           <table class="tram-tabla">
             <thead><tr><th>CLIENTE</th><th>GUÍA</th><th>ALMACÉN</th><th>FECHA DE ARRIBO</th><th>ESTATUS</th><th>EJECUTIVO</th></tr></thead>
             <tbody>${filas.length ? filas.map(t => {
               const llegoTs = tramTs(t.eta);
               const cls = llegoTs !== Infinity && llegoTs < hoyTs ? 'tram-atrasada' : '';
+              const ed = puedeEditarFila(t);
+              const id = tramEsc(t.id);
+              const etaIso = /^\d{4}-\d{2}-\d{2}/.test(t.eta || '') ? String(t.eta).slice(0, 10) : '';
+              const ejActual = t.ejecutivo || '';
+              const ejOpts = [...new Set([...execsLista, ejActual].filter(Boolean))];
               return `<tr class="${cls}">
-                <td class="tram-cliente">${tramEsc((t.cliente || '—').toUpperCase())}</td>
-                <td class="tram-mono">${tramEsc(t.guia)}</td>
-                <td>${tramEsc((t.almacen || '—').toUpperCase())}</td>
-                <td class="tram-centro">${tramEsc(tramFecha(t.eta))}</td>
+                <td class="tram-cliente">${ed ? `<input class="tram-in tram-in-cliente" data-id="${id}" data-campo="cliente" list="tramClientesT" value="${tramEsc((t.cliente || '').toUpperCase())}" placeholder="— cliente —">` : tramEsc((t.cliente || '—').toUpperCase())}</td>
+                <td class="tram-mono">${ed ? `<input class="tram-in tram-mono" data-id="${id}" data-campo="guia" value="${tramEsc(t.guia)}">` : tramEsc(t.guia)}</td>
+                <td>${ed ? `<input class="tram-in" data-id="${id}" data-campo="almacen" list="tramAlmacenesT" value="${tramEsc((t.almacen || '').toUpperCase())}" placeholder="—">` : tramEsc((t.almacen || '—').toUpperCase())}</td>
+                <td class="tram-centro">${ed ? `<input class="tram-in tram-in-fecha" type="date" data-id="${id}" data-campo="eta" value="${tramEsc(etaIso)}" title="${tramEsc(tramFecha(t.eta))}">` : tramEsc(tramFecha(t.eta))}</td>
                 <td>${puedeEditar
-                  ? `<input class="tram-estatus" list="tramSugeridos" data-id="${tramEsc(t.id)}" value="${tramEsc(t.estatusTramite || '')}" placeholder="— sin estatus —">`
+                  ? `<input class="tram-in tram-estatus" list="tramSugeridos" data-id="${id}" data-campo="estatusTramite" value="${tramEsc(t.estatusTramite || '')}" placeholder="— sin estatus —">`
                   : tramEsc(t.estatusTramite || '—')}</td>
-                <td>${tramEsc((t.ejecutivo || 'Sin asignar').toUpperCase())}</td>
+                <td>${puedeEditar
+                  ? `<select class="tram-in" data-id="${id}" data-campo="ejecutivo">${ejOpts.map(e => `<option value="${tramEsc(e)}" ${normKey(e) === normKey(ejActual) ? 'selected' : ''}>${tramEsc(e.toUpperCase())}</option>`).join('')}</select>`
+                  : tramEsc((t.ejecutivo || 'Sin asignar').toUpperCase())}</td>
               </tr>`;
             }).join('') : '<tr><td colspan="6" class="tram-vacio">No hay guías pendientes con estos filtros 🎉</td></tr>'}</tbody>
           </table>
           <datalist id="tramSugeridos">${TRAM_ESTATUS_SUGERIDOS.map(s => `<option value="${tramEsc(s)}">`).join('')}</datalist>
+          <datalist id="tramClientesT">${clientesCatalogo.map(c => `<option value="${tramEsc((c.nombre || '').toUpperCase())}">`).join('')}</datalist>
+          <datalist id="tramAlmacenesT">${[...new Set(tasks.map(t => (t.almacen || '').trim().toUpperCase()).filter(Boolean))].map(a => `<option value="${tramEsc(a)}">`).join('')}</datalist>
         </div>
       </div>`;
 
     const buscar = document.getElementById('tramBuscar');
-    buscar.addEventListener('input', () => { tramBusqueda = buscar.value; const pos = buscar.selectionStart; renderTramitadoresTab(); const b = document.getElementById('tramBuscar'); b.focus(); b.setSelectionRange(pos, pos); });
-    document.getElementById('tramEjecutivo').addEventListener('change', (e) => { tramEjecutivo = e.target.value; renderTramitadoresTab(); });
+    buscar.addEventListener('input', () => { tramBusqueda = buscar.value; const pos = buscar.selectionStart; renderTramitadoresTab(true); const b = document.getElementById('tramBuscar'); b.focus(); b.setSelectionRange(pos, pos); });
+    document.getElementById('tramEjecutivo').addEventListener('change', (e) => { tramEjecutivo = e.target.value; renderTramitadoresTab(true); });
     const sinEst = document.getElementById('tramSinEstatus');
-    if (sinEst) sinEst.addEventListener('change', (e) => { tramSoloSinEstatus = e.target.checked; renderTramitadoresTab(); });
+    if (sinEst) sinEst.addEventListener('change', (e) => { tramSoloSinEstatus = e.target.checked; renderTramitadoresTab(true); });
     document.getElementById('tramImagenBtn').addEventListener('click', () => tramGenerarImagen(filas));
     const nuevaBtn = document.getElementById('tramNuevaBtn'), pegarBtn = document.getElementById('tramPegarBtn');
-    if (nuevaBtn) nuevaBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'una' ? null : 'una'; renderTramitadoresTab(); });
-    if (pegarBtn) pegarBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'pegar' ? null : 'pegar'; renderTramitadoresTab(); });
+    if (nuevaBtn) nuevaBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'una' ? null : 'una'; renderTramitadoresTab(true); });
+    if (pegarBtn) pegarBtn.addEventListener('click', () => { tramFormAbierto = tramFormAbierto === 'pegar' ? null : 'pegar'; renderTramitadoresTab(true); });
     tramConectarForm();
-    rowsEl.querySelectorAll('.tram-estatus').forEach(inp => {
+    rowsEl.querySelectorAll('.tram-in').forEach(inp => {
       const guardar = () => {
         const t = tasks.find(x => x.id === inp.dataset.id);
-        const val = inp.value.trim();
-        if (!t || (t.estatusTramite || '') === val) return;
+        if (!t) return;
+        const campo = inp.dataset.campo;
+        let val = inp.value.trim();
+        if (campo === 'cliente' || campo === 'almacen') val = val.toUpperCase();
+        const actual = String(t[campo] || '').trim();
+        if ((campo === 'cliente' || campo === 'almacen' ? actual.toUpperCase() : actual) === val) return;
+        const datos = { [campo]: val, lastModifiedBy: currentUser };
+        if (campo === 'guia') {
+          if (!val) { alert('La guía no puede quedar vacía.'); inp.value = t.guia || ''; return; }
+          const otra = tasks.find(x => x.id !== t.id && !x.isTask && x.status !== 'Eliminado' && tramNormGuia(x.guia) === tramNormGuia(val));
+          if (otra && !confirm(`La guía ${val} ya está en otro pedimento (${otra.cliente || 'sin cliente'}, ${otra.ejecutivo || 'sin asignar'}). ¿Guardarla de todos modos?`)) { inp.value = t.guia || ''; return; }
+        }
+        if (campo === 'cliente') {
+          const cli = clientesCatalogo.find(c => normKey(c.nombre) === normKey(val));
+          if (cli) { datos.cliente = cli.nombre; datos.cliente_id = cli.id; } else datos.cliente_id = null;
+        }
+        if (campo === 'estatusTramite') { datos.estatusTramitePor = currentUser; datos.estatusTramiteEn = new Date().toISOString(); }
         inp.classList.add('guardando');
-        update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: val, estatusTramitePor: currentUser, estatusTramiteEn: new Date().toISOString(), lastModifiedBy: currentUser })
+        update(ref(db, 'pendientes_ayc/' + t.id), datos)
           .then(() => { inp.classList.remove('guardando'); inp.classList.add('guardado'); setTimeout(() => inp.classList.remove('guardado'), 1200); })
-          .catch(err => { inp.classList.remove('guardando'); alert('No se pudo guardar el estatus: ' + (err.code || err.message)); });
+          .catch(err => { inp.classList.remove('guardando'); alert('No se pudo guardar: ' + (err.code || err.message)); });
       };
       inp.addEventListener('change', guardar);
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { const t = tasks.find(x => x.id === inp.dataset.id); if (t) inp.value = inp.dataset.campo === 'eta' ? (String(t.eta || '').slice(0, 10)) : (t[inp.dataset.campo] || ''); inp.blur(); } });
     });
   }
 
@@ -2283,7 +2333,7 @@
     const msg = (t, ok) => { const el = document.getElementById('tfMsg'); if (el) { el.textContent = t; el.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
     const cancelar = document.getElementById('tfCancelar');
     if (!cancelar) return;
-    cancelar.addEventListener('click', () => { tramFormAbierto = null; renderTramitadoresTab(); });
+    cancelar.addEventListener('click', () => { tramFormAbierto = null; renderTramitadoresTab(true); });
     const guardarBtn = document.getElementById('tfGuardar');
     if (tramFormAbierto === 'una') {
       document.getElementById('tfCliente').focus();
@@ -2293,7 +2343,7 @@
         const ya = tramGuiaExistente(d.guia);
         if (ya) { msg(`Esa guía ya está en el tablero (${ya.cliente || 'sin cliente'}, ${ya.ejecutivo || 'sin asignar'}).`); return; }
         guardarBtn.disabled = true;
-        tramGuardarGuias([d]).then(() => { tramFormAbierto = null; renderTramitadoresTab(); })
+        tramGuardarGuias([d]).then(() => { tramFormAbierto = null; renderTramitadoresTab(true); })
           .catch(err => { guardarBtn.disabled = false; msg('No se pudo guardar: ' + (err.code || err.message)); });
       });
     } else {
@@ -2312,7 +2362,7 @@
       guardarBtn.addEventListener('click', () => {
         if (!parse.filas.length) return;
         guardarBtn.disabled = true;
-        tramGuardarGuias(parse.filas).then(() => { tramFormAbierto = null; renderTramitadoresTab(); })
+        tramGuardarGuias(parse.filas).then(() => { tramFormAbierto = null; renderTramitadoresTab(true); })
           .catch(err => { guardarBtn.disabled = false; msg('No se pudieron guardar: ' + (err.code || err.message)); });
       });
     }
