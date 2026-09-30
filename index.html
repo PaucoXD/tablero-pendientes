@@ -286,18 +286,26 @@
   .gelo-body-wrap:hover { transform: scale(1.06); }
   .gelo-svg { width: 100%; height: 100%; overflow: visible; }
   .gelo-blob { transform-origin: 50% 100%; animation: gelo-wobble 2.6s ease-in-out infinite; }
-  .gelo-shape { fill: var(--gelo-color, var(--primary)); opacity: .9; transition: fill .4s; }
-  .gelo-shine { fill: #fff; opacity: .45; }
-  .gelo-eye { fill: #1b1b1b; transform-box: fill-box; transform-origin: center; animation: gelo-blink 5s infinite; }
-  .gelo-cheek { fill: #ff5c8a; opacity: .45; }
-  .gelo-mouth { fill: none; stroke: #1b1b1b; stroke-width: 2.6; stroke-linecap: round; }
+  .gelo-shape { fill: url(#geloCuerpo); }
+  .gelo-shine { opacity: .9; }
+  .gelo-eye { fill: #231629; transform-box: fill-box; transform-origin: center; animation: gelo-blink 5s infinite; }
+  .gelo-mouth { fill: none; stroke: #3a2446; stroke-width: 1.7; stroke-linecap: round; transition: d .3s; }
+  .gelo-boca { fill: #3a2446; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .gelo-gota { fill: #8fd3ff; stroke: #fff; stroke-width: .6; opacity: 0; }
+  .gelo-zzz { font: 700 9px var(--font-main); fill: #B97FD6; opacity: 0; }
+  #gelo.mood-worried .gelo-gota { opacity: .95; animation: gelo-gota 1.6s ease-in infinite; }
+  #gelo.mood-sleepy .gelo-zzz { opacity: .9; animation: gelo-zzz 2.4s ease-in-out infinite; }
+  @keyframes gelo-gota { 0% { transform: translateY(0); opacity: .95; } 80% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
+  @keyframes gelo-zzz { 0% { transform: translate(0,4px); opacity: 0; } 40% { opacity: .9; } 100% { transform: translate(5px,-6px); opacity: 0; } }
+  #gelo.mood-worried .gelo-body-wrap { filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)) drop-shadow(0 0 8px rgba(255,77,77,.55)); }
   .gelo-badge { position: absolute; top: -2px; right: -2px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--red); color: #fff; font: 700 12px/22px var(--font-main); text-align: center; padding: 0 6px; display: none; box-shadow: 0 0 0 2px var(--panel); }
   .gelo-badge.show { display: block; }
   #gelo.mood-worried .gelo-blob { animation: gelo-shiver .5s ease-in-out infinite; }
   #gelo.mood-sleepy .gelo-blob { animation: gelo-breathe 4s ease-in-out infinite; }
   #gelo.mood-sleepy .gelo-eye { transform: scaleY(.15); animation: none; }
-  #gelo.gelo-hablando .gelo-mouth { animation: gelo-hablar .28s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
-  @keyframes gelo-hablar { from { transform: scaleY(1); } to { transform: scaleY(2.2); } }
+  #gelo.gelo-hablando .gelo-mouth { opacity: 0; }
+  #gelo.gelo-hablando .gelo-boca { opacity: 1; animation: gelo-hablar .26s ease-in-out infinite alternate; }
+  @keyframes gelo-hablar { from { transform: scaleY(.35); } to { transform: scaleY(1.25); } }
   .gelo-voces { flex-wrap: wrap; }
   .gelo-voces button { font-weight: 500; font-size: 12px; }
   .gelo-voces button.activa { background: var(--primary); border-color: var(--primary); color: var(--panel); }
@@ -877,15 +885,37 @@
   <div class="gelo-bubble" id="geloBubble"><span id="geloBubbleText"></span><button class="gelo-bubble-x" id="geloBubbleX" title="Cerrar">✕</button></div>
   <div class="gelo-body-wrap" id="geloBody" title="¡Hola! Soy Gelo">
     <svg class="gelo-svg" viewBox="0 0 100 100" aria-hidden="true">
-      <ellipse cx="50" cy="96" rx="34" ry="4" fill="#000" opacity=".18"/>
+      <defs>
+        <radialGradient id="geloCuerpo" cx="38%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#F7E2FA"/>
+          <stop offset=".35" stop-color="#DDB0EB"/>
+          <stop offset=".7" stop-color="#B97FD6"/>
+          <stop offset="1" stop-color="#8446B3"/>
+        </radialGradient>
+        <linearGradient id="geloBase" x1="0" y1="0" x2="0" y2="1">
+          <stop offset=".55" stop-color="#6A2E9A" stop-opacity="0"/>
+          <stop offset="1" stop-color="#5B2388" stop-opacity=".55"/>
+        </linearGradient>
+        <radialGradient id="geloBrillo" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="geloSuave" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.6"/></filter>
+      </defs>
+      <ellipse cx="51" cy="94" rx="38" ry="4.5" fill="#2a0f3d" opacity=".28" filter="url(#geloSuave)"/>
       <g class="gelo-blob">
-        <path class="gelo-shape" d="M14 92 C 8 60, 20 18, 50 16 C 80 18, 92 60, 86 92 C 70 97, 30 97, 14 92 Z"/>
-        <ellipse class="gelo-shine" cx="34" cy="34" rx="8" ry="5" transform="rotate(-30 34 34)"/>
-        <ellipse class="gelo-eye" cx="38" cy="54" rx="4.5" ry="6"/>
-        <ellipse class="gelo-eye" cx="62" cy="54" rx="4.5" ry="6"/>
-        <ellipse class="gelo-cheek" cx="28" cy="65" rx="5" ry="3"/>
-        <ellipse class="gelo-cheek" cx="72" cy="65" rx="5" ry="3"/>
-        <path class="gelo-mouth" id="geloMouth" d="M42 67 Q50 75 58 67"/>
+        <path id="geloForma" class="gelo-shape" d="M12 90 C6 88 8 76 12 66 C15 56 9 42 10 26 C10 14 15 5 22 6 C29 7 30 17 32 24 C35 30 38 22 44 18 C50 14 56 17 60 20 C64 22 68 17 74 18 C82 20 84 28 86 30 C93 32 96 40 92 46 C89 50 86 50 85 54 C84 60 92 66 92 76 C93 86 90 91 84 92 C64 95 34 95 12 90 Z"/>
+        <use href="#geloForma" fill="url(#geloBase)"/>
+        <path d="M16 70 C14 56 15 44 16 34" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#geloSuave)"/>
+        <ellipse class="gelo-shine" cx="36" cy="34" rx="8" ry="4.5" transform="rotate(-25 36 34)" fill="url(#geloBrillo)"/>
+        <ellipse cx="19" cy="14" rx="3" ry="2" fill="url(#geloBrillo)" opacity=".8"/>
+        <ellipse cx="54" cy="24" rx="5" ry="2" fill="url(#geloBrillo)" opacity=".6"/>
+        <ellipse class="gelo-eye" cx="42" cy="38" rx="2" ry="2.3"/>
+        <ellipse class="gelo-eye" cx="62" cy="39" rx="2" ry="2.3"/>
+        <path class="gelo-mouth" id="geloMouth" d="M34 49 Q52 52 70 50"/>
+        <ellipse class="gelo-boca" cx="52" cy="50.5" rx="6.5" ry="2.6"/>
+        <path class="gelo-gota" d="M78 24 C76 28 75 31 78 32 C81 31 80 28 78 24 Z"/>
+        <text class="gelo-zzz" x="74" y="20">z</text>
       </g>
     </svg>
     <span class="gelo-badge" id="geloBadge"></span>
@@ -2567,9 +2597,7 @@
     const pend = geloPorCapturar(false).length;
     const mood = retr > 0 ? 'worried' : (pend === 0 && geloMisTareas().length === 0 ? 'sleepy' : 'happy');
     geloEl.className = 'mood-' + mood + (geloHidden ? ' gelo-hidden' : '');
-    const colors = { worried: 'var(--red)', sleepy: 'var(--blue)', happy: 'var(--green)' };
-    geloEl.style.setProperty('--gelo-color', colors[mood]);
-    document.getElementById('geloMouth').setAttribute('d', mood === 'worried' ? 'M42 71 Q50 64 58 71' : mood === 'sleepy' ? 'M45 69 Q50 71 55 69' : 'M42 67 Q50 75 58 67');
+    document.getElementById('geloMouth').setAttribute('d', mood === 'worried' ? 'M36 51 Q41 47 46 51 Q51 55 56 51 Q61 47 66 51' : mood === 'sleepy' ? 'M40 50 Q52 51 64 50' : 'M34 49 Q52 52 70 50');
     const badge = document.getElementById('geloBadge');
     const n = retr || pend;
     badge.textContent = n > 99 ? '99+' : n;
