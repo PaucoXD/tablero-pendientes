@@ -329,6 +329,8 @@
   .gelo-input { display: flex; gap: 6px; padding: 10px 12px; }
   .gelo-input input { flex: 1; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); border-radius: var(--radius-btn); padding: 8px 10px; font-size: 13px; font-family: var(--font-main); outline: none; }
   .gelo-input input:focus { border-color: var(--primary); }
+  .gelo-input .gelo-mic { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-main); }
+  .gelo-input .gelo-mic.escuchando { background: var(--red); border-color: var(--red); animation: gelo-shiver .6s infinite; }
   .gelo-input button { background: var(--primary); color: var(--panel); border: 0; border-radius: var(--radius-btn); padding: 0 12px; font-weight: 700; cursor: pointer; }
   @media (max-width: 600px) { #gelo { right: 12px; bottom: 12px; } .gelo-body-wrap { width: 64px; height: 64px; } .gelo-chat { bottom: 74px; } .gelo-bubble { right: 54px; bottom: 54px; } }
 </style>
@@ -846,6 +848,7 @@
   <div class="gelo-chat" id="geloChat" role="dialog" aria-label="Asistente Gelo">
     <div class="gelo-chat-head">
       <span>🍮</span><b>Gelo</b>
+      <button id="geloVozBtn" title="Que Gelo conteste en voz alta">🔈</button>
       <button id="geloMuteBtn" title="Silenciar recordatorios">🔔</button>
       <button id="geloHideBtn" title="Esconder a Gelo">🙈</button>
       <button id="geloCloseBtn" title="Cerrar">✕</button>
@@ -862,6 +865,7 @@
     </div>
     <form class="gelo-input" id="geloForm" autocomplete="off">
       <input id="geloInput" placeholder="Pregúntame algo… (ej. busca 3001234)">
+      <button type="button" id="geloMicBtn" class="gelo-mic" title="Háblale a Gelo">🎤</button>
       <button type="submit">➤</button>
     </form>
   </div>
@@ -2626,12 +2630,13 @@
     }
   }, 60000);
 
-  function geloAdd(html, who) {
+  function geloAdd(html, who, hablar) {
     const d = document.createElement('div');
     d.className = 'gelo-msg ' + who;
     d.innerHTML = html;
     geloMsgs.appendChild(d);
     geloMsgs.scrollTop = geloMsgs.scrollHeight;
+    if (who === 'bot' && (geloVozOn || hablar)) geloHablar(html);
   }
 
   function geloBuscar(q) {
@@ -2731,13 +2736,16 @@
     if (!p.cuando) return `¿A qué hora te recuerdo "${geloEsc(p.titulo)}"? Ej: "recuérdame ${geloEsc(p.titulo.toLowerCase())} a las 4" o "en 30 min".`;
     const data = { titulo: p.titulo, prioridad: 'Media', limite: geloFechaLocal(p.cuando), notas: 'Recordatorio creado con Gelo', status: 'Pendiente' };
     const cuandoTxt = `"<b>${geloEsc(p.titulo)}</b>" ${geloFormatoCuando(p.cuando)}`;
-    set(push(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid)), data)
-      .then(() => geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n(Quedó en Mis Tareas.)`, 'bot'))
+    const recRef = push(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid));
+    set(recRef, data)
+      .then(() => { geloRegistrar(`borré el recordatorio "${geloEsc(p.titulo)}"`, () => remove(recRef)); geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n(Quedó en Mis Tareas.)`, 'bot'); })
       .catch(err => {
         // Firebase no dejó escribir: lo guardo en este navegador para que el aviso funcione igual
         const arr = geloLeerLocales();
-        arr.push({ id: 'local-' + Date.now(), ...data });
+        const localId = 'local-' + Date.now();
+        arr.push({ id: localId, ...data });
         geloGuardarLocales(arr); geloSetMood();
+        geloRegistrar(`borré el recordatorio "${geloEsc(p.titulo)}"`, () => geloActualizarTareaPrivada(localId, { status: 'Eliminado' }));
         geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n⚠️ Firebase no me dejó guardarlo en Mis Tareas (${geloEsc(err.code || err.message || err)}), así que lo guardé solo en este navegador. Te aviso mientras el tablero esté abierto aquí.`, 'bot');
       });
     geloPedirPermisoAvisos();
@@ -2759,6 +2767,7 @@
       geloAvisados.add(clave); cambio = true;
       if (ahora - ts < 12 * 3600000) geloAvisarRecordatorio(t); // no revivir avisos viejos al abrir el tablero
     });
+    if (geloRevisarPorVencer()) cambio = true;
     if (cambio) { try { localStorage.setItem('ayc-gelo-avisados', JSON.stringify([...geloAvisados].slice(-300))); } catch (e) {} }
   }
   setInterval(geloRevisarRecordatorios, 20000);
@@ -2775,13 +2784,15 @@
     const id = btn.dataset.id;
     btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
     const fallo = err => geloAdd(`Ups, no pude guardarlo 😣 (${geloEsc(err.code || err.message || err)})`, 'bot');
+    const t = geloMisTareas().find(x => x.id === id) || {};
     if (btn.dataset.geloRem === 'done') {
       geloActualizarTareaPrivada(id, { status: 'Completado' })
-        .then(() => { playSparkle(btn); geloAdd('¡Bien! Recordatorio completado ✨', 'bot'); }).catch(fallo);
+        .then(() => { playSparkle(btn); geloRegistrar(`"${geloEsc(t.titulo || 'recordatorio')}" volvió a pendiente`, () => geloActualizarTareaPrivada(id, { status: 'Pendiente' })); geloAdd('¡Bien! Recordatorio completado ✨', 'bot'); }).catch(fallo);
     } else {
       const d = new Date(Date.now() + 10 * 60000);
+      const limitePrevio = t.limite || null;
       geloActualizarTareaPrivada(id, { limite: geloFechaLocal(d) })
-        .then(() => geloAdd(`Ok, te vuelvo a avisar ${geloFormatoCuando(d)} 😴`, 'bot')).catch(fallo);
+        .then(() => { geloRegistrar(`quité el "10 min más" de "${geloEsc(t.titulo || 'recordatorio')}"`, () => geloActualizarTareaPrivada(id, { limite: limitePrevio })); geloAdd(`Ok, te vuelvo a avisar ${geloFormatoCuando(d)} 😴`, 'bot'); }).catch(fallo);
     }
   }
 
@@ -2810,10 +2821,172 @@
     const t = res.t;
     const nota = m[2].trim();
     if (!nota) return '¿Qué anoto? Ej: "anota en AYC26-7929: falta factura".';
-    push(ref(db, `pendientes_ayc/${t.id}/chat`), { texto: geloEsc(nota), usuario: currentUser || 'Usuario', timestamp: Date.now(), isInternal: true })
-      .then(() => { touchRef(t.ref); geloAdd(`📝 Anotado en la bitácora de <b>${geloEsc(t.ref || t.guia || 'S/REF')}</b>: "${geloEsc(nota)}"\n(Nota interna: el cliente no la ve.)`, 'bot'); })
+    const notaRef = push(ref(db, `pendientes_ayc/${t.id}/chat`));
+    set(notaRef, { texto: geloEsc(nota), usuario: currentUser || 'Usuario', timestamp: Date.now(), isInternal: true })
+      .then(() => { touchRef(t.ref); geloRegistrar(`borré la nota "${geloEsc(nota)}" de ${geloEsc(t.ref || 'S/REF')}`, () => remove(notaRef)); geloAdd(`📝 Anotado en la bitácora de <b>${geloEsc(t.ref || t.guia || 'S/REF')}</b>: "${geloEsc(nota)}"\n(Nota interna: el cliente no la ve.)`, 'bot'); })
       .catch(err => geloAdd(`Ups, no pude guardar la nota 😣 (${geloEsc(err.message || err)})`, 'bot'));
     return 'Anotando… ✍️';
+  }
+
+
+  // ----- Deshacer ("deshaz"): cada acción de Gelo guarda cómo revertirse -----
+  const geloHistorial = [];
+  function geloRegistrar(descripcion, revertir) {
+    geloHistorial.push({ descripcion, revertir });
+    if (geloHistorial.length > 15) geloHistorial.shift();
+  }
+  function geloDeshacer() {
+    const h = geloHistorial.pop();
+    if (!h) return 'No tengo nada que deshacer 🤷 (solo recuerdo lo que hice desde que abriste el tablero).';
+    Promise.resolve().then(h.revertir)
+      .then(() => { geloSetMood(); geloAdd(`↩️ Deshecho: ${h.descripcion}`, 'bot'); })
+      .catch(err => { geloHistorial.push(h); geloAdd(`Ups, no pude deshacerlo 😣 (${geloEsc(err.code || err.message || err)})`, 'bot'); });
+    return 'Deshaciendo… ↩️';
+  }
+
+  // ----- Aviso 1 hora antes de que un pedimento tuyo se venza -----
+  function geloRevisarPorVencer() {
+    const ahora = Date.now();
+    const porVencer = geloActivos(false).filter(t => {
+      if (!t.limite) return false;
+      const ts = new Date(t.limite).getTime();
+      return !isNaN(ts) && ts > ahora && ts - ahora <= 3600000 && !geloAvisados.has('pre|' + t.id + '|' + t.limite);
+    });
+    if (!porVencer.length) return false;
+    porVencer.forEach(t => geloAvisados.add('pre|' + t.id + '|' + t.limite));
+    const lineas = porVencer.map(t => {
+      const mins = Math.max(1, Math.round((new Date(t.limite).getTime() - ahora) / 60000));
+      return `${geloLinea(t)} → <b>vence en ${mins} min</b>`;
+    }).join('\n');
+    geloAdd(`⚠️ <b>¡Ojo! Está(n) por vencer:</b>\n${lineas}`, 'bot');
+    if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); }
+    geloSay(`⚠️ <b>¡Ojo!</b> ${porVencer.length === 1 ? geloEsc(porVencer[0].ref || 'Un pedimento') + ' vence' : porVencer.length + ' pedimentos vencen'} en menos de 1 hora.\nTócame para ver.`, 60000);
+    geloBubbleRecordatorio = true;
+    geloNotificar('⚠️ Por vencer', porVencer.map(t => `${t.ref || t.guia || 'S/REF'} — ${t.cliente || ''} (${formatLimite(t.limite)})`).join('\n'));
+    return true;
+  }
+
+  // ----- Tomar libres ("dame 3 libres de Monterrey") -----
+  function geloTomarLibres(q) {
+    const m = q.match(/^(?:dame|toma|tomar|asigname|asignarme|quiero|pasame|agarra|agarro|tomo)\s+(?:(\d+|un|una|uno|dos|tres|cuatro|cinco|diez)\s+)?(?:pedimentos?\s+)?libres?\b(.*)$/);
+    if (!m) return null;
+    const palabras = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, diez: 10 };
+    const cantidad = m[1] ? (palabras[m[1]] || parseInt(m[1], 10)) : 1;
+    const aduana = /laredo|nuevo laredo|nld/.test(m[2]) ? 'Laredo' : /monterrey|mty/.test(m[2]) ? 'Monterrey' : null;
+    if (!aduana) return `¿De qué aduana? Escribe "dame ${cantidad} libre${cantidad > 1 ? 's' : ''} de Monterrey" o "… de Laredo".`;
+    if (cantidad < 1 || cantidad > 50) return 'Puedo tomar de 1 a 50 libres a la vez 🙂';
+    const libres = catalogo.filter(c => isLibreCat(c) && extractConsecutivo(c.ref) >= corteLibres(aduana) && c.aduana === aduana)
+      .sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
+    if (!libres.length) return `No hay libres de ${aduana} ahorita 😕`;
+    const lote = libres.slice(0, cantidad);
+    geloPendienteAccion = { run: (anchor) => geloEjecutarTomaLibres(lote, aduana, anchor) };
+    const faltan = cantidad > libres.length ? `\n(Solo hay ${libres.length} libres de ${aduana}.)` : '';
+    return `¿Te asigno ${lote.length === 1 ? 'este libre' : 'estos ' + lote.length + ' libres'} de <b>${aduana}</b>?\n${lote.slice(0, 10).map(c => `• ${geloEsc(c.ref)}${c.cliente ? ' — ' + geloEsc(c.cliente) : ''}`).join('\n')}${lote.length > 10 ? `\n…y ${lote.length - 10} más.` : ''}${faltan}\n<span class="gelo-confirm"><button data-gelo-confirm="si">✅ Sí</button><button data-gelo-confirm="no">No</button></span>`;
+  }
+
+  function geloEjecutarTomaLibres(lote, aduana, anchor) {
+    const creados = [];
+    const promesas = lote.map(c => {
+      const nuevo = push(ref(db, 'pendientes_ayc'));
+      const { id: catId, ...catData } = c;
+      creados.push({ nuevo, catId, catData });
+      return set(nuevo, { ref: c.ref, cliente: c.cliente || '', cliente_id: c.cliente_id || null, aduana: c.aduana || aduana, depto: c.depto || 'Aéreo', tipo: c.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: c.notas || '', lastModifiedBy: currentUser })
+        .then(() => remove(ref(db, 'catalogo_ayc/' + catId)));
+    });
+    return Promise.all(promesas).then(() => {
+      touchRef(lote[lote.length - 1].ref);
+      geloRegistrar(`regresé ${lote.length} libre(s) de ${aduana} al catálogo`, () => Promise.all(creados.map(x =>
+        set(ref(db, 'catalogo_ayc/' + x.catId), x.catData).then(() => remove(x.nuevo)))));
+      return `¡Listo! Te asigné ${lote.length} libre(s) de ${aduana} 📦\n${lote.slice(0, 10).map(c => `• ${geloEsc(c.ref)}`).join('\n')}${lote.length > 10 ? `\n…y ${lote.length - 10} más.` : ''}\n(Si fue error, dime "deshaz".)`;
+    });
+  }
+
+  // ----- Preguntas del equipo ("¿qué tiene Dany?", "¿quién tiene más retrasados?", "¿quién tiene el MNZ2814?") -----
+  function geloEjecutivos() {
+    const vistos = new Map();
+    (executives || []).forEach(e => { const n = e && (e.nombre || e); if (n) vistos.set(normKey(n), String(n).trim()); });
+    tasks.forEach(t => { if (!t.isTask && t.status !== 'Eliminado' && !isLibre(t)) { const k = normKey(t.ejecutivo); if (!vistos.has(k)) vistos.set(k, t.ejecutivo.trim()); } });
+    return [...vistos.values()];
+  }
+  function geloBuscarEjecutivo(textoNorm) {
+    const palabras = new Set(textoNorm.split(/[^a-z0-9ñ]+/).filter(w => w.length >= 3));
+    return geloEjecutivos().find(n => { const nn = geloNorm(n); return textoNorm.includes(nn) || palabras.has(nn.split(/\s+/)[0]); }) || null;
+  }
+  function geloEquipo(q) {
+    const activosDe = n => tasks.filter(t => !t.isTask && !GELO_CERRADOS.includes(t.status) && normKey(t.ejecutivo) === normKey(n));
+    let m;
+    if (/quien (tiene|trae|lleva) (mas|menos)\b/.test(q)) {
+      const menos = /\bmenos\b/.test(q), retr = /(retrasad|atrasad|vencid)/.test(q);
+      const filas = geloEjecutivos().map(n => ({ n, c: activosDe(n).filter(t => !retr || isOverdue(t)).length })).filter(x => menos || x.c > 0);
+      if (!filas.length) return retr ? 'Nadie tiene retrasados 🎉' : 'Nadie tiene operaciones activas.';
+      filas.sort((a, b) => menos ? a.c - b.c : b.c - a.c);
+      return `👥 ${retr ? 'Retrasados' : 'Operaciones activas'} por ejecutivo:\n` + filas.slice(0, 10).map((x, i) => `${i + 1}. ${geloEsc(x.n)}: <b>${x.c}</b>`).join('\n');
+    }
+    if ((m = q.match(/^(?:quien (?:tiene|trae|lleva)|de quien es|a quien (?:le toca|se asigno))\s+(?:el|la)?\s*(.+)$/))) {
+      const arr = geloBuscar(m[1].replace(/[?¿]/g, '').trim());
+      if (!arr.length) return null;
+      geloUltimos = arr;
+      return `🔎 ${arr.slice(0, 8).map(t => `${geloLinea(t)} → 👤 <b>${geloEsc(isLibre(t) ? 'Sin asignar' : t.ejecutivo)}</b>`).join('\n')}${arr.length > 8 ? `\n…y ${arr.length - 8} más.` : ''}`;
+    }
+    if (/^(que (tiene|lleva|trae)|como va|como vamos con|pendientes de|retrasados de|atrasados de|trabajo de|operaciones de|carga de)\b/.test(q)) {
+      const n = geloBuscarEjecutivo(q.replace(/^\S+\s+\S+\s*/, ''));
+      if (!n) return null;
+      let arr = activosDe(n);
+      const retr = /(retrasad|atrasad)/.test(q);
+      if (retr) arr = arr.filter(isOverdue);
+      if (!arr.length) return `${geloEsc(n)} no tiene ${retr ? 'retrasados' : 'operaciones activas'} 🎉`;
+      const nRetr = arr.filter(isOverdue).length;
+      return `👤 <b>${geloEsc(n)}</b> tiene ${arr.length} ${retr ? 'retrasado(s)' : 'activa(s)'}${!retr && nRetr ? ` (${nRetr} retrasada(s) ⚠️)` : ''}:\n${geloLista(arr)}`;
+    }
+    return null;
+  }
+
+  // ----- Voz: dictar con 🎤 y que Gelo conteste en voz alta -----
+  const GeloRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let geloVozOn = localStorage.getItem('ayc-gelo-voz') === '1';
+  let geloUltimaPorVoz = false;
+  let geloEscuchando = null;
+  function geloHablar(html) {
+    if (!('speechSynthesis' in window)) return;
+    const txt = geloStripHtml(html).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/•/g, '. ').replace(/\s+/g, ' ').trim();
+    if (!txt || /^(guardando|anotando|deshaciendo|va…)/i.test(txt)) return;
+    const u = new SpeechSynthesisUtterance(txt.slice(0, 400));
+    u.lang = 'es-MX';
+    const voz = speechSynthesis.getVoices().find(v => v.lang === 'es-MX') || speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('es'));
+    if (voz) u.voice = voz;
+    u.rate = 1.05;
+    speechSynthesis.speak(u);
+  }
+  function geloUpdateVozBtn() {
+    const b = document.getElementById('geloVozBtn');
+    b.textContent = geloVozOn ? '🔊' : '🔈';
+    b.title = geloVozOn ? 'Gelo habla en voz alta (clic para callar)' : 'Que Gelo conteste en voz alta';
+  }
+  function geloEscuchar() {
+    const btn = document.getElementById('geloMicBtn');
+    if (geloEscuchando) { geloEscuchando.stop(); return; }
+    const rec = new GeloRec();
+    rec.lang = 'es-MX'; rec.interimResults = true; rec.maxAlternatives = 1;
+    let final = '';
+    rec.onresult = (e) => {
+      let parcial = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript; else parcial += e.results[i][0].transcript;
+      }
+      geloInput.value = (final + parcial).trim();
+    };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') geloAdd('No tengo permiso para usar el micrófono 🎤. Da clic en el candado 🔒 junto a la dirección → Micrófono → Permitir.', 'bot');
+      else if (e.error !== 'no-speech' && e.error !== 'aborted') geloAdd(`No te pude escuchar 😕 (${geloEsc(e.error)})`, 'bot');
+    };
+    rec.onend = () => {
+      geloEscuchando = null; btn.classList.remove('escuchando');
+      const texto = final.trim();
+      if (texto) { geloInput.value = ''; geloUltimaPorVoz = true; geloAsk(texto); }
+    };
+    geloEscuchando = rec; btn.classList.add('escuchando');
+    try { speechSynthesis.cancel(); } catch (e) {}
+    rec.start();
   }
 
   // ----- Acciones: cambiar status desde el chat -----
@@ -2870,26 +3043,36 @@
   }
 
   function geloPedirConfirmacion(acc) {
-    geloPendienteAccion = acc;
+    geloPendienteAccion = { run: (anchor) => geloCambiarStatus(acc.t, acc.status, anchor) };
     const nombre = acc.t._privada ? `la tarea "${geloEsc(acc.t.titulo)}"` : `<b>${geloEsc(acc.t.ref || acc.t.guia || 'S/REF')}</b> (${geloEsc(acc.t.cliente || 'sin cliente')})`;
     return `¿Paso ${nombre} de "${geloEsc(acc.t.status || 'Pendiente')}" a <b>${geloEsc(acc.status)}</b>?\n<span class="gelo-confirm"><button data-gelo-confirm="si">✅ Sí</button><button data-gelo-confirm="no">No</button></span>`;
+  }
+
+  function geloCambiarStatus(t, status, anchor) {
+    const previo = t.status || 'Pendiente';
+    const p = t._privada
+      ? geloActualizarTareaPrivada(t.id, { status })
+      : update(ref(db, 'pendientes_ayc/' + t.id), { status, lastModifiedBy: currentUser });
+    return p.then(() => {
+      if (!t._privada) touchRef(t.ref);
+      if (status === 'Completado' || status === 'Expediente') playSparkle(anchor);
+      geloUltimos = [];
+      const nombre = t.ref || t.titulo;
+      geloRegistrar(`${geloEsc(nombre)} regresó a "${geloEsc(previo)}"`, () => t._privada
+        ? geloActualizarTareaPrivada(t.id, { status: previo })
+        : update(ref(db, 'pendientes_ayc/' + t.id), { status: previo, lastModifiedBy: currentUser }));
+      return status === 'Completado' ? `¡Listo! ${geloEsc(nombre)} completado 🎉 Uno menos.` : `¡Hecho! ${geloEsc(nombre)} ahora está en "${geloEsc(status)}" ✨`;
+    });
   }
 
   function geloEjecutarAccion(anchor) {
     const acc = geloPendienteAccion; geloPendienteAccion = null;
     geloMsgs.querySelectorAll('[data-gelo-confirm]').forEach(b => b.disabled = true);
     if (!acc) return;
-    const { t, status } = acc;
-    const p = t._privada
-      ? geloActualizarTareaPrivada(t.id, { status })
-      : update(ref(db, 'pendientes_ayc/' + t.id), { status, lastModifiedBy: currentUser });
-    p.then(() => {
-      if (!t._privada) touchRef(t.ref);
-      if (status === 'Completado' || status === 'Expediente') playSparkle(anchor);
-      geloUltimos = [];
-      geloAdd(status === 'Completado' ? `¡Listo! ${geloEsc(t.ref || t.titulo)} completado 🎉 Uno menos.` : `¡Hecho! ${geloEsc(t.ref || t.titulo)} ahora está en "${geloEsc(status)}" ✨`, 'bot');
+    acc.run(anchor).then(msg => {
+      geloAdd(msg, 'bot'); geloSetMood();
       geloEl.classList.remove('gelo-jump'); void geloEl.offsetWidth; geloEl.classList.add('gelo-jump');
-    }).catch(err => geloAdd(`Ups, no pude guardarlo 😣 (${geloEsc(err.message || err)})`, 'bot'));
+    }).catch(err => geloAdd(`Ups, no pude guardarlo 😣 (${geloEsc(err.code || err.message || err)})`, 'bot'));
   }
 
   function geloResponder(texto) {
@@ -2903,6 +3086,11 @@
       if (/^(no|nel|cancela|mejor no)\b/.test(q)) { geloPendienteAccion = null; return 'Ok, no toco nada 👌'; }
       geloPendienteAccion = null;
     }
+    if (/^(deshaz|deshacer|deshazlo|undo|regresalo|regresa(lo)? como estaba|me equivoque|ups deshaz)\b/.test(q)) return geloDeshacer();
+    const libres = geloTomarLibres(q);
+    if (libres) return libres;
+    const equipo = geloEquipo(q.replace(/[¿?]/g, '').trim());
+    if (equipo) return equipo;
     const rec = geloCrearRecordatorio(texto);
     if (rec) return rec;
     const nota = geloAnotar(texto);
@@ -2913,7 +3101,7 @@
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
@@ -2980,7 +3168,8 @@
   function geloAsk(texto) {
     if (!texto.trim()) return;
     geloAdd(geloEsc(texto), 'me');
-    setTimeout(() => { geloAdd(geloResponder(texto), 'bot'); geloSetMood(); }, 250);
+    const porVoz = geloUltimaPorVoz; geloUltimaPorVoz = false;
+    setTimeout(() => { geloAdd(geloResponder(texto), 'bot', porVoz); geloSetMood(); }, 250);
   }
 
   function geloOpen() {
@@ -2995,6 +3184,14 @@
     b.title = geloMuted ? 'Activar recordatorios' : 'Silenciar recordatorios';
   }
   geloUpdateMuteBtn();
+  geloUpdateVozBtn();
+  if (!GeloRec) document.getElementById('geloMicBtn').style.display = 'none';
+  document.getElementById('geloMicBtn').addEventListener('click', geloEscuchar);
+  document.getElementById('geloVozBtn').addEventListener('click', () => {
+    geloVozOn = !geloVozOn; localStorage.setItem('ayc-gelo-voz', geloVozOn ? '1' : '0'); geloUpdateVozBtn();
+    if (!geloVozOn) { try { speechSynthesis.cancel(); } catch (e) {} }
+    geloAdd(geloVozOn ? 'Ahora te contesto en voz alta 🔊' : 'Ok, ya no hablo en voz alta 🔈', 'bot');
+  });
 
   document.getElementById('geloBody').addEventListener('click', () => {
     if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); return; }
