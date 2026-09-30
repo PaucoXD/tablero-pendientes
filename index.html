@@ -274,6 +274,58 @@
     .timeline-container { padding: 0 10px; }
     .timeline-label { font-size: 9px; }
   }
+
+  /* =========================================
+     GELO — asistente gelatina
+     ========================================= */
+  #gelo { position: fixed; right: 22px; bottom: 22px; z-index: 900; display: none; font-family: var(--font-main); }
+  body.gelo-on #gelo { display: block; }
+  body.is-client #gelo { display: none !important; }
+  #gelo.gelo-hidden .gelo-body-wrap { transform: translateX(120px); opacity: .35; }
+  .gelo-body-wrap { width: 84px; height: 84px; cursor: pointer; position: relative; transition: transform .3s, opacity .3s; filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
+  .gelo-body-wrap:hover { transform: scale(1.06); }
+  .gelo-svg { width: 100%; height: 100%; overflow: visible; }
+  .gelo-blob { transform-origin: 50% 100%; animation: gelo-wobble 2.6s ease-in-out infinite; }
+  .gelo-shape { fill: var(--gelo-color, var(--primary)); opacity: .9; transition: fill .4s; }
+  .gelo-shine { fill: #fff; opacity: .45; }
+  .gelo-eye { fill: #1b1b1b; transform-box: fill-box; transform-origin: center; animation: gelo-blink 5s infinite; }
+  .gelo-cheek { fill: #ff5c8a; opacity: .45; }
+  .gelo-mouth { fill: none; stroke: #1b1b1b; stroke-width: 2.6; stroke-linecap: round; }
+  .gelo-badge { position: absolute; top: -2px; right: -2px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--red); color: #fff; font: 700 12px/22px var(--font-main); text-align: center; padding: 0 6px; display: none; box-shadow: 0 0 0 2px var(--panel); }
+  .gelo-badge.show { display: block; }
+  #gelo.mood-worried .gelo-blob { animation: gelo-shiver .5s ease-in-out infinite; }
+  #gelo.mood-sleepy .gelo-blob { animation: gelo-breathe 4s ease-in-out infinite; }
+  #gelo.mood-sleepy .gelo-eye { transform: scaleY(.15); animation: none; }
+  #gelo.gelo-jump .gelo-blob { animation: gelo-jump .7s ease-out 2; }
+  @keyframes gelo-wobble { 0%,100% { transform: scale(1,1); } 25% { transform: scale(1.07,.93); } 50% { transform: scale(.95,1.06); } 75% { transform: scale(1.03,.97); } }
+  @keyframes gelo-shiver { 0%,100% { transform: translateX(0) scale(1,1); } 25% { transform: translateX(-2px) scale(1.03,.97); } 75% { transform: translateX(2px) scale(.97,1.03); } }
+  @keyframes gelo-breathe { 0%,100% { transform: scale(1,1); } 50% { transform: scale(1.04,.96); } }
+  @keyframes gelo-jump { 0% { transform: translateY(0) scale(1.2,.8); } 40% { transform: translateY(-26px) scale(.9,1.12); } 70% { transform: translateY(0) scale(1.15,.85); } 100% { transform: translateY(0) scale(1,1); } }
+  @keyframes gelo-blink { 0%,94%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+
+  .gelo-bubble { position: absolute; right: 70px; bottom: 70px; width: max-content; max-width: 260px; background: var(--panel); color: var(--text-main); border: 1px solid var(--divider); border-radius: 14px 14px 4px 14px; padding: 10px 30px 10px 12px; font-size: 13px; line-height: 1.4; white-space: pre-line; box-shadow: var(--shadow); display: none; cursor: pointer; }
+  .gelo-bubble.show { display: block; animation: gelo-pop .25s ease-out; }
+  .gelo-bubble-x { position: absolute; top: 4px; right: 8px; background: none; border: 0; color: var(--text-sub); cursor: pointer; font-size: 14px; }
+  @keyframes gelo-pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .gelo-chat { position: absolute; right: 0; bottom: 96px; width: min(360px, calc(100vw - 32px)); height: min(480px, calc(100vh - 140px)); background: var(--panel); border: 1px solid var(--divider); border-radius: var(--radius-board); box-shadow: var(--shadow); display: none; flex-direction: column; overflow: hidden; }
+  .gelo-chat.open { display: flex; animation: gelo-pop .2s ease-out; }
+  .gelo-chat-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--divider); background: var(--panel-alt); }
+  .gelo-chat-head b { font-family: var(--font-heading); color: var(--primary); flex: 1; }
+  .gelo-chat-head button { background: none; border: 0; color: var(--text-sub); cursor: pointer; font-size: 15px; padding: 2px 4px; }
+  .gelo-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .gelo-msg { max-width: 88%; padding: 8px 11px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+  .gelo-msg.bot { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .gelo-msg.me { background: var(--primary); color: var(--panel); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .gelo-ref { color: var(--accent); cursor: pointer; text-decoration: underline; font-weight: 600; }
+  .gelo-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px 0; }
+  .gelo-chips button { background: var(--panel-alt); border: 1px solid var(--divider); color: var(--text-sub); border-radius: 14px; padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: var(--font-main); }
+  .gelo-chips button:hover { color: var(--primary); border-color: var(--primary); }
+  .gelo-input { display: flex; gap: 6px; padding: 10px 12px; }
+  .gelo-input input { flex: 1; background: var(--bg); border: 1px solid var(--divider); color: var(--text-main); border-radius: var(--radius-btn); padding: 8px 10px; font-size: 13px; font-family: var(--font-main); outline: none; }
+  .gelo-input input:focus { border-color: var(--primary); }
+  .gelo-input button { background: var(--primary); color: var(--panel); border: 0; border-radius: var(--radius-btn); padding: 0 12px; font-weight: 700; cursor: pointer; }
+  @media (max-width: 600px) { #gelo { right: 12px; bottom: 12px; } .gelo-body-wrap { width: 64px; height: 64px; } .gelo-chat { bottom: 74px; } .gelo-bubble { right: 54px; bottom: 54px; } }
 </style>
 </head>
 <body>
@@ -780,6 +832,47 @@
       <button class="btn-add" id="choiceLaredoBtn" style="flex: 1; background: var(--blue);">Nuevo Laredo</button>
     </div>
     <button class="btn-secondary" id="cancelAduanaChoiceBtn" style="margin-top: 14px; width: 100%;">Cancelar</button>
+  </div>
+</div>
+
+
+<!-- ===== GELO: asistente gelatina ===== -->
+<div id="gelo" class="mood-happy">
+  <div class="gelo-chat" id="geloChat" role="dialog" aria-label="Asistente Gelo">
+    <div class="gelo-chat-head">
+      <span>🍮</span><b>Gelo</b>
+      <button id="geloMuteBtn" title="Silenciar recordatorios">🔔</button>
+      <button id="geloHideBtn" title="Esconder a Gelo">🙈</button>
+      <button id="geloCloseBtn" title="Cerrar">✕</button>
+    </div>
+    <div class="gelo-msgs" id="geloMsgs"></div>
+    <div class="gelo-chips" id="geloChips">
+      <button data-q="¿Qué tengo pendiente?">📋 Pendientes</button>
+      <button data-q="¿Qué está retrasado?">⏰ Retrasados</button>
+      <button data-q="¿Qué vence hoy?">📅 Hoy</button>
+      <button data-q="Mis tareas">✅ Tareas</button>
+      <button data-q="Ayuda">❓</button>
+    </div>
+    <form class="gelo-input" id="geloForm" autocomplete="off">
+      <input id="geloInput" placeholder="Pregúntame algo… (ej. busca 3001234)">
+      <button type="submit">➤</button>
+    </form>
+  </div>
+  <div class="gelo-bubble" id="geloBubble"><span id="geloBubbleText"></span><button class="gelo-bubble-x" id="geloBubbleX" title="Cerrar">✕</button></div>
+  <div class="gelo-body-wrap" id="geloBody" title="¡Hola! Soy Gelo">
+    <svg class="gelo-svg" viewBox="0 0 100 100" aria-hidden="true">
+      <ellipse cx="50" cy="96" rx="34" ry="4" fill="#000" opacity=".18"/>
+      <g class="gelo-blob">
+        <path class="gelo-shape" d="M14 92 C 8 60, 20 18, 50 16 C 80 18, 92 60, 86 92 C 70 97, 30 97, 14 92 Z"/>
+        <ellipse class="gelo-shine" cx="34" cy="34" rx="8" ry="5" transform="rotate(-30 34 34)"/>
+        <ellipse class="gelo-eye" cx="38" cy="54" rx="4.5" ry="6"/>
+        <ellipse class="gelo-eye" cx="62" cy="54" rx="4.5" ry="6"/>
+        <ellipse class="gelo-cheek" cx="28" cy="65" rx="5" ry="3"/>
+        <ellipse class="gelo-cheek" cx="72" cy="65" rx="5" ry="3"/>
+        <path class="gelo-mouth" id="geloMouth" d="M42 67 Q50 75 58 67"/>
+      </g>
+    </svg>
+    <span class="gelo-badge" id="geloBadge"></span>
   </div>
 </div>
 
@@ -1544,7 +1637,7 @@
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
     const isCorresp = currentUserProfile.rol === 'corresponsal';
     
-    renderTabs(); renderTicker();
+    renderTabs(); renderTicker(); geloRefresh();
     
     document.getElementById('libresCount').textContent = `Catálogo por asignar: ${catalogo.filter(isLibreCat).length}`;
     
@@ -2391,6 +2484,239 @@
           texto: texto, usuario: currentUser || 'Usuario', timestamp: Date.now()
       }).then(() => { input.value = ''; input.disabled = false; input.focus(); });
   };
+
+  // =========================================
+  // GELO — asistente gelatina: recuerda pendientes y responde preguntas
+  // =========================================
+  const GELO_CERRADOS = ['Completado', 'Expediente', 'Eliminado'];
+  const GELO_POR_CAPTURAR = ['Pendiente', 'Documentación incompleta', 'En proceso'];
+  const geloEl = document.getElementById('gelo');
+  const geloChat = document.getElementById('geloChat');
+  const geloMsgs = document.getElementById('geloMsgs');
+  const geloBubble = document.getElementById('geloBubble');
+  const geloInput = document.getElementById('geloInput');
+  let geloMuted = localStorage.getItem('ayc-gelo-muted') === '1';
+  let geloIntervalMin = parseInt(localStorage.getItem('ayc-gelo-interval') || '30', 10) || 30;
+  let geloHidden = localStorage.getItem('ayc-gelo-hidden') === '1';
+  let geloLastRemind = 0;
+  let geloGreeted = false;
+  let geloKnownIds = null;
+  let geloBubbleTimer = null;
+
+  function geloEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+  function geloNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+  function geloIsAdmin() { return currentUserProfile && currentUserProfile.rol === 'admin'; }
+  function geloMine(t) { return normKey(t.ejecutivo) === normKey(currentUser); }
+  function geloActivos(todos) { return tasks.filter(t => !t.isTask && !GELO_CERRADOS.includes(t.status) && (todos || geloMine(t))); }
+  function geloPorCapturar(todos) { return geloActivos(todos).filter(t => GELO_POR_CAPTURAR.includes(t.status || 'Pendiente')); }
+  function geloRetrasados(todos) { return geloActivos(todos).filter(isOverdue); }
+  function geloVencenHoy(todos) {
+    const hoy = new Date().toDateString();
+    return geloActivos(todos).filter(t => t.limite && new Date(t.limite).toDateString() === hoy);
+  }
+  function geloMisTareas() { return misTareasPrivadas.filter(t => !GELO_CERRADOS.includes(t.status)); }
+
+  function geloLinea(t) {
+    const r = t.ref || t.guia || t.bl || 'S/REF';
+    const extra = [t.cliente, t.status || 'Pendiente', t.limite ? '⏱ ' + formatLimite(t.limite) : ''].filter(Boolean).join(' · ');
+    return `• <span class="gelo-ref" data-ref="${geloEsc(r)}">${geloEsc(r)}</span> — ${geloEsc(extra)}${isOverdue(t) ? ' ⚠️' : ''}`;
+  }
+  function geloLista(arr, max = 8) {
+    const ts = t => t.limite ? new Date(t.limite).getTime() : Number.MAX_SAFE_INTEGER;
+    const orden = [...arr].sort((a, b) => (isOverdue(b) - isOverdue(a)) || (ts(a) - ts(b)));
+    let out = orden.slice(0, max).map(geloLinea).join('\n');
+    if (arr.length > max) out += `\n…y ${arr.length - max} más.`;
+    return out;
+  }
+
+  function geloSetMood() {
+    if (!currentUserProfile) return;
+    const retr = geloRetrasados(false).length;
+    const pend = geloPorCapturar(false).length;
+    const mood = retr > 0 ? 'worried' : (pend === 0 && geloMisTareas().length === 0 ? 'sleepy' : 'happy');
+    geloEl.className = 'mood-' + mood + (geloHidden ? ' gelo-hidden' : '');
+    const colors = { worried: 'var(--red)', sleepy: 'var(--blue)', happy: 'var(--green)' };
+    geloEl.style.setProperty('--gelo-color', colors[mood]);
+    document.getElementById('geloMouth').setAttribute('d', mood === 'worried' ? 'M42 71 Q50 64 58 71' : mood === 'sleepy' ? 'M45 69 Q50 71 55 69' : 'M42 67 Q50 75 58 67');
+    const badge = document.getElementById('geloBadge');
+    const n = retr || pend;
+    badge.textContent = n > 99 ? '99+' : n;
+    badge.style.background = retr ? 'var(--red)' : 'var(--amber)';
+    badge.classList.toggle('show', n > 0);
+  }
+
+  function geloSay(html, ms = 12000) {
+    if (geloHidden || geloChat.classList.contains('open')) return;
+    document.getElementById('geloBubbleText').innerHTML = html;
+    geloBubble.classList.add('show');
+    geloEl.classList.remove('gelo-jump'); void geloEl.offsetWidth; geloEl.classList.add('gelo-jump');
+    clearTimeout(geloBubbleTimer);
+    geloBubbleTimer = setTimeout(() => geloBubble.classList.remove('show'), ms);
+  }
+
+  function geloResumenCorto() {
+    const retr = geloRetrasados(false).length, pend = geloPorCapturar(false).length, hoy = geloVencenHoy(false).length, tar = geloMisTareas().length;
+    if (!retr && !pend && !tar) return '¡Todo al día! No tienes pendientes de captura 🎉';
+    const partes = [];
+    if (pend) partes.push(`<b>${pend}</b> por capturar`);
+    if (retr) partes.push(`<b style="color:var(--red)">${retr} retrasado(s)</b>`);
+    if (hoy) partes.push(`<b>${hoy}</b> vence(n) hoy`);
+    if (tar) partes.push(`<b>${tar}</b> tarea(s) personal(es)`);
+    return 'Tienes ' + partes.join(', ') + '.';
+  }
+
+  function geloRemind(force) {
+    if (!currentUserProfile || (geloMuted && !force)) return;
+    geloLastRemind = Date.now();
+    geloSay(geloResumenCorto() + ' ¡Tócame para ver!');
+  }
+
+  // Se llama en cada render() del tablero
+  function geloRefresh() {
+    if (!currentUserProfile || currentUserProfile.rol === 'cliente') return;
+    document.body.classList.add('gelo-on');
+    geloSetMood();
+    const ids = new Set(geloActivos(false).map(t => t.id));
+    if (geloKnownIds) {
+      const nuevos = geloActivos(false).filter(t => !geloKnownIds.has(t.id));
+      if (nuevos.length && !geloMuted) geloSay(`¡Te llegó ${nuevos.length === 1 ? 'un pendiente nuevo' : nuevos.length + ' pendientes nuevos'}!\n${nuevos.slice(0, 3).map(geloLinea).join('\n')}`);
+    }
+    geloKnownIds = ids;
+    if (!geloGreeted) {
+      geloGreeted = true;
+      const h = new Date().getHours();
+      const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+      setTimeout(() => { if (!geloMuted) geloSay(`${saludo}, ${geloEsc((currentUser || '').split(' ')[0])} 👋\n` + geloResumenCorto()); geloLastRemind = Date.now(); }, 1500);
+    }
+  }
+
+  setInterval(() => {
+    if (geloIntervalMin > 0 && Date.now() - geloLastRemind >= geloIntervalMin * 60000) {
+      if (geloPorCapturar(false).length || geloMisTareas().length) geloRemind(false);
+      else geloLastRemind = Date.now();
+    }
+  }, 60000);
+
+  function geloAdd(html, who) {
+    const d = document.createElement('div');
+    d.className = 'gelo-msg ' + who;
+    d.innerHTML = html;
+    geloMsgs.appendChild(d);
+    geloMsgs.scrollTop = geloMsgs.scrollHeight;
+  }
+
+  function geloBuscar(q) {
+    const nq = geloNorm(q);
+    if (!nq) return [];
+    return tasks.filter(t => !t.isTask && t.status !== 'Eliminado' && [t.ref, t.guia, t.bl, t.cliente, t.patente, t.notas, t.ejecutivo, t.corresponsal].some(v => geloNorm(v).includes(nq)));
+  }
+
+  function geloResponder(texto) {
+    const q = geloNorm(texto);
+    const todos = geloIsAdmin() && /\b(todos|equipo|general|todo el mundo)\b/.test(q);
+    const quien = todos ? 'el equipo' : 'ti';
+    let m;
+
+    if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
+    if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
+    if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+    }
+    if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
+      let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
+      geloIntervalMin = Math.max(5, n); localStorage.setItem('ayc-gelo-interval', geloIntervalMin);
+      geloMuted = false; localStorage.setItem('ayc-gelo-muted', '0'); geloUpdateMuteBtn();
+      return `¡Listo! Te recordaré tus pendientes cada ${geloIntervalMin} min ⏰`;
+    }
+    if (/(silencio|callate|cállate|no me recuerdes|desactiva|mute|shh)/.test(q)) {
+      geloMuted = true; localStorage.setItem('ayc-gelo-muted', '1'); geloUpdateMuteBtn();
+      return 'Ok, me quedo calladito 🤐 (sigo aquí si me preguntas). Di "activa recordatorios" para volver.';
+    }
+    if (/(activa|enciende|vuelve).*(recordatorio|aviso)/.test(q)) {
+      geloMuted = false; localStorage.setItem('ayc-gelo-muted', '0'); geloUpdateMuteBtn();
+      return `¡De vuelta! Te recordaré cada ${geloIntervalMin} min 🔔`;
+    }
+    if (/(retrasad|atrasad|vencid|tarde)/.test(q)) {
+      const arr = geloRetrasados(todos);
+      return arr.length ? `⏰ ${arr.length} retrasado(s) para ${quien}:\n${geloLista(arr)}` : `Nada retrasado para ${quien} 🎉`;
+    }
+    if (/manana/.test(q)) {
+      const d = new Date(); d.setDate(d.getDate() + 1); const s = d.toDateString();
+      const arr = geloActivos(todos).filter(t => t.limite && new Date(t.limite).toDateString() === s);
+      return arr.length ? `📅 Vencen mañana (${arr.length}):\n${geloLista(arr)}` : 'Nada vence mañana 😌';
+    }
+    if (/(hoy|urgente)/.test(q)) {
+      const arr = geloVencenHoy(todos);
+      return arr.length ? `📅 Vencen hoy (${arr.length}):\n${geloLista(arr)}` : 'Nada vence hoy 😌';
+    }
+    if (/(mis tareas|tareas personales|\bto ?do\b|\btareas?\b)/.test(q)) {
+      const arr = geloMisTareas();
+      if (!arr.length) return 'No tienes tareas personales abiertas ✨';
+      return `✅ Tus tareas (${arr.length}):\n` + arr.slice(0, 10).map(t => `• ${geloEsc(t.titulo)}${t.prioridad ? ' · ' + geloEsc(t.prioridad) : ''}${t.limite ? ' · ⏱ ' + formatLimite(t.limite) : ''}${isOverdue(t) ? ' ⚠️' : ''}`).join('\n');
+    }
+    if (/(resumen|como voy|cómo voy|status|estado general)/.test(q)) {
+      const act = geloActivos(todos);
+      const porStatus = {};
+      act.forEach(t => { const s = isOverdue(t) ? 'Retrasado' : (t.status || 'Pendiente'); porStatus[s] = (porStatus[s] || 0) + 1; });
+      const lineas = Object.entries(porStatus).sort((a, b) => b[1] - a[1]).map(([s, n]) => `• ${geloEsc(s)}: ${n}`).join('\n');
+      return act.length ? `📊 Resumen ${todos ? "del equipo" : "tuyo"} (${act.length} activos):\n${lineas}` : `Sin operaciones activas para ${quien} 🎉`;
+    }
+    if ((m = q.match(/cliente\s+(.+)/))) {
+      const nc = m[1].trim();
+      const arr = tasks.filter(t => !t.isTask && !GELO_CERRADOS.includes(t.status) && geloNorm(t.cliente).includes(nc));
+      return arr.length ? `🏢 Activos de "${geloEsc(m[1])}" (${arr.length}):\n${geloLista(arr)}` : `No encontré operaciones activas del cliente "${geloEsc(m[1])}".`;
+    }
+    if (/(pendiente|captur|que tengo|qué tengo|que hago|qué hago|que sigue|qué sigue|trabajo)/.test(q)) {
+      const arr = geloPorCapturar(todos);
+      const tar = todos ? 0 : geloMisTareas().length;
+      if (!arr.length) return `No hay pendientes de captura para ${quien} 🎉` + (tar ? `\nPero tienes ${tar} tarea(s) personal(es).` : '');
+      return `📋 Por capturar para ${quien} (${arr.length}):\n${geloLista(arr)}` + (tar ? `\n\nAdemás: ${tar} tarea(s) personal(es).` : '');
+    }
+    const busq = q.replace(/^(busca(r)?|buscame|encuentra|donde (esta|va)|dónde (está|va)|como va|cómo va|info( de)?|la|el|ref(erencia)?|guia|guía|bl)\s+/g, '').replace(/[¿?]/g, '').trim();
+    const arr = geloBuscar(busq);
+    if (arr.length) return `🔎 Encontré ${arr.length} resultado(s) para "${geloEsc(busq)}":\n${geloLista(arr)}\n\n(Toca una referencia para verla en el tablero)`;
+    return `Mmm… no entendí o no encontré "${geloEsc(texto)}" 🤔\nEscribe "ayuda" para ver lo que sé hacer.`;
+  }
+
+  function geloAsk(texto) {
+    if (!texto.trim()) return;
+    geloAdd(geloEsc(texto), 'me');
+    setTimeout(() => { geloAdd(geloResponder(texto), 'bot'); geloSetMood(); }, 250);
+  }
+
+  function geloOpen() {
+    geloBubble.classList.remove('show');
+    geloChat.classList.add('open');
+    if (!geloMsgs.children.length) geloAdd(`¡Hola! Soy <b>Gelo</b> 🍮, tu asistente.\n${geloResumenCorto()}\n\nPregúntame lo que quieras o usa los botones de abajo.`, 'bot');
+    setTimeout(() => geloInput.focus(), 50);
+  }
+  function geloUpdateMuteBtn() {
+    const b = document.getElementById('geloMuteBtn');
+    b.textContent = geloMuted ? '🔕' : '🔔';
+    b.title = geloMuted ? 'Activar recordatorios' : 'Silenciar recordatorios';
+  }
+  geloUpdateMuteBtn();
+
+  document.getElementById('geloBody').addEventListener('click', () => {
+    if (geloHidden) { geloHidden = false; localStorage.setItem('ayc-gelo-hidden', '0'); geloSetMood(); return; }
+    geloChat.classList.contains('open') ? geloChat.classList.remove('open') : geloOpen();
+  });
+  geloBubble.addEventListener('click', (e) => { if (e.target.id === 'geloBubbleX') { geloBubble.classList.remove('show'); return; } geloOpen(); geloAsk('¿Qué tengo pendiente?'); });
+  document.getElementById('geloCloseBtn').addEventListener('click', () => geloChat.classList.remove('open'));
+  document.getElementById('geloHideBtn').addEventListener('click', () => { geloHidden = true; localStorage.setItem('ayc-gelo-hidden', '1'); geloChat.classList.remove('open'); geloSetMood(); });
+  document.getElementById('geloMuteBtn').addEventListener('click', () => {
+    geloMuted = !geloMuted; localStorage.setItem('ayc-gelo-muted', geloMuted ? '1' : '0'); geloUpdateMuteBtn();
+    geloAdd(geloMuted ? 'Recordatorios en silencio 🔕' : `Recordatorios activos cada ${geloIntervalMin} min 🔔`, 'bot');
+  });
+  document.getElementById('geloChips').addEventListener('click', (e) => { const q = e.target.closest('button')?.dataset.q; if (q) geloAsk(q); });
+  document.getElementById('geloForm').addEventListener('submit', (e) => { e.preventDefault(); const v = geloInput.value; geloInput.value = ''; geloAsk(v); });
+  geloMsgs.addEventListener('click', (e) => {
+    const r = e.target.closest('.gelo-ref')?.dataset.ref;
+    if (!r) return;
+    const si = document.getElementById('searchInput');
+    si.value = r; si.dispatchEvent(new Event('input'));
+    si.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 </script>
 </body>
 </html>
