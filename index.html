@@ -2524,7 +2524,19 @@
     const hoy = new Date().toDateString();
     return geloActivos(todos).filter(t => t.limite && new Date(t.limite).toDateString() === hoy);
   }
-  function geloMisTareas() { return misTareasPrivadas.filter(t => !GELO_CERRADOS.includes(t.status)); }
+  // Recordatorios de respaldo guardados solo en este navegador (si Firebase no deja escribir en tareas privadas)
+  function geloLeerLocales() { try { return JSON.parse(localStorage.getItem('ayc-gelo-rec-locales') || '[]'); } catch (e) { return []; } }
+  function geloGuardarLocales(arr) { try { localStorage.setItem('ayc-gelo-rec-locales', JSON.stringify(arr.filter(t => t.status === 'Pendiente').slice(-100))); } catch (e) {} }
+  function geloMisTareas() { return [...misTareasPrivadas, ...geloLeerLocales()].filter(t => !GELO_CERRADOS.includes(t.status)); }
+  function geloActualizarTareaPrivada(id, datos) {
+    if (String(id).startsWith('local-')) {
+      const arr = geloLeerLocales(); const t = arr.find(x => x.id === id);
+      if (t) Object.assign(t, datos);
+      geloGuardarLocales(arr); geloSetMood();
+      return Promise.resolve();
+    }
+    return update(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid + '/' + id), datos);
+  }
 
   function geloLinea(t) {
     const r = t.ref || t.guia || t.bl || 'S/REF';
@@ -2714,10 +2726,18 @@
     if (!p.titulo) return '¿Qué te recuerdo? Ej: "recuérdame llamar a DECKAMMEX a las 4".';
     if (!p.cuando) return `¿A qué hora te recuerdo "${geloEsc(p.titulo)}"? Ej: "recuérdame ${geloEsc(p.titulo.toLowerCase())} a las 4" o "en 30 min".`;
     const data = { titulo: p.titulo, prioridad: 'Media', limite: geloFechaLocal(p.cuando), notas: 'Recordatorio creado con Gelo', status: 'Pendiente' };
+    const cuandoTxt = `"<b>${geloEsc(p.titulo)}</b>" ${geloFormatoCuando(p.cuando)}`;
     set(push(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid)), data)
-      .catch(err => geloAdd(`Ups, no pude guardar el recordatorio 😣 (${geloEsc(err.message || err)})`, 'bot'));
+      .then(() => geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n(Quedó en Mis Tareas.)`, 'bot'))
+      .catch(err => {
+        // Firebase no dejó escribir: lo guardo en este navegador para que el aviso funcione igual
+        const arr = geloLeerLocales();
+        arr.push({ id: 'local-' + Date.now(), ...data });
+        geloGuardarLocales(arr); geloSetMood();
+        geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n⚠️ Firebase no me dejó guardarlo en Mis Tareas (${geloEsc(err.code || err.message || err)}), así que lo guardé solo en este navegador. Te aviso mientras el tablero esté abierto aquí.`, 'bot');
+      });
     geloPedirPermisoAvisos();
-    return `⏰ ¡Anotado! Te recuerdo "<b>${geloEsc(p.titulo)}</b>" ${geloFormatoCuando(p.cuando)} 👍\n(Quedó en Mis Tareas.)`;
+    return 'Guardando recordatorio… ⏳';
   }
 
   // Revisa tareas personales con hora cumplida y avisa una sola vez por cada hora programada
@@ -2748,15 +2768,16 @@
   }
 
   function geloAccionRecordatorio(btn) {
-    const id = btn.dataset.id, uid = currentUserProfile.uid;
+    const id = btn.dataset.id;
     btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+    const fallo = err => geloAdd(`Ups, no pude guardarlo 😣 (${geloEsc(err.code || err.message || err)})`, 'bot');
     if (btn.dataset.geloRem === 'done') {
-      update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { status: 'Completado' })
-        .then(() => { playSparkle(btn); geloAdd('¡Bien! Recordatorio completado ✨', 'bot'); });
+      geloActualizarTareaPrivada(id, { status: 'Completado' })
+        .then(() => { playSparkle(btn); geloAdd('¡Bien! Recordatorio completado ✨', 'bot'); }).catch(fallo);
     } else {
       const d = new Date(Date.now() + 10 * 60000);
-      update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { limite: geloFechaLocal(d) })
-        .then(() => geloAdd(`Ok, te vuelvo a avisar ${geloFormatoCuando(d)} 😴`, 'bot'));
+      geloActualizarTareaPrivada(id, { limite: geloFechaLocal(d) })
+        .then(() => geloAdd(`Ok, te vuelvo a avisar ${geloFormatoCuando(d)} 😴`, 'bot')).catch(fallo);
     }
   }
 
@@ -2856,7 +2877,7 @@
     if (!acc) return;
     const { t, status } = acc;
     const p = t._privada
-      ? update(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid + '/' + t.id), { status })
+      ? geloActualizarTareaPrivada(t.id, { status })
       : update(ref(db, 'pendientes_ayc/' + t.id), { status, lastModifiedBy: currentUser });
     p.then(() => {
       if (!t._privada) touchRef(t.ref);
