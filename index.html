@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A&C - Tablero de Pendientes</title>
+<title>Expedito · Pendientes</title>
 <meta name="theme-color" content="#0D1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -229,6 +229,12 @@
   .badge-retrasado { background: var(--red-soft); color: var(--red); }
   .badge-eliminado { background: rgba(128,128,128,0.15); color: var(--text-sub); text-decoration: line-through; }
   .row-actions { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: nowrap; }
+  .expedito-btn { background: #16a34a; color: #fff; border: none; border-radius: var(--radius-btn, 8px); padding: 7px 12px; font-family: var(--font-heading); font-size: 11.5px; font-weight: 800; letter-spacing: 0.3px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(22,163,74,.35); }
+  .expedito-btn:hover { background: #15803d; }
+  .expedito-btn.en-celda { display: inline-flex; align-items: center; gap: 4px; margin: 7px 0 0 0; padding: 5px 10px; font-size: 10.5px; box-shadow: none; }
+  .cell-status-exp { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+  .expedito-badge { display: inline-block; max-width: 100%; font-size: 10.5px; font-weight: 700; color: #fff; border-radius: 10px; padding: 2px 8px; line-height: 1.35; white-space: normal; overflow-wrap: break-word; min-width: 76px; }
+  .expedito-btn:disabled { background: #64748b; box-shadow: none; cursor: default; }
   .icon-btn { background: transparent; border: none; color: var(--text-sub); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
   .icon-btn:hover { background: var(--divider); color: var(--text-main); }
   .icon-btn.done:hover { background: var(--green-soft); color: var(--green); }
@@ -434,7 +440,7 @@
     <h2>Iniciar sesión</h2>
     <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">Ingresa tu usuario y contraseña proporcionados por el administrador.</p>
     <div class="field">
-      <input type="text" id="loginUser" placeholder="Usuario (ej. dany, paulo)" style="text-align: center; font-size: 15px; text-transform: lowercase;">
+      <input type="text" id="loginUser" placeholder="Usuario" style="text-align: center; font-size: 15px; text-transform: lowercase;">
     </div>
     <div class="field">
       <input type="password" id="loginPassword" placeholder="Contraseña" style="text-align: center; font-size: 15px;">
@@ -447,9 +453,9 @@
 <div class="board">
   <div class="board-header">
     <div class="logo-block">
-      <div class="logo-badge">A&C</div>
+      <div class="logo-badge" id="logoBadge">EXP</div>
       <div class="logo-text">
-        <h1 id="boardMainTitle">Pendientes Monterrey</h1>
+        <h1 id="boardMainTitle">Pendientes</h1>
         <span id="userGreeting">Cargando...</span>
         <button id="logoutBtn" title="Cerrar sesión" style="background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:11px;text-decoration:underline;margin-left:8px;padding:0;">Cerrar sesión</button>
       </div>
@@ -1014,7 +1020,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue as onValueFb, set, push, remove, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -1029,16 +1035,33 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
-  const dbRef = ref(db, 'pendientes_ayc');
+  // Expedito: cada empresa guarda sus datos en empresas/<id>/… (la manda Expedito en ?empresa=).
+  // 'ayc' (A&C, donde nació el tablero) sigue usando sus rutas de siempre: pendientes_ayc, usuarios_ayc…
+  const empParams = new URLSearchParams(window.location.search);
+  // Sin ?empresa: la página web de A&C (GitHub Pages) es A&C; en cualquier otro lado, la demo.
+  const EMPRESA = (empParams.get('empresa') || (location.hostname.endsWith('github.io') ? 'ayc' : 'demo')).toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'demo';
+  const EMPRESA_NOMBRE = empParams.get('nombre') || (EMPRESA === 'demo' ? 'Demo' : (EMPRESA === 'ayc' ? 'Monterrey' : EMPRESA.toUpperCase()));
+  const P = (p) => EMPRESA === 'ayc' ? p.replace(/^([a-z_]+)/, '$1_ayc') : `empresas/${EMPRESA}/${p}`;
+  // Sin sesión las empresas nuevas no dejan leer nada, y Firebase cancela para siempre una lectura negada.
+  // Por eso cada onValue se guarda y, al iniciar sesión, se vuelven a pedir las que se negaron.
+  const subsFb = [];
+  function onValue(r, cb, errCb) {
+    const s = { r, cb, errCb, off: null, negado: false, muerto: false };
+    s.pedir = () => { s.negado = false; s.off = onValueFb(s.r, s.cb, (e) => { s.negado = true; s.off = null; if (s.errCb) s.errCb(e); }); };
+    s.pedir(); subsFb.push(s);
+    return () => { s.muerto = true; if (s.off) s.off(); };
+  }
+  function repedirNegados() { subsFb.forEach(s => { if (s.negado && !s.muerto) s.pedir(); }); }
+  const dbRef = ref(db, P('pendientes'));
   let misTareasPrivadas = [];
   let misTareasListenerUid = null; // evita re-enganchar el listener si el perfil se refresca varias veces
-  const execRef = ref(db, 'ejecutivos_ayc');
-  const usersRef = ref(db, 'usuarios_ayc');
-  const catalogoRef = ref(db, 'catalogo_ayc');
-  const configRef = ref(db, 'config_ayc');
+  const execRef = ref(db, P('ejecutivos'));
+  const usersRef = ref(db, P('usuarios'));
+  const catalogoRef = ref(db, P('catalogo'));
+  const configRef = ref(db, P('config'));
   
-  const clientesRef = ref(db, 'clientes_ayc');
-  const corresponsalesRef = ref(db, 'corresponsales_ayc');
+  const clientesRef = ref(db, P('clientes'));
+  const corresponsalesRef = ref(db, P('corresponsales'));
   
   let generalPage = 1;
   const GENERAL_PAGE_SIZE = 150;
@@ -1060,8 +1083,65 @@
 
   const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
   const secondaryAuth = getAuth(secondaryApp);
-  const DUMMY_DOMAIN = '@ayc.local';
+  const DUMMY_DOMAIN = EMPRESA === 'ayc' ? '@ayc.local' : '@' + EMPRESA + '.expedito';
 
+  document.title = EMPRESA === 'ayc' ? 'A&C - Tablero de Pendientes' : `Pendientes · ${EMPRESA_NOMBRE}`;
+  { const lb = document.getElementById('logoBadge'); if (lb) lb.textContent = EMPRESA === 'ayc' ? 'A&C' : (EMPRESA_NOMBRE.match(/[A-Za-zÁÉÍÓÚÑ0-9&]+/g) || ['EXP']).slice(0, 3).map(w => /^[A-Z0-9&]{2,4}$/.test(w) ? w : w[0].toUpperCase()).join('').slice(0, 4); }
+
+  // ===== Expedito: armar el expediente de CASA desde el pendiente =====
+  // Dentro de Expedito existe window.chrome.webview. El pendiente necesita un pedimento (7 dígitos o los 15 completos).
+  const EXPEDITO = (window.chrome && window.chrome.webview && empParams.get('casa') !== '0') ? window.chrome.webview : null;   // casa=0: la licencia no trae Expediente
+  const expeditoEstado = {};   // id del pendiente -> { est, av, fal, res }
+  function pedimentoDe(r) { const d = String(r || '').replace(/\D/g, ''); return d.length >= 7 ? d.slice(-7) : null; }
+  function expeditoBadgeHtml(t) {
+    const e = expeditoEstado[t.id] || (t.expedito ? { est: t.expedito.estado, fal: t.expedito.falta, res: t.expedito.resultado } : null);
+    if (!e || !e.est) return '';
+    const trabajando = e.av !== undefined && Number(e.av) < 100;
+    const color = trabajando ? 'var(--accent, #2563eb)' : (e.est === 'Completo' ? '#16a34a' : (e.est === 'Listo para FAYC' ? '#0891b2' : '#ea580c'));
+    const tip = [e.res, e.fal ? 'Falta: ' + e.fal : ''].filter(Boolean).join(' · ');
+    return `<span class="expedito-badge" id="expb-${t.id}" title="${geloEsc(tip)}" style="background:${color}">⚙️ ${geloEsc(e.est)}${trabajando ? ' ' + e.av + '%' : ''}</span>`;
+  }
+  function expeditoRefrescar(id) {
+    const t = tasks.find(x => x.id === id); const el = document.getElementById('expb-' + id);
+    if (t && el) { el.outerHTML = expeditoBadgeHtml(t) || `<span id="expb-${id}"></span>`; } else if (t) { render(); }
+  }
+  function expeditoActivo(t) { const e = expeditoEstado[t.id]; return !!(e && e.av !== undefined && Number(e.av) < 100); }
+  // Barra arriba de la lista: manda a Expedito todos los de la vista (con pedimento) y deja detener el lote.
+  function expeditoLoteHtml(lista) {
+    if (!EXPEDITO || currentFilter !== 'expediente' || (currentUserProfile && (currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal'))) return '';   // solo en la pestaña Expediente
+    const cand = lista.filter(t => t.status !== 'Eliminado' && pedimentoDe(t.ref) && !expeditoActivo(t));
+    const activos = tasks.filter(expeditoActivo).length;
+    window.__expLote = cand.map(t => t.id);
+    if (cand.length < 2 && !activos) return '';
+    return `<div style="padding: 12px 30px; background: var(--panel-alt); border-bottom: 1px solid var(--divider); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span style="font-weight: 700; color: var(--text-sub);">⚙️ Expedito</span>
+      ${cand.length >= 2 ? `<button class="expedito-btn edit-only" data-action="armarLote" title="Se arman uno tras otro con CASA">⚙️ Mandar ${cand.length} a Expedito (por lote)</button>` : ''}
+      ${activos ? `<span style="color: var(--text-sub); font-size: 12px;">${activos} en Expedito</span><button class="btn-mini edit-only" data-action="expDetener">Detener después del actual</button><button class="btn-mini edit-only" data-action="expDetenerYa" style="border-color:#dc2626;color:#dc2626" title="Para en cuanto CASA termine el paso que está haciendo, sin dejar ventanas abiertas">⏹ Detener ahora (punto seguro)</button>` : ''}
+    </div>`;
+  }
+  function expeditoArmar(lista) {
+    const items = lista.filter(t => pedimentoDe(t.ref) && !expeditoActivo(t)).map(t => ({ id: t.id, ped: pedimentoDe(t.ref), ref: t.ref || '', cliente: t.cliente || '' }));
+    if (!EXPEDITO || !items.length) { alert('Para armar el expediente el pendiente necesita el número de pedimento.'); return; }
+    if (items.length > 1 && !confirm(`¿Mando ${items.length} pedimentos a Expedito? Se arman uno tras otro con CASA (no uses CASA mientras tanto).\n\n${items.slice(0, 15).map(i => i.ped).join(', ')}${items.length > 15 ? '…' : ''}`)) return;
+    items.forEach((i, k) => { expeditoEstado[i.id] = { est: k === 0 ? 'Enviado a Expedito' : 'En cola', av: 0 }; });
+    render();
+    EXPEDITO.postMessage({ tipo: 'armar', items });
+  }
+  if (EXPEDITO) EXPEDITO.addEventListener('message', (ev) => {
+    const m = ev.data || {};
+    if (m.tipo === 'rechazo') { (m.ids || []).forEach(i => delete expeditoEstado[i]); render(); alert(m.motivo); return; }
+    if (!m.id) return;
+    const e = expeditoEstado[m.id] || (expeditoEstado[m.id] = {});
+    if (m.tipo === 'avance') { e[m.campo] = m.valor; expeditoRefrescar(m.id); return; }
+    if (m.tipo !== 'fin') return;
+    if (/^No iniciado/.test(m.estado || '')) { delete expeditoEstado[m.id]; render(); return; }   // lote detenido: queda como estaba
+    Object.assign(e, { est: m.estado, fal: m.falta || '', res: m.resultado || '', av: 100 }); render();
+    const t = tasks.find(x => x.id === m.id); if (!t) return;
+    const datos = { expedito: { estado: m.estado, falta: m.falta || '', resultado: m.resultado || '', pedimento: m.ped, pc: m.pc || '', en: new Date().toISOString() }, lastModifiedBy: currentUser };
+    if (m.estado === 'Completo' && t.status !== 'Expediente') datos.status = 'Expediente';
+    update(ref(db, P('pendientes/') + m.id), datos);
+    push(ref(db, P(`pendientes/${m.id}/chat`)), { texto: `⚙️ Expedito (${m.pc || 'PC'}): ${m.estado}${m.falta ? ' · falta ' + m.falta : ''}${m.resultado ? ' · ' + m.resultado : ''}`, usuario: 'Expedito', timestamp: Date.now() });
+  });
   function isGirlyTheme() { return (document.documentElement.getAttribute('data-theme') || '').includes('girly'); }
   function playSparkle(anchorEl) {
     if (!isGirlyTheme()) return;
@@ -1085,6 +1165,11 @@
     }
   }
 
+  // Seguridad: lo que escriben los usuarios (chat, notas, cliente…) se pinta como texto, nunca como HTML.
+  function escObj(o) { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? geloEsc(o[k]) : o[k]; return r; }
+  // Clave de cliente para las reglas de Firebase: los clientes solo leen los pendientes con sus claves.
+  function ckey(n) { return normKey(n).replace(/[.$#\[\]\/]/g, '_'); }
+  function clavesDe(empresas) { const k = {}; String(empresas || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => { k[ckey(s)] = true; }); return k; }
   function normKey(name) { return (name || '').trim().toLowerCase().replace(/\s+/g, ' '); }
   function canonicalExecName(name) {
     const key = normKey(name);
@@ -1121,8 +1206,8 @@
           container.innerHTML = '<div style="font-size:11px; color:var(--text-sub);">No hay clientes en el catálogo maestro.</div>';
           return;
       }
-      container.innerHTML = clientesCatalogo.map(c => {
-          const isChecked = selectedEmpresas.map(e => normKey(e)).includes(normKey(c.nombre));
+      container.innerHTML = clientesCatalogo.map(c0 => {
+          const c = escObj(c0); const isChecked = selectedEmpresas.map(e => normKey(e)).includes(normKey(c0.nombre));
           return `<label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:var(--text-main);">
                     <input type="checkbox" value="${c.nombre}" ${isChecked ? 'checked' : ''} style="accent-color:var(--accent); width:14px; height:14px;">
                     ${c.nombre}
@@ -1147,7 +1232,7 @@
     const container = document.getElementById('usersListUi');
     if (!container) return;
     container.innerHTML = Object.keys(usersCache).map(uid => {
-        let u = usersCache[uid];
+        let u = escObj(usersCache[uid]);
         let badge = u.rol === 'cliente' ? '🧳 Cliente' : (u.rol === 'corresponsal' ? '🚢 Corresponsal' : (u.rol === 'admin' ? '👑 Admin' : (u.rol === 'tramitador' ? '🚚 Tramitador' : '👤 Staff')));
         let editBtn = (u.rol === 'cliente' || u.rol === 'corresponsal') ? `<button class="btn-mini" onclick="window.editClientPerms('${uid}')">⚙️ Editar</button>` : '';
         return `<div class="exec-item">
@@ -1164,11 +1249,20 @@
     usersCache = snapshot.val() || {};
     usersLoaded = true;
     updateUsersListUi();
+    // admin: a los clientes viejos les faltan las claves de sus clientes (las reglas las necesitan)
+    if (currentUserProfile && currentUserProfile.rol === 'admin') Object.keys(usersCache).forEach(uid => { const u = usersCache[uid];
+      if ((u.rol === 'cliente' || u.rol === 'corresponsal') && u.empresaAsociada && !u.clientesKeys) update(ref(db, P('usuarios/') + uid), { clientesKeys: clavesDe(u.empresaAsociada) }); });
     tryApplyProfile();
   }, (error) => {
-    usersLoaded = true;
-    tryApplyProfile();
+    if (!authUser) { usersLoaded = true; tryApplyProfile(); }
   });
+  // perfil propio: lo único de usuarios que puede leer un cliente
+  let perfilPropioUid = null;
+  function leerPerfilPropio(uid) {
+    if (perfilPropioUid === uid) return; perfilPropioUid = uid;
+    onValueFb(ref(db, P('usuarios/') + uid), (snap) => { if (snap.exists()) usersCache[uid] = snap.val(); usersLoaded = true; tryApplyProfile(); },
+      () => { usersLoaded = true; tryApplyProfile(); });
+  }
 
   setTimeout(() => {
     if (!currentUserProfile && loginOverlay && !authUser) {
@@ -1179,10 +1273,14 @@
 
   async function applyProfileForUser(user) {
     let profile = usersCache[user.uid];
+    if (!profile && EMPRESA !== 'ayc') {
+      loginError.textContent = `Tu usuario no está dado de alta en ${EMPRESA_NOMBRE}. Pídele a tu administrador que te agregue.`; loginError.style.display = 'block';
+      loginOverlay.classList.add('open'); signOut(auth); return;
+    }
     if (!profile) {
       const isFirstEver = Object.keys(usersCache).length === 0;
       profile = { nombre: canonicalExecName(user.email.split('@')[0]), email: user.email, rol: isFirstEver ? 'admin' : 'ejecutivo' };
-      try { await set(ref(db, 'usuarios_ayc/' + user.uid), profile); } 
+      try { await set(ref(db, P('usuarios/') + user.uid), profile); } 
       catch (e) { loginError.textContent = 'Error al crear perfil.'; loginError.style.display = 'block'; return; }
       return;
     }
@@ -1193,6 +1291,7 @@
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
     const isCorresp = currentUserProfile.rol === 'corresponsal';
 
+    if (isClient && EMPRESA !== 'ayc') iniciarPendientesCliente(currentUserProfile);
     applyPersonalizacion(currentUserProfile.personalizacion);
     attachMisTareasPrivadasListener(user.uid);
     
@@ -1209,7 +1308,7 @@
     } else if (isClient) {
         document.getElementById('boardMainTitle').textContent = `Portal: ${currentUserProfile.empresaAsociada || 'Operativo'}`;
     } else {
-        document.getElementById('boardMainTitle').textContent = `Pendientes Monterrey`;
+        document.getElementById('boardMainTitle').textContent = `Pendientes ${EMPRESA_NOMBRE}`;
     }
     
     if (isGeneralMode && !isClient) currentFilter = 'general';
@@ -1218,8 +1317,22 @@
     render(); 
   }
 
+  // Clientes y corresponsales: las reglas solo les dejan leer sus pendientes, con una consulta por clienteKey.
+  let pendientesClienteOn = false;
+  function iniciarPendientesCliente(perfil) {
+    if (pendientesClienteOn) return; pendientesClienteOn = true;
+    offPendientes();   // la lista completa no la tienen permitida
+    const llaves = Object.keys(perfil.clientesKeys || {}); const porLlave = {};
+    if (!llaves.length) { tasks = []; render(); return; }
+    llaves.forEach(k => onValue(query(dbRef, orderByChild('clienteKey'), equalTo(k)), (snap) => {
+      porLlave[k] = []; snap.forEach(ch => { const x = { id: ch.key, ...ch.val() }; if (x.depto === 'Corresponsalías') { x.depto = 'Marítimo'; x.isCorresponsal = true; } porLlave[k].push(x); });
+      tasks = [].concat(...Object.values(porLlave));
+      if (currentUserProfile) render();
+    }));
+  }
+
   onAuthStateChanged(auth, (user) => {
-    if (user) { authUser = user; tryApplyProfile(); } 
+    if (user) { authUser = user; if (subsFb.some(s => s.negado && !s.muerto && s.r.toString() === usersRef.toString())) usersLoaded = false; repedirNegados(); leerPerfilPropio(user.uid); tryApplyProfile(); } 
     else { authUser = null; currentUser = null; currentUserProfile = null; document.body.classList.remove('is-admin', 'is-client', 'is-corresponsal', 'is-tramitador'); loginOverlay.classList.add('open'); }
   });
 
@@ -1304,13 +1417,13 @@
     const tiposPerm = Array.from(document.querySelectorAll('#perm-tipos input:checked')).map(cb => cb.value);
     const deptosPerm = Array.from(document.querySelectorAll('#perm-deptos input:checked')).map(cb => cb.value);
 
-    const userPayload = { nombre, email: mode === 'edit' ? usersCache[editingUserUid].email : email, rol, empresaAsociada };
+    const userPayload = { nombre, email: mode === 'edit' ? usersCache[editingUserUid].email : email, rol, empresaAsociada, clientesKeys: isExternal ? clavesDe(empresaAsociada) : null };
     if (isExternal) userPayload.permisos = { aduanas: aduanasPerm, tipos: tiposPerm, deptos: deptosPerm };
 
     try {
       if (mode === 'create') {
           const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-          await set(ref(db, 'usuarios_ayc/' + cred.user.uid), userPayload);
+          await set(ref(db, P('usuarios/') + cred.user.uid), userPayload);
           if (!isExternal) {
               const dup = executives.find(e => normKey(e.nombre) === normKey(nombre));
               if (!dup) push(execRef, nombre);
@@ -1318,7 +1431,7 @@
           await signOut(secondaryAuth); 
           msgEl.style.color = 'var(--green)'; msgEl.textContent = `Cuenta creada para ${nombre}.`;
       } else if (mode === 'edit' && editingUserUid) {
-          await update(ref(db, 'usuarios_ayc/' + editingUserUid), userPayload);
+          await update(ref(db, P('usuarios/') + editingUserUid), userPayload);
           msgEl.style.color = 'var(--green)'; msgEl.textContent = `Actualizado para ${nombre}.`;
       }
       setTimeout(window.resetUserForm, 2000);
@@ -1341,7 +1454,7 @@
       const container = document.getElementById('catClientesList');
       if (!container) return;
       if (clientesCatalogo.length === 0) { container.innerHTML = '<div class="empty-state">No hay clientes registrados en el catálogo.</div>'; return; }
-      container.innerHTML = clientesCatalogo.map(c => `
+      container.innerHTML = clientesCatalogo.map(escObj).map(c => `
           <div class="exec-item">
               <div>
                   <strong style="color:var(--accent);">${c.nombre}</strong><br>
@@ -1356,7 +1469,7 @@
       const container = document.getElementById('catCorrespList');
       if (!container) return;
       if (corresponsalesCatalogo.length === 0) { container.innerHTML = '<div class="empty-state">No hay corresponsales registrados.</div>'; return; }
-      container.innerHTML = corresponsalesCatalogo.map(co => `
+      container.innerHTML = corresponsalesCatalogo.map(escObj).map(co => `
           <div class="exec-item">
               <div>
                   <strong style="color:var(--amber);">${co.nombre}</strong> <span style="font-size:10px; color:var(--text-sub);">(${co.ciudad || 'Genérico'})</span>
@@ -1388,8 +1501,8 @@
       document.getElementById('newCorrespCiudad').value = '';
   });
 
-  window.deleteCatCliente = function(id) { if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?")) remove(ref(db, 'clientes_ayc/' + id)); };
-  window.deleteCatCorresp = function(id) { if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, 'corresponsales_ayc/' + id)); };
+  window.deleteCatCliente = function(id) { if(confirm("¿Seguro que deseas eliminar este cliente del catálogo maestro?")) remove(ref(db, P('clientes/') + id)); };
+  window.deleteCatCorresp = function(id) { if(confirm("¿Seguro que deseas eliminar este corresponsal?")) remove(ref(db, P('corresponsales/') + id)); };
 
   function realignCurrentUserCasing() {
     if (!currentUser) return;
@@ -1471,7 +1584,7 @@
       accent: document.getElementById('pColorAccent').value,
       fondo: document.getElementById('pFondo').value
     };
-    await update(ref(db, 'usuarios_ayc/' + currentUserProfile.uid), { personalizacion });
+    await update(ref(db, P('usuarios/') + currentUserProfile.uid), { personalizacion });
     currentUserProfile.personalizacion = personalizacion;
     applyPersonalizacion(personalizacion);
     personalizarOverlay.classList.remove('open');
@@ -1479,7 +1592,7 @@
 
   document.getElementById('resetPersonalizarBtn').addEventListener('click', async () => {
     if (!currentUserProfile) return;
-    await update(ref(db, 'usuarios_ayc/' + currentUserProfile.uid), { personalizacion: null });
+    await update(ref(db, P('usuarios/') + currentUserProfile.uid), { personalizacion: null });
     currentUserProfile.personalizacion = null;
     applyPersonalizacion(null);
     personalizarOverlay.classList.remove('open');
@@ -1489,7 +1602,7 @@
   function attachMisTareasPrivadasListener(uid) {
     if (misTareasListenerUid === uid) return; // ya está enganchado para este usuario, no duplicar
     misTareasListenerUid = uid;
-    onValue(ref(db, 'tareas_privadas_ayc/' + uid), (snapshot) => {
+    onValue(ref(db, P('tareas_privadas/') + uid), (snapshot) => {
       misTareasPrivadas = [];
       snapshot.forEach((childSnapshot) => { misTareasPrivadas.push({ id: childSnapshot.key, ...childSnapshot.val() }); });
       render();
@@ -1502,8 +1615,8 @@
     const viejas = tasks.filter(t => t.isTask && normKey(t.ejecutivo) === normKey(currentUser) && t.status !== 'Eliminado');
     viejas.forEach(t => {
       const { id: _oldId, isTask, ejecutivo, ...rest } = t;
-      set(push(ref(db, 'tareas_privadas_ayc/' + uid)), rest);
-      remove(ref(db, 'pendientes_ayc/' + t.id));
+      set(push(ref(db, P('tareas_privadas/') + uid)), rest);
+      remove(ref(db, P('pendientes/') + t.id));
     });
   }
 
@@ -1550,7 +1663,7 @@
       let idx = mapToTimelineIndex(t.status);
       if (idx < 4) {
           const nextStatuses = ['Documentación incompleta', 'En proceso', 'Validado / Pagado', 'Modulación', 'Expediente'];
-          update(ref(db, 'pendientes_ayc/' + taskId), { status: nextStatuses[idx + 1], lastModifiedBy: currentUser });
+          update(ref(db, P('pendientes/') + taskId), { status: nextStatuses[idx + 1], lastModifiedBy: currentUser });
       }
   };
 
@@ -1559,12 +1672,12 @@
     executives = [];
     snapshot.forEach((childSnapshot) => { executives.push({ id: childSnapshot.key, nombre: childSnapshot.val() }); });
     executives.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    if (!execsSeeded && executives.length === 0) { execsSeeded = true; ['Dany', 'Paulo', 'Benja', 'Steph'].forEach(n => push(execRef, n)); }
+    if (EMPRESA === 'ayc' && !execsSeeded && executives.length === 0) { execsSeeded = true; ['Dany', 'Paulo', 'Benja', 'Steph'].forEach(n => push(execRef, n)); }
     extractExecutives();
   });
 
   let migracionTareasPrivadasHecha = false;
-  onValue(dbRef, (snapshot) => {
+  const offPendientes = onValue(dbRef, (snapshot) => {
     tasks = [];
     const now = Date.now();
     snapshot.forEach((childSnapshot) => {
@@ -1572,10 +1685,12 @@
       if (t.depto === 'Corresponsalías') { t.depto = 'Marítimo'; t.isCorresponsal = true; }
       if (t.status === 'Eliminado' && t.deletedAt) {
         const daysInTrash = (now - new Date(t.deletedAt).getTime()) / (1000 * 3600 * 24);
-        if (daysInTrash > 7) { remove(ref(db, 'pendientes_ayc/' + t.id)); return; }
+        if (daysInTrash > 7) { remove(ref(db, P('pendientes/') + t.id)); return; }
       }
       tasks.push(t);
     });
+    // personal: cada pendiente lleva la clave de su cliente (para que su cliente lo pueda leer)
+    if (currentUserProfile && !['cliente', 'corresponsal'].includes(currentUserProfile.rol)) tasks.forEach(x => { if (x.cliente && x.clienteKey !== ckey(x.cliente)) update(ref(db, P('pendientes/') + x.id), { clienteKey: ckey(x.cliente) }); });
     extractExecutives();
     if(currentUserProfile) render();
     checkOverdueNotifications();
@@ -1630,18 +1745,18 @@
     const cForm = formSelect.value;
     const cFilter = filterSelect.value;
 
-    formSelect.innerHTML = '<option value="">Sin asignar</option>' + execArr.map(e => `<option value="${e}">${e}</option>`).join('');
-    if (currentUser && !seen.has(normKey(currentUser))) formSelect.innerHTML += `<option value="${currentUser}">${currentUser}</option>`;
+    formSelect.innerHTML = '<option value="">Sin asignar</option>' + execArr.map(geloEsc).map(e => `<option value="${e}">${e}</option>`).join('');
+    if (currentUser && !seen.has(normKey(currentUser))) formSelect.innerHTML += `<option value="${geloEsc(currentUser)}">${geloEsc(currentUser)}</option>`;
     formSelect.value = cForm;
 
-    filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar / Libres</option>' + execArr.map(e => `<option value="${e}">${e}</option>`).join('');
+    filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar / Libres</option>' + execArr.map(geloEsc).map(e => `<option value="${e}">${e}</option>`).join('');
     filterSelect.value = cFilter || 'todos';
 
-    document.getElementById('execList').innerHTML = executives.length ? executives.map(e => `
+    document.getElementById('execList').innerHTML = executives.length ? executives.map(escObj).map(e => `
         <div class="exec-item"><span>${e.nombre}</span><button class="icon-btn del" data-exec-id="${e.id}">✖</button></div>`).join('')
       : '<div class="exec-item" style="color:var(--text-sub);">Aún no hay ejecutivos fijos.</div>';
 
-    document.querySelectorAll('[data-exec-id]').forEach(btn => { btn.addEventListener('click', () => { remove(ref(db, 'ejecutivos_ayc/' + btn.getAttribute('data-exec-id'))); }); });
+    document.querySelectorAll('[data-exec-id]').forEach(btn => { btn.addEventListener('click', () => { remove(ref(db, P('ejecutivos/') + btn.getAttribute('data-exec-id'))); }); });
   }
 
   const execOverlay = document.getElementById('execOverlay');
@@ -1810,7 +1925,7 @@
       });
       if (misFiltered.length === 0) { rowsEl.innerHTML = '<div class="empty-state">No tienes tareas personales pendientes. ¡Créate una! ✨</div>'; }
       else {
-        rowsEl.innerHTML = `<div class="tasks-grid">${misFiltered.map((t, i) => {
+        rowsEl.innerHTML = `<div class="tasks-grid">${misFiltered.map((t, i) => { t = escObj(t);
           const st = isOverdue(t) ? 'Retrasado' : t.status;
           return `
           <div class="task-card ${prioClass(t.prioridad)} ${t.status === 'Completado' ? 'is-done' : ''}" data-task-id="${t.id}" style="animation-delay:${i * 45}ms">
@@ -1911,16 +2026,19 @@
     });
     currentFilteredTasks = filtered;
 
+    bannerHtml = expeditoLoteHtml(filtered) + bannerHtml;
     if (filtered.length === 0) { rowsEl.innerHTML = bannerHtml + '<div class="empty-state">No hay operaciones con estos filtros.</div>'; }
     else {
-      rowsEl.innerHTML = bannerHtml + filtered.map(t => {
+      rowsEl.innerHTML = bannerHtml + filtered.map(t => { t = escObj(t);
         const st = isOverdue(t) && currentFilter !== 'papelera' ? 'Retrasado' : t.status;
         const isTrash = t.status === 'Eliminado';
 
         let actionsHtml = '';
+        let armarHtml = '';   // botón de Expedito: va debajo del pedimento (fuera del bloque de acciones)
         if (isTrash && !isClient) {
             actionsHtml = `<button class="icon-btn edit-only" title="Restaurar" data-action="restore" data-id="${t.id}">↩</button><button class="icon-btn del admin-only" title="Eliminar definitivamente" data-action="purge" data-id="${t.id}">🗑</button>`;
         } else if (!isClient) {
+            armarHtml = (EXPEDITO && currentFilter === 'expediente' && pedimentoDe(t.ref)) ? `<button class="expedito-btn en-celda edit-only" title="Armar el expediente con CASA en Expedito" data-action="armar" data-id="${t.id}"${expeditoActivo(t) ? ' disabled' : ''}>⚙️ Armar expediente</button>` : '';
             let moveExpHtml = (t.status !== 'Completado' && t.status !== 'Expediente') ? `<button class="icon-btn exp edit-only" title="Mover a Expediente" data-action="expediente" data-id="${t.id}">📁</button>` : '';
             actionsHtml = `${moveExpHtml}<button class="icon-btn done edit-only" title="Marcar completado" data-action="done" data-id="${t.id}">✔</button><button class="icon-btn edit-only" title="Duplicar" data-action="dup" data-id="${t.id}">⧉</button><button class="icon-btn edit-only" title="Editar" data-action="edit" data-id="${t.id}">✎</button><button class="icon-btn del edit-only" title="Eliminar" data-action="del" data-id="${t.id}">✖</button>`;
         }
@@ -1973,11 +2091,11 @@
           <div class="row-main">
             <button class="expand-btn" data-action="toggle" data-id="${t.id}">❯</button>
             <div class="prio-dot ${prioClass(t.prioridad)}"></div>
-            <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div>${extraDocHtml}</div>
+            <div><div class="cell-main">${t.ref || 'S/REF'}</div><div class="cell-sub">${t.tipo}</div>${extraDocHtml}${armarHtml}</div>
             <div data-label="Cliente"><div class="cell-client">${t.cliente || '—'}</div>${!isClient && t.ejecutivo ? `<div class="cell-sub" style="margin-top: 3px;">👤 ${t.ejecutivo}</div>` : ''}</div>
             <div class="cell small" data-label="Aduana">${t.aduana}</div>
             <div class="cell small" data-label="Depto">${t.depto}</div>
-            <div data-label="Status"><span class="badge ${isClient ? 'badge-proceso' : statusBadgeClass(st)}">${isClient ? TIMELINE_STEPS[currentStepIdx] : st}</span></div>
+            <div data-label="Status" class="cell-status-exp"><span class="badge ${isClient ? 'badge-proceso' : statusBadgeClass(st)}">${isClient ? TIMELINE_STEPS[currentStepIdx] : st}</span>${isClient ? '' : expeditoBadgeHtml(t)}</div>
             <div class="cell small" data-label="Límite">${formatLimite(t.limite)}</div>
             <div class="row-actions edit-only">${actionsHtml}</div>
           </div>
@@ -2006,7 +2124,7 @@
                     const msgs = Object.values(t.chat).sort((a, b) => a.timestamp - b.timestamp);
                     const filteredMsgs = isCorresp ? msgs : (isClient ? msgs.filter(m => !m.isInternal) : msgs);
                     if (filteredMsgs.length > 0) {
-                        chatHtml = '<div class="chat-messages">' + filteredMsgs.map(m => `
+                        chatHtml = '<div class="chat-messages">' + filteredMsgs.map(escObj).map(m => `
                             <div class="chat-msg">
                                 <div class="meta">
                                     <span class="user">👤 ${m.usuario}</span>
@@ -2162,7 +2280,7 @@
         }
         if (campo === 'estatusTramite') { datos.estatusTramitePor = currentUser; datos.estatusTramiteEn = new Date().toISOString(); }
         inp.classList.add('guardando');
-        update(ref(db, 'pendientes_ayc/' + t.id), datos)
+        update(ref(db, P('pendientes/') + t.id), datos)
           .then(() => { inp.classList.remove('guardando'); inp.classList.add('guardado'); setTimeout(() => inp.classList.remove('guardado'), 1200); })
           .catch(err => { inp.classList.remove('guardando'); alert('No se pudo guardar: ' + (err.code || err.message)); });
       };
@@ -2275,7 +2393,7 @@
     };
   }
   function tramGuardarGuias(lista) {
-    return Promise.all(lista.map(d => set(push(ref(db, 'pendientes_ayc')), tramNuevoPendiente(d))));
+    return Promise.all(lista.map(d => set(push(ref(db, P('pendientes'))), tramNuevoPendiente(d))));
   }
   function tramEjecutivosLista() {
     const m = new Map();
@@ -2380,7 +2498,7 @@
     const mios = isAdmin ? [] : base.filter(c => !isLibreCat(c) && normKey(c.ejecutivoAsignado) === normKey(currentUser));
     const deOtros = isAdmin ? base.filter(c => !isLibreCat(c)) : [];
 
-    function catRow(c, mode) {
+    function catRow(c, mode) { c = escObj(c);
       const btnLabel = mode === 'libre' ? '✋ Tomar' : '➕ Marcar como pendiente';
       return `
         <div class="row-wrapper" data-cat-id="${c.id}">
@@ -2412,11 +2530,11 @@
     if (!c) return;
     const asignarA = isLibreCat(c) ? currentUser : c.ejecutivoAsignado;
     if (!confirm(`¿Convertir "${c.ref}" en un pendiente activo asignado a ${asignarA}?`)) return;
-    set(push(ref(db, 'pendientes_ayc')), {
+    set(push(ref(db, P('pendientes'))), {
       ref: c.ref, cliente: c.cliente || '', aduana: c.aduana || 'Monterrey', depto: c.depto || 'Aéreo',
       tipo: c.tipo || 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
       ejecutivo: asignarA, enlace: '', notas: c.notas || '', lastModifiedBy: currentUser
-    }).then(() => { remove(ref(db, 'catalogo_ayc/' + catId)); touchRef(c.ref); playSparkle(document.getElementById('takePedimentoBtn')); });
+    }).then(() => { remove(ref(db, P('catalogo/') + catId)); touchRef(c.ref); playSparkle(document.getElementById('takePedimentoBtn')); });
   }
 
   function renderGeneralTab() {
@@ -2454,7 +2572,7 @@
         <button class="btn-mini${generalAduanaFilter === 'todas' ? ' active-toggle' : ''}" data-general-aduana="todas">📊 Ver todo</button>
       </div>`;
 
-    const filas = pagina.length ? pagina.map(m => `
+    const filas = pagina.length ? pagina.map(escObj).map(m => `
         <div class="row-wrapper general-row" data-ref="${(m.ref || '').replace(/"/g, '&quot;')}" style="animation:none;">
           <div class="row-main" style="grid-template-columns: 1.4fr 1.1fr 1fr 1fr 1fr 130px;">
             <div class="cell-main">${m.ref || 'S/REF'}</div><div class="cell-client" style="display: flex; align-items: center;">${m.cliente || '—'}</div>
@@ -2510,8 +2628,8 @@
 
       const filteredVals = uniqueVals.filter(v => v.toLowerCase().includes(filterText.toLowerCase()));
 
-      listEl.innerHTML = filteredVals.map(v => {
-          const isChecked = currentSelected.has(v);
+      listEl.innerHTML = filteredVals.map(v0 => {
+          const isChecked = currentSelected.has(v0); const v = geloEsc(v0);
           return `<label class="excel-checkbox-item">
                     <input type="checkbox" value="${v}" ${isChecked ? 'checked' : ''} data-excel-val style="accent-color:var(--primary);">
                     <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v}">${v}</span>
@@ -2579,12 +2697,16 @@
         const id = btn.getAttribute('data-id'); const action = btn.getAttribute('data-action');
         const t = tasks.find(t => t.id === id);
         if (action === 'del') { openConfirmDelete(id); } 
-        else if (action === 'restore') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); if (t) touchRef(t.ref); } 
-        else if (action === 'purge') { if (currentUserProfile && currentUserProfile.rol === 'admin' && confirm('¿Borrar para siempre?')) { remove(ref(db, 'pendientes_ayc/' + id)); } } 
-        else if (action === 'done') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Completado', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); geloCelebrar(); } 
-        else if (action === 'expediente') { update(ref(db, 'pendientes_ayc/' + id), { status: 'Expediente', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); }
+        else if (action === 'restore') { update(ref(db, P('pendientes/') + id), { status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); if (t) touchRef(t.ref); } 
+        else if (action === 'purge') { if (currentUserProfile && currentUserProfile.rol === 'admin' && confirm('¿Borrar para siempre?')) { remove(ref(db, P('pendientes/') + id)); } } 
+        else if (action === 'done') { update(ref(db, P('pendientes/') + id), { status: 'Completado', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); geloCelebrar(); } 
+        else if (action === 'expediente') { update(ref(db, P('pendientes/') + id), { status: 'Expediente', lastModifiedBy: currentUser }); if (t) touchRef(t.ref); playSparkle(btn); }
         else if (action === 'edit') { if (t) touchRef(t.ref); openModal(id); } 
-        else if (action === 'dup') { if (t) { const { id: _oldId, ...rest } = t; set(push(ref(db, 'pendientes_ayc')), { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); touchRef(rest.ref); } }
+        else if (action === 'armar') { if (t) expeditoArmar([t]); } 
+        else if (action === 'armarLote') { expeditoArmar((window.__expLote || []).map(i => tasks.find(x => x.id === i)).filter(Boolean)); } 
+        else if (action === 'expDetenerYa') { if (EXPEDITO) EXPEDITO.postMessage({ tipo: 'detenerYa' }); } 
+        else if (action === 'expDetener') { if (EXPEDITO) { EXPEDITO.postMessage({ tipo: 'detener' }); btn.disabled = true; btn.textContent = '⏹ Se detendrá al terminar el actual'; } } 
+        else if (action === 'dup') { if (t) { const { id: _oldId, ...rest } = t; set(push(ref(db, P('pendientes'))), { ...rest, ref: (rest.ref || 'S/REF') + ' (copia)', status: 'Pendiente', deletedAt: null, lastModifiedBy: currentUser }); touchRef(rest.ref); } }
       });
     });
   }
@@ -2617,7 +2739,7 @@
     if (!titulo) { alert("Escribe qué necesitas hacer."); return; }
     const uid = currentUserProfile.uid;
     const data = { titulo: titulo, prioridad: document.getElementById('t-prioridad').value, limite: document.getElementById('t-limite').value || null, notas: document.getElementById('t-notas').value.trim(), status: editingTaskId ? misTareasPrivadas.find(x => x.id === editingTaskId).status : 'Pendiente' };
-    if (editingTaskId) { update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + editingTaskId), data); } else { set(push(ref(db, 'tareas_privadas_ayc/' + uid)), data); }
+    if (editingTaskId) { update(ref(db, P('tareas_privadas/') + uid + '/' + editingTaskId), data); } else { set(push(ref(db, P('tareas_privadas/') + uid)), data); }
     closeTaskModal();
   });
 
@@ -2625,8 +2747,8 @@
     const card = document.querySelector(`.task-card[data-task-id="${id}"]`);
     const uid = currentUserProfile.uid;
     const finish = () => {
-      if (action === 'done') update(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id), { status: 'Completado' });
-      if (action === 'del') remove(ref(db, 'tareas_privadas_ayc/' + uid + '/' + id));
+      if (action === 'done') update(ref(db, P('tareas_privadas/') + uid + '/' + id), { status: 'Completado' });
+      if (action === 'del') remove(ref(db, P('tareas_privadas/') + uid + '/' + id));
     };
     if (card) { card.classList.add('completing'); setTimeout(finish, 320); } else { finish(); }
   };
@@ -2651,8 +2773,8 @@
       libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
       const lote = libres.slice(0, cantidad);
       lote.forEach(next => {
-        set(push(ref(db, 'pendientes_ayc')), { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
-        remove(ref(db, 'catalogo_ayc/' + next.id));
+        set(push(ref(db, P('pendientes'))), { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser });
+        remove(ref(db, P('catalogo/') + next.id));
       });
       playSparkle(document.getElementById('takeBatchBtn'));
     }
@@ -2664,9 +2786,9 @@
     libres.sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
     const next = libres[0];
     if(confirm(`Siguiente de ${aduana}:\n${next.ref}\n¿Asignártelo?`)) {
-      const newRef = push(ref(db, 'pendientes_ayc'));
+      const newRef = push(ref(db, P('pendientes')));
       set(newRef, { ref: next.ref, cliente: next.cliente || '', cliente_id: next.cliente_id || null, aduana: next.aduana || aduana, depto: next.depto || 'Aéreo', tipo: next.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: next.notas || '', lastModifiedBy: currentUser }).then(() => {
-        remove(ref(db, 'catalogo_ayc/' + next.id)); touchRef(next.ref); playSparkle(document.getElementById('takePedimentoBtn')); openModal(newRef.key); 
+        remove(ref(db, P('catalogo/') + next.id)); touchRef(next.ref); playSparkle(document.getElementById('takePedimentoBtn')); openModal(newRef.key); 
       });
     }
   }
@@ -2678,7 +2800,7 @@
   function openConfirmDelete(id) { deleteTargetId = id; confirmOverlay.classList.add('open'); }
   function closeConfirmDelete() { confirmOverlay.classList.remove('open'); deleteTargetId = null; }
   document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmDelete);
-  document.getElementById('confirmDeleteBtn').addEventListener('click', () => { if (deleteTargetId) { update(ref(db, 'pendientes_ayc/' + deleteTargetId), { status: 'Eliminado', deletedAt: new Date().toISOString(), deletedBy: currentUser, lastModifiedBy: currentUser }); } closeConfirmDelete(); });
+  document.getElementById('confirmDeleteBtn').addEventListener('click', () => { if (deleteTargetId) { update(ref(db, P('pendientes/') + deleteTargetId), { status: 'Eliminado', deletedAt: new Date().toISOString(), deletedBy: currentUser, lastModifiedBy: currentUser }); } closeConfirmDelete(); });
 
   document.getElementById('viewChartBtn').addEventListener('click', () => {
     const chartContainer = document.getElementById('chartContainer'); const execCounts = {}; const displayNames = {}; let max = 0;
@@ -2692,7 +2814,7 @@
     let html = '';
     Object.keys(execCounts).sort((a,b) => execCounts[b] - execCounts[a]).forEach(key => {
       const percent = max > 0 ? (execCounts[key] / max) * 100 : 0;
-      html += `<div class="chart-row"><div class="chart-label">${displayNames[key]}</div><div class="chart-bar-wrap"><div class="chart-bar" style="width: ${percent}%;"></div></div><div class="chart-count">${execCounts[key]}</div></div>`;
+      html += `<div class="chart-row"><div class="chart-label">${geloEsc(displayNames[key])}</div><div class="chart-bar-wrap"><div class="chart-bar" style="width: ${percent}%;"></div></div><div class="chart-count">${execCounts[key]}</div></div>`;
     });
     chartContainer.innerHTML = html || '<p style="color:var(--text-sub); text-align:center;">No hay operaciones activas.</p>'; 
     document.getElementById('chartOverlay').classList.add('open');
@@ -2706,7 +2828,7 @@
     let moved = 0;
     candidatos.forEach(t => {
       set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
-      remove(ref(db, 'pendientes_ayc/' + t.id)); moved++;
+      remove(ref(db, P('pendientes/') + t.id)); moved++;
     });
     alert(`Listo: se movieron ${moved} pedimentos.`);
   });
@@ -2883,8 +3005,8 @@
       eta: etaValue, lastModifiedBy: currentUser
     };
     
-    if (editingId) update(ref(db, 'pendientes_ayc/' + editingId), data);
-    else set(push(ref(db, 'pendientes_ayc')), data);
+    if (editingId) update(ref(db, P('pendientes/') + editingId), data);
+    else set(push(ref(db, P('pendientes'))), data);
     
     touchRef(document.getElementById('f-ref').value.trim());
     overlay.classList.remove('open');
@@ -2906,7 +3028,7 @@
           matches.forEach(c => {
               const div = document.createElement('div');
               div.className = 'autocomplete-item';
-              div.innerHTML = `<div><strong>${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.rfc || 'Sin RFC'}</span></div>`;
+              div.innerHTML = `<div><strong>${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.rfc || 'Sin RFC')}</span></div>`;
               div.addEventListener('click', () => {
                   fClienteInput.value = c.nombre;
                   fClienteIdInput.value = c.id;
@@ -2932,7 +3054,7 @@
               matches.forEach(c => {
                   const div = document.createElement('div');
                   div.className = 'autocomplete-item';
-                  div.innerHTML = `<div><strong style="color:var(--amber);">${c.nombre}</strong><br><span style="font-size:10px; color:var(--text-sub);">${c.ciudad || 'Genérico'}</span></div>`;
+                  div.innerHTML = `<div><strong style="color:var(--amber);">${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.ciudad || 'Genérico')}</span></div>`;
                   div.addEventListener('click', () => {
                       dCorresponsalInput.value = c.nombre;
                       correspAutoList.style.display = 'none';
@@ -2954,7 +3076,7 @@
       const texto = input.value.trim();
       if (!texto) return;
       input.disabled = true;
-      push(ref(db, `pendientes_ayc/${taskId}/chat`), {
+      push(ref(db, P(`pendientes/${taskId}/chat`)), {
           texto: texto, usuario: currentUser || 'Usuario', timestamp: Date.now()
       }).then(() => { input.value = ''; input.disabled = false; input.focus(); });
   };
@@ -3002,7 +3124,7 @@
       geloGuardarLocales(arr); geloSetMood();
       return Promise.resolve();
     }
-    return update(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid + '/' + id), datos);
+    return update(ref(db, P('tareas_privadas/') + currentUserProfile.uid + '/' + id), datos);
   }
 
   function geloLinea(t) {
@@ -3199,7 +3321,7 @@
     if (!p.cuando) return `¿A qué hora te recuerdo "${geloEsc(p.titulo)}"? Ej: "recuérdame ${geloEsc(p.titulo.toLowerCase())} a las 4" o "en 30 min".`;
     const data = { titulo: p.titulo, prioridad: 'Media', limite: geloFechaLocal(p.cuando), notas: 'Recordatorio creado con Gelo', status: 'Pendiente' };
     const cuandoTxt = `"<b>${geloEsc(p.titulo)}</b>" ${geloFormatoCuando(p.cuando)}`;
-    const recRef = push(ref(db, 'tareas_privadas_ayc/' + currentUserProfile.uid));
+    const recRef = push(ref(db, P('tareas_privadas/') + currentUserProfile.uid));
     set(recRef, data)
       .then(() => { geloRegistrar(`borré el recordatorio "${geloEsc(p.titulo)}"`, () => remove(recRef)); geloAdd(`⏰ ¡Anotado! Te recuerdo ${cuandoTxt} 👍\n(Quedó en Mis Tareas.)`, 'bot'); })
       .catch(err => {
@@ -3284,7 +3406,7 @@
     const t = res.t;
     const nota = m[2].trim();
     if (!nota) return '¿Qué anoto? Ej: "anota en AYC26-7929: falta factura".';
-    const notaRef = push(ref(db, `pendientes_ayc/${t.id}/chat`));
+    const notaRef = push(ref(db, P(`pendientes/${t.id}/chat`)));
     set(notaRef, { texto: geloEsc(nota), usuario: currentUser || 'Usuario', timestamp: Date.now(), isInternal: true })
       .then(() => { touchRef(t.ref); geloRegistrar(`borré la nota "${geloEsc(nota)}" de ${geloEsc(t.ref || 'S/REF')}`, () => remove(notaRef)); geloAdd(`📝 Anotado en la bitácora de <b>${geloEsc(t.ref || t.guia || 'S/REF')}</b>: "${geloEsc(nota)}"\n(Nota interna: el cliente no la ve.)`, 'bot'); })
       .catch(err => geloAdd(`Ups, no pude guardar la nota 😣 (${geloEsc(err.message || err)})`, 'bot'));
@@ -3434,9 +3556,9 @@
     if (!estatus) return `¿Qué estatus le pongo a la guía ${geloEsc(t.guia)} (${geloEsc(t.cliente || '')})? Ej: "ponle pendiente previo a la guía ${geloEsc(t.guia)}".`;
     if (/^(borra|quita|quitale|ninguno|vacio|nada)$/.test(estatus)) estatus = '';
     const previo = t.estatusTramite || '';
-    geloPendienteAccion = { run: () => update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: estatus, estatusTramitePor: currentUser, estatusTramiteEn: new Date().toISOString(), lastModifiedBy: currentUser })
+    geloPendienteAccion = { run: () => update(ref(db, P('pendientes/') + t.id), { estatusTramite: estatus, estatusTramitePor: currentUser, estatusTramiteEn: new Date().toISOString(), lastModifiedBy: currentUser })
       .then(() => {
-        geloRegistrar(`la guía ${geloEsc(t.guia)} regresó a "${geloEsc(previo || 'sin estatus')}"`, () => update(ref(db, 'pendientes_ayc/' + t.id), { estatusTramite: previo, lastModifiedBy: currentUser }));
+        geloRegistrar(`la guía ${geloEsc(t.guia)} regresó a "${geloEsc(previo || 'sin estatus')}"`, () => update(ref(db, P('pendientes/') + t.id), { estatusTramite: previo, lastModifiedBy: currentUser }));
         return `¡Listo! Guía <b>${geloEsc(t.guia)}</b> (${geloEsc(t.cliente || '')}) → "${geloEsc(estatus || 'sin estatus')}" 🚚`;
       }) };
     return `¿Le pongo a la guía <b>${geloEsc(t.guia)}</b> (${geloEsc(t.cliente || '')}) el estatus "<b>${geloEsc(estatus || 'sin estatus')}</b>"?${previo ? `\n(Ahora tiene: "${geloEsc(previo)}")` : ''}\n<span class="gelo-confirm"><button data-gelo-confirm="si">✅ Sí</button><button data-gelo-confirm="no">No</button></span>`;
@@ -3463,16 +3585,16 @@
   function geloEjecutarTomaLibres(lote, aduana, anchor) {
     const creados = [];
     const promesas = lote.map(c => {
-      const nuevo = push(ref(db, 'pendientes_ayc'));
+      const nuevo = push(ref(db, P('pendientes')));
       const { id: catId, ...catData } = c;
       creados.push({ nuevo, catId, catData });
       return set(nuevo, { ref: c.ref, cliente: c.cliente || '', cliente_id: c.cliente_id || null, aduana: c.aduana || aduana, depto: c.depto || 'Aéreo', tipo: c.tipo || 'Importación', prioridad: 'Media', status: 'En proceso', limite: null, ejecutivo: currentUser, enlace: '', notas: c.notas || '', lastModifiedBy: currentUser })
-        .then(() => remove(ref(db, 'catalogo_ayc/' + catId)));
+        .then(() => remove(ref(db, P('catalogo/') + catId)));
     });
     return Promise.all(promesas).then(() => {
       touchRef(lote[lote.length - 1].ref);
       geloRegistrar(`regresé ${lote.length} libre(s) de ${aduana} al catálogo`, () => Promise.all(creados.map(x =>
-        set(ref(db, 'catalogo_ayc/' + x.catId), x.catData).then(() => remove(x.nuevo)))));
+        set(ref(db, P('catalogo/') + x.catId), x.catData).then(() => remove(x.nuevo)))));
       geloCelebrar();
       return `¡Listo! Te asigné ${lote.length} libre(s) de ${aduana} 📦\n${lote.slice(0, 10).map(c => `• ${geloEsc(c.ref)}`).join('\n')}${lote.length > 10 ? `\n…y ${lote.length - 10} más.` : ''}\n(Si fue error, dime "deshaz".)`;
     });
@@ -3753,7 +3875,7 @@
     const previo = t.status || 'Pendiente';
     const p = t._privada
       ? geloActualizarTareaPrivada(t.id, { status })
-      : update(ref(db, 'pendientes_ayc/' + t.id), { status, lastModifiedBy: currentUser });
+      : update(ref(db, P('pendientes/') + t.id), { status, lastModifiedBy: currentUser });
     return p.then(() => {
       if (!t._privada) touchRef(t.ref);
       if (status === 'Completado' || status === 'Expediente') { playSparkle(anchor); geloCelebrar(); }
@@ -3761,7 +3883,7 @@
       const nombre = t.ref || t.titulo;
       geloRegistrar(`${geloEsc(nombre)} regresó a "${geloEsc(previo)}"`, () => t._privada
         ? geloActualizarTareaPrivada(t.id, { status: previo })
-        : update(ref(db, 'pendientes_ayc/' + t.id), { status: previo, lastModifiedBy: currentUser }));
+        : update(ref(db, P('pendientes/') + t.id), { status: previo, lastModifiedBy: currentUser }));
       return status === 'Completado' ? `¡Listo! ${geloEsc(nombre)} completado 🎉 Uno menos.` : `¡Hecho! ${geloEsc(nombre)} ahora está en "${geloEsc(status)}" ✨`;
     });
   }
@@ -3806,7 +3928,7 @@
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "Ponle pendiente previo a la guía 877546120242" / "guías sin estatus"\n• "¿Qué tiene Dany?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "Ponle pendiente previo a la guía 877546120242" / "guías sin estatus"\n• "¿Qué tiene Laura?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
