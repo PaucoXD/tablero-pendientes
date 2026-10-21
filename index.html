@@ -1326,7 +1326,7 @@
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
     const isCorresp = currentUserProfile.rol === 'corresponsal';
 
-    if (isClient && EMPRESA !== 'ayc') iniciarPendientesCliente(currentUserProfile);
+    if (isClient) iniciarPendientesCliente(currentUserProfile);   // clientes y corresponsales (también de A&C): solo sus pendientes
     applyPersonalizacion(currentUserProfile.personalizacion);
     attachMisTareasPrivadasListener(user.uid);
     
