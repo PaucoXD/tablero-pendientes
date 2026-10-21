@@ -1309,7 +1309,7 @@
   async function applyProfileForUser(user) {
     let profile = usersCache[user.uid];
     if (!profile && EMPRESA !== 'ayc') {
-      loginError.textContent = `Tu usuario no está dado de alta en ${EMPRESA_NOMBRE}. Pídele a tu administrador que te agregue.`; loginError.style.display = 'block';
+      loginError.textContent = suspension ? avisoSuspension() : `Tu usuario no está dado de alta en ${EMPRESA_NOMBRE}. Pídele a tu administrador que te agregue.`; loginError.style.display = 'block';
       loginOverlay.classList.add('open'); signOut(auth); return;
     }
     if (!profile) {
@@ -1351,6 +1351,16 @@
     extractExecutives(); pintarAduanasUi();
     render(); 
   }
+
+  // Agencia suspendida por su proveedor (suspendidas/<empresa>, lo pone el dueño desde el Generador): las reglas ya
+  // le niegan todo; aquí solo se avisa en la pantalla de entrada.
+  let suspension = null;
+  function avisoSuspension() { return `El servicio de ${EMPRESA_NOMBRE} está suspendido${suspension && suspension.motivo ? ' (' + suspension.motivo + ')' : ''}. Comunícate con tu proveedor de Expedito.`; }
+  if (EMPRESA !== 'ayc') onValueFb(ref(db, 'suspendidas/' + EMPRESA), (snap) => {
+    suspension = snap.val();
+    if (suspension) { loginOverlay.classList.add('open'); loginError.textContent = avisoSuspension(); loginError.style.display = 'block'; if (auth.currentUser) signOut(auth); }
+    else if (loginError.textContent.includes('está suspendido')) { loginError.style.display = 'none'; }
+  });
 
   // Clientes y corresponsales: las reglas solo les dejan leer sus pendientes, con una consulta por clienteKey.
   let pendientesClienteOn = false;
