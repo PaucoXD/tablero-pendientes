@@ -231,6 +231,13 @@
   .row-actions { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: nowrap; }
   .expedito-btn { background: #16a34a; color: #fff; border: none; border-radius: var(--radius-btn, 8px); padding: 7px 12px; font-family: var(--font-heading); font-size: 11.5px; font-weight: 800; letter-spacing: 0.3px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(22,163,74,.35); }
   .expedito-btn:hover { background: #15803d; }
+  .autocomplete-item.autocomplete-nuevo { border-top: 1px dashed var(--divider); }
+  .autocomplete-item.autocomplete-nuevo strong { color: var(--green, #16a34a); }
+  .aduana-fila { display: grid; grid-template-columns: 1.1fr 1.2fr 0.9fr 1.3fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .aduana-fila input { width: 100%; min-width: 0; }
+  .aduana-fila .acc { display: flex; gap: 2px; }
+  .aduana-head { font-size: 10.5px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  @media (max-width: 640px) { .aduana-fila { grid-template-columns: 1fr 1fr; } .aduana-head { display: none; } }
   .expedito-btn.en-celda { display: inline-flex; align-items: center; gap: 4px; margin: 7px 0 0 0; padding: 5px 10px; font-size: 10.5px; box-shadow: none; }
   .cell-status-exp { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
   .expedito-badge { display: inline-block; max-width: 100%; font-size: 10.5px; font-weight: 700; color: #fff; border-radius: 10px; padding: 2px 8px; line-height: 1.35; white-space: normal; overflow-wrap: break-word; min-width: 76px; }
@@ -517,8 +524,7 @@
       <button class="btn-mini edit-only" id="downloadTemplateBtn">⬇ Plantilla CSV</button>
       <button class="btn-mini edit-only admin-only" id="uploadLayoutBtn">⬆ Cargar Excel Pedimentos</button>
       <button class="btn-mini edit-only admin-only" id="migrateBtn" title="Mueve al catálogo lo que ya se subió como pendiente sin haber sido tomado">🔧 Reparar import anterior</button>
-      <button class="btn-mini edit-only admin-only" id="setCorteMtyBtn" title="A partir de qué consecutivo se consideran libres de verdad en Monterrey">🔢 Corte Mty: <span id="corteMtyValue">6107606</span></button>
-      <button class="btn-mini edit-only admin-only" id="setCorteLrdBtn" title="A partir de qué consecutivo se consideran libres de verdad en Nuevo Laredo">🔢 Corte Laredo: <span id="corteLrdValue">6120024</span></button>
+      <button class="btn-mini edit-only admin-only" id="aduanasBtn" title="Las aduanas de tu agencia y desde qué consecutivo son libres" style="border-color: var(--primary); color: var(--primary);">🏢 Aduanas y cortes</button>
       <input type="file" id="layoutFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
       <button class="btn-mini edit-only" id="exportCsvBtn">📄 Exportar filtrado</button>
       <button class="btn-mini" id="compactToggleBtn">▤ Vista compacta</button>
@@ -618,13 +624,7 @@
     <div class="field-row">
       <div class="field">
         <label>Aduana</label>
-        <select id="f-aduana">
-          <option value="Monterrey" selected>Monterrey</option>
-          <option value="Laredo">Laredo</option>
-          <option value="Altamira">Altamira</option>
-          <option value="Manzanillo">Manzanillo</option>
-          <option value="Otra">Otra</option>
-        </select>
+        <select id="f-aduana"></select>
       </div>
       <div class="field">
         <label>Departamento</label>
@@ -892,11 +892,6 @@
           <label style="color: var(--primary); font-weight: 800; font-size: 11px;">FILTROS DE VISUALIZACIÓN</label>
           <div style="font-size: 11px; margin-top: 8px; font-weight: bold;">Aduanas Permitidas:</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-aduanas">
-            <label><input type="checkbox" value="Monterrey" checked> Monterrey</label>
-            <label><input type="checkbox" value="Laredo" checked> Laredo</label>
-            <label><input type="checkbox" value="Altamira" checked> Altamira</label>
-            <label><input type="checkbox" value="Manzanillo" checked> Manzanillo</label>
-            <label><input type="checkbox" value="Otra" checked> Otra</label>
           </div>
           <div style="font-size: 11px; margin-top: 8px; font-weight: bold;">Operaciones Permitidas:</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;" id="perm-tipos">
@@ -933,11 +928,19 @@
 <div class="modal-overlay" id="aduanaChoiceOverlay">
   <div class="modal" style="max-width: 340px; text-align: center;">
     <h2>¿De qué aduana?</h2>
-    <div style="display: flex; gap: 10px;">
-      <button class="btn-add" id="choiceMonterreyBtn" style="flex: 1;">Monterrey</button>
-      <button class="btn-add" id="choiceLaredoBtn" style="flex: 1; background: var(--blue);">Nuevo Laredo</button>
-    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="aduanaChoiceBtns"></div>
     <button class="btn-secondary" id="cancelAduanaChoiceBtn" style="margin-top: 14px; width: 100%;">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="aduanasOverlay">
+  <div class="modal" style="max-width: 720px;">
+    <h2>🏢 Aduanas y cortes de libres</h2>
+    <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 12px; line-height: 1.5;">Las aduanas donde trabaja tu agencia. La <b>primera</b> es la principal: se usa cuando no se indica otra. <b>Corte de libres</b>: desde qué consecutivo de pedimento se consideran libres. <b>Otros nombres</b>: cómo la reconocen Gelo y la carga de Excel (p. ej. <i>mty, nld</i>), separados por coma.</p>
+    <div id="aduanasLista"></div>
+    <button class="btn-mini" id="aduanaAgregarBtn" style="margin-top: 10px;">+ Agregar aduana</button>
+    <p id="aduanasMsg" style="font-size: 12px; margin-top: 8px;"></p>
+    <div class="modal-actions"><button class="btn-secondary" id="aduanasCerrarBtn">Cerrar</button><button class="btn-add" id="aduanasGuardarBtn">Guardar</button></div>
   </div>
 </div>
 
@@ -1068,16 +1071,48 @@
   const urlParams = new URLSearchParams(window.location.search);
   const isGeneralMode = urlParams.get('modo') === 'general';
   
-  let corteLibresPorAduana = { Monterrey: 6107606, Laredo: 6120024 };
-  function corteLibres(aduana) { return corteLibresPorAduana[aduana] || 0; }
+  // Aduanas de la empresa (config/aduanas): el admin las agrega y ordena en "🏢 Aduanas y cortes"; la primera es la principal.
+  // A&C las tenía fijas (Monterrey y Laredo, con config.corteMonterrey / corteLaredo): mientras no guarde su lista, se usan esas.
+  let ADUANAS = [], aduanasGuardadas = false;
+  function aduanasDeConfig(val) {
+    if (val && val.aduanas) return Object.entries(val.aduanas).map(([id, a]) => ({ id, nombre: a.nombre || '', etiqueta: a.etiqueta || a.nombre || '', corte: Number(a.corte) || 0, alias: a.alias || '', orden: Number(a.orden) || 0 })).filter(a => a.nombre).sort((x, y) => x.orden - y.orden);
+    if (EMPRESA === 'ayc') return [
+      { id: 'mty', nombre: 'Monterrey', etiqueta: 'Monterrey', corte: Number(val && val.corteMonterrey) || 6107606, alias: 'mty', orden: 0 },
+      { id: 'lrd', nombre: 'Laredo', etiqueta: 'Nuevo Laredo', corte: Number(val && val.corteLaredo) || 6120024, alias: 'nld, nuevo laredo', orden: 1 }];
+    return [];
+  }
+  function aduanaPrincipal() { return ADUANAS.length ? ADUANAS[0].nombre : ''; }
+  function aduanaEtiqueta(n) { const a = ADUANAS.find(x => x.nombre === n); return a ? a.etiqueta : (n || ''); }
+  function corteLibres(aduana) { const a = ADUANAS.find(x => x.nombre === aduana); return a ? a.corte : 0; }
+  // "dame 3 libres de mty", hoja de Excel "NUEVO LAREDO"… → nombre de la aduana
+  function aduanaPorTexto(txt) {
+    const s = geloNorm(txt); if (!s) return null;
+    const cands = ADUANAS.map(a => ({ a, ns: [a.nombre, a.etiqueta, ...String(a.alias || '').split(',')].map(geloNorm).filter(Boolean) }));
+    const exacta = cands.find(c => c.ns.includes(s)); if (exacta) return exacta.a.nombre;
+    const parcial = cands.find(c => c.ns.some(n => s.includes(n))); return parcial ? parcial.a.nombre : null;
+  }
+  function setAduanaSelect(val) {
+    const sel = document.getElementById('f-aduana'); if (!sel) return;
+    if (val && ![...sel.options].some(o => o.value === val)) { const o = document.createElement('option'); o.value = val; o.textContent = val; const mas = sel.querySelector('option[value="__nueva__"]'); sel.insertBefore(o, mas); }
+    sel.value = val || '';
+  }
+  // pinta las aduanas en el formulario, permisos de clientes y "¿De qué aduana?"
+  function pintarAduanasUi() {
+    const sel = document.getElementById('f-aduana');
+    if (sel) { const actual = sel.value; sel.innerHTML = (ADUANAS.length ? ADUANAS.map(a => `<option value="${geloEsc(a.nombre)}">${geloEsc(a.etiqueta)}</option>`).join('') : '<option value="">(sin aduanas todavía)</option>') + (puedeAgregarCatalogo() ? '<option value="__nueva__">➕ Agregar aduana…</option>' : ''); if (actual && actual !== '__nueva__') setAduanaSelect(actual); }
+    const perm = document.getElementById('perm-aduanas');
+    if (perm) { const marcadas = new Set([...perm.querySelectorAll('input')].filter(cb => !cb.checked).map(cb => cb.value));
+      perm.innerHTML = ADUANAS.map(a => `<label><input type="checkbox" value="${geloEsc(a.nombre)}" ${marcadas.has(a.nombre) ? '' : 'checked'}> ${geloEsc(a.etiqueta)}</label>`).join('') || '<span style="color:var(--text-sub)">Sin aduanas configuradas</span>'; }
+    const ch = document.getElementById('aduanaChoiceBtns');
+    if (ch) ch.innerHTML = ADUANAS.length ? ADUANAS.map((a, i) => `<button class="btn-add" data-aduana-elegir="${geloEsc(a.nombre)}" style="flex: 1; min-width: 120px;${i % 2 ? ' background: var(--blue);' : ''}">${geloEsc(a.etiqueta)}</button>`).join('') : '<p style="font-size:12px;color:var(--text-sub)">Primero agrega tus aduanas en 🏢 Aduanas y cortes.</p>';
+  }
+  function avisoAduanasHtml() {
+    if (ADUANAS.length || !currentUserProfile || currentUserProfile.rol !== 'admin') return '';
+    return `<div style="padding: 12px 30px; background: var(--panel-alt); border-bottom: 1px solid var(--divider); color: var(--amber); font-weight: 700;">🏢 Agrega las aduanas de tu agencia en <b>Filtros y Herramientas → Aduanas y cortes</b> para usar libres, la vista general y Gelo.</div>`;
+  }
   onValue(configRef, (snap) => {
-    const val = snap.val();
-    corteLibresPorAduana.Monterrey = (val && val.corteMonterrey) ? Number(val.corteMonterrey) : 6107606;
-    corteLibresPorAduana.Laredo = (val && val.corteLaredo) ? Number(val.corteLaredo) : 6120024;
-    const mtyLabel = document.getElementById('corteMtyValue');
-    const lrdLabel = document.getElementById('corteLrdValue');
-    if (mtyLabel) mtyLabel.textContent = corteLibresPorAduana.Monterrey;
-    if (lrdLabel) lrdLabel.textContent = corteLibresPorAduana.Laredo;
+    ADUANAS = aduanasDeConfig(snap.val()); aduanasGuardadas = !!(snap.val() && snap.val().aduanas);
+    pintarAduanasUi();
     if(currentUserProfile) render();
   });
 
@@ -1313,7 +1348,7 @@
     
     if (isGeneralMode && !isClient) currentFilter = 'general';
     loginOverlay.classList.remove('open');
-    extractExecutives();
+    extractExecutives(); pintarAduanasUi();
     render(); 
   }
 
@@ -1635,7 +1670,7 @@
   let scrollToLastTouched = false; 
   function touchRef(r) { if (!r) return; lastTouchedRef = r; localStorage.setItem('ayc-last-touched-ref', r); }
   let currentFilter = 'todos';
-  let generalAduanaFilter = 'Monterrey'; 
+  let generalAduanaFilter = null;   // null = la aduana principal 
   
   const DEPTOS = ['Aéreo', 'Terrestre', 'Marítimo', 'Virtual']; 
   const TIMELINE_STEPS = ['Recepción', 'Proforma', 'Pagado', 'Despacho', 'Cierre'];
@@ -1747,6 +1782,7 @@
 
     formSelect.innerHTML = '<option value="">Sin asignar</option>' + execArr.map(geloEsc).map(e => `<option value="${e}">${e}</option>`).join('');
     if (currentUser && !seen.has(normKey(currentUser))) formSelect.innerHTML += `<option value="${geloEsc(currentUser)}">${geloEsc(currentUser)}</option>`;
+    if (puedeAgregarCatalogo()) formSelect.innerHTML += '<option value="__nuevo__">➕ Agregar ejecutivo…</option>';
     formSelect.value = cForm;
 
     filterSelect.innerHTML = '<option value="todos">Todos los ejecutivos</option><option value="__sin__">Sin asignar / Libres</option>' + execArr.map(geloEsc).map(e => `<option value="${e}">${e}</option>`).join('');
@@ -1982,7 +2018,7 @@
       else if (execF !== 'todos') filtered = filtered.filter(t => normKey(t.ejecutivo) === normKey(execF));
     }
     
-    let foraneas = 0; filtered.forEach(t => { if(t.status !== 'Eliminado' && t.status !== 'Completado' && t.status !== 'Expediente' && t.aduana !== 'Monterrey') foraneas++; });
+    let foraneas = 0; filtered.forEach(t => { if(t.status !== 'Eliminado' && t.status !== 'Completado' && t.status !== 'Expediente' && t.aduana !== aduanaPrincipal()) foraneas++; });
     document.getElementById('foraneasCount').textContent = `Aduanas Foráneas: ${foraneas}`;
     
     if (currentFilter === 'papelera') { filtered = filtered.filter(t => t.status === 'Eliminado'); } 
@@ -2026,7 +2062,7 @@
     });
     currentFilteredTasks = filtered;
 
-    bannerHtml = expeditoLoteHtml(filtered) + bannerHtml;
+    bannerHtml = avisoAduanasHtml() + expeditoLoteHtml(filtered) + bannerHtml;
     if (filtered.length === 0) { rowsEl.innerHTML = bannerHtml + '<div class="empty-state">No hay operaciones con estos filtros.</div>'; }
     else {
       rowsEl.innerHTML = bannerHtml + filtered.map(t => { t = escObj(t);
@@ -2385,7 +2421,7 @@
     const cli = clientesCatalogo.find(c => normKey(c.nombre) === normKey(d.cliente));
     return {
       ref: '', cliente: cli ? cli.nombre : d.cliente.toUpperCase(), cliente_id: cli ? cli.id : null,
-      aduana: 'Monterrey', depto: 'Aéreo', tipo: 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
+      aduana: aduanaPrincipal(), depto: 'Aéreo', tipo: 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
       ejecutivo: d.ejecutivo || currentUser, enlace: '', notas: '',
       guia: d.guia.trim(), almacen: (d.almacen || '').toUpperCase(), eta: d.eta || '',
       estatusTramite: d.estatus || '', estatusTramitePor: d.estatus ? currentUser : null, estatusTramiteEn: d.estatus ? new Date().toISOString() : null,
@@ -2531,7 +2567,7 @@
     const asignarA = isLibreCat(c) ? currentUser : c.ejecutivoAsignado;
     if (!confirm(`¿Convertir "${c.ref}" en un pendiente activo asignado a ${asignarA}?`)) return;
     set(push(ref(db, P('pendientes'))), {
-      ref: c.ref, cliente: c.cliente || '', aduana: c.aduana || 'Monterrey', depto: c.depto || 'Aéreo',
+      ref: c.ref, cliente: c.cliente || '', aduana: c.aduana || aduanaPrincipal(), depto: c.depto || 'Aéreo',
       tipo: c.tipo || 'Importación', prioridad: 'Media', status: 'Pendiente', limite: null,
       ejecutivo: asignarA, enlace: '', notas: c.notas || '', lastModifiedBy: currentUser
     }).then(() => { remove(ref(db, P('catalogo/') + catId)); touchRef(c.ref); playSparkle(document.getElementById('takePedimentoBtn')); });
@@ -2549,14 +2585,14 @@
 
     if (search) merged = merged.filter(m => (m.ref || '').toLowerCase().includes(search) || (m.cliente || '').toLowerCase().includes(search));
 
-    const mty = merged.filter(m => m.aduana === 'Monterrey');
-    const lrd = merged.filter(m => m.aduana === 'Laredo');
-    const otras = merged.filter(m => m.aduana !== 'Monterrey' && m.aduana !== 'Laredo');
-
+    const grupos = ADUANAS.map(a => ({ a, lista: merged.filter(m => m.aduana === a.nombre) }));
+    const otras = merged.filter(m => !ADUANAS.some(a => a.nombre === m.aduana));
+    if (!generalAduanaFilter) generalAduanaFilter = ADUANAS.length ? ADUANAS[0].nombre : 'todas';
+    const grupoSel = grupos.find(g => g.a.nombre === generalAduanaFilter);
     let listaActual;
-    if (generalAduanaFilter === 'Monterrey') listaActual = mty;
-    else if (generalAduanaFilter === 'Laredo') listaActual = lrd;
-    else listaActual = [...mty, ...lrd, ...otras];
+    if (grupoSel) listaActual = grupoSel.lista;
+    else if (generalAduanaFilter === '__otras') listaActual = otras;
+    else listaActual = [...grupos.flatMap(g => g.lista), ...otras];
     
     listaActual = [...listaActual].sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
 
@@ -2567,8 +2603,8 @@
 
     const botones = `
       <div style="display:flex; gap:8px; padding:14px 30px 4px; flex-wrap:wrap; align-items:center;">
-        <button class="btn-mini${generalAduanaFilter === 'Monterrey' ? ' active-toggle' : ''}" data-general-aduana="Monterrey">🏢 Monterrey (${mty.length})</button>
-        <button class="btn-mini${generalAduanaFilter === 'Laredo' ? ' active-toggle' : ''}" data-general-aduana="Laredo">🚚 Nuevo Laredo (${lrd.length})</button>
+        ${grupos.map(g => `<button class="btn-mini${generalAduanaFilter === g.a.nombre ? ' active-toggle' : ''}" data-general-aduana="${geloEsc(g.a.nombre)}">🏢 ${geloEsc(g.a.etiqueta)} (${g.lista.length})</button>`).join('')}
+        ${otras.length ? `<button class="btn-mini${generalAduanaFilter === '__otras' ? ' active-toggle' : ''}" data-general-aduana="__otras">Otras (${otras.length})</button>` : ''}
         <button class="btn-mini${generalAduanaFilter === 'todas' ? ' active-toggle' : ''}" data-general-aduana="todas">📊 Ver todo</button>
       </div>`;
 
@@ -2759,12 +2795,11 @@
   function closeAduanaChoice() { aduanaChoiceOverlay.classList.remove('open'); pendingTakeAction = null; }
   document.getElementById('cancelAduanaChoiceBtn').addEventListener('click', closeAduanaChoice);
   aduanaChoiceOverlay.addEventListener('click', (e) => { if (e.target === aduanaChoiceOverlay) closeAduanaChoice(); });
-  document.getElementById('choiceMonterreyBtn').addEventListener('click', () => { const action = pendingTakeAction; closeAduanaChoice(); if (action === 'single') runTakeSingle('Monterrey'); else if (action === 'batch') runTakeBatch('Monterrey'); });
-  document.getElementById('choiceLaredoBtn').addEventListener('click', () => { const action = pendingTakeAction; closeAduanaChoice(); if (action === 'single') runTakeSingle('Laredo'); else if (action === 'batch') runTakeBatch('Laredo'); });
+  document.getElementById('aduanaChoiceBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-aduana-elegir]'); if (!b) return; const ad = b.getAttribute('data-aduana-elegir'); const action = pendingTakeAction; closeAduanaChoice(); if (action === 'single') runTakeSingle(ad); else if (action === 'batch') runTakeBatch(ad); });
 
   function runTakeBatch(aduana) {
     let libres = catalogo.filter(c => isLibreCat(c) && extractConsecutivo(c.ref) >= corteLibres(aduana) && c.aduana === aduana);
-    if (libres.length === 0) { alert(`No hay libres de ${aduana}.`); return; }
+    if (libres.length === 0) { alert(`No hay libres de ${aduanaEtiqueta(aduana)}.`); return; }
     const cantidadInput = prompt(`Hay ${libres.length} libres.\n¿Cuántos tomas?`, "100");
     if (!cantidadInput) return;
     const cantidad = parseInt(cantidadInput, 10);
@@ -2827,21 +2862,49 @@
     if (!confirm(`Se moverán ${candidatos.length} pedimento(s) al catálogo.`)) return;
     let moved = 0;
     candidatos.forEach(t => {
-      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || 'Monterrey', depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
+      set(push(catalogoRef), { ref: t.ref || '', cliente: t.cliente || '', cliente_id: t.cliente_id || null, aduana: t.aduana || aduanaPrincipal(), depto: t.depto || 'Aéreo', tipo: t.tipo || 'Importación', ejecutivoAsignado: t.ejecutivo || '', notas: t.notas || '', importadoPor: currentUser, importadoEn: new Date().toISOString() });
       remove(ref(db, P('pendientes/') + t.id)); moved++;
     });
     alert(`Listo: se movieron ${moved} pedimentos.`);
   });
 
-  document.getElementById('setCorteMtyBtn').addEventListener('click', () => {
-    const nuevo = prompt('¿Corte libres Monterrey?', corteLibresPorAduana.Monterrey);
-    if (nuevo !== null && !isNaN(parseInt(nuevo.replace(/\D/g, ''), 10))) update(configRef, { corteMonterrey: parseInt(nuevo.replace(/\D/g, ''), 10) });
+  // ===== Panel "🏢 Aduanas y cortes" (admin): agregar, ordenar, quitar; se guarda en config/aduanas =====
+  let aduanasEdit = [];
+  const aduanasLista = document.getElementById('aduanasLista'), aduanasMsg = document.getElementById('aduanasMsg');
+  function pintarAduanasEdit() {
+    aduanasLista.innerHTML = `<div class="aduana-fila aduana-head"><span>Nombre</span><span>Cómo se muestra</span><span>Corte de libres</span><span>Otros nombres</span><span></span></div>` +
+      aduanasEdit.map((a, i) => `<div class="aduana-fila">
+        <input data-i="${i}" data-k="nombre" value="${geloEsc(a.nombre)}" placeholder="p. ej. Manzanillo" ${a.nueva ? '' : 'readonly title="Ya lo usan tus pendientes: cambia mejor cómo se muestra"'}>
+        <input data-i="${i}" data-k="etiqueta" value="${geloEsc(a.etiqueta)}" placeholder="igual que el nombre">
+        <input data-i="${i}" data-k="corte" value="${a.corte || ''}" placeholder="0 = todos" inputmode="numeric">
+        <input data-i="${i}" data-k="alias" value="${geloEsc(a.alias)}" placeholder="mzo, manzanillo">
+        <span class="acc"><button class="icon-btn" data-mover="-1" data-i="${i}" title="Subir">▲</button><button class="icon-btn" data-mover="1" data-i="${i}" title="Bajar">▼</button><button class="icon-btn del" data-quitar="${i}" title="Quitar">✖</button></span>
+      </div>`).join('') + (aduanasEdit.length ? `<div style="font-size:11px;color:var(--text-sub);margin-top:2px">⭐ Principal: <b>${geloEsc(aduanasEdit[0].etiqueta || aduanasEdit[0].nombre || '—')}</b></div>` : '');
+  }
+  function abrirAduanas() {
+    aduanasEdit = ADUANAS.map(a => ({ ...a, nueva: false }));
+    if (!aduanasEdit.length) aduanasEdit.push({ id: null, nombre: '', etiqueta: '', corte: 0, alias: '', nueva: true });
+    aduanasMsg.textContent = ''; pintarAduanasEdit(); document.getElementById('aduanasOverlay').classList.add('open');
+  }
+  document.getElementById('aduanasBtn').addEventListener('click', abrirAduanas);
+  document.getElementById('aduanasCerrarBtn').addEventListener('click', () => document.getElementById('aduanasOverlay').classList.remove('open'));
+  document.getElementById('aduanaAgregarBtn').addEventListener('click', () => { aduanasEdit.push({ id: null, nombre: '', etiqueta: '', corte: 0, alias: '', nueva: true }); pintarAduanasEdit(); const ins = aduanasLista.querySelectorAll('input[data-k="nombre"]'); if (ins.length) ins[ins.length - 1].focus(); });
+  aduanasLista.addEventListener('input', (e) => { const i = e.target.getAttribute('data-i'), k = e.target.getAttribute('data-k'); if (i === null || !k) return; aduanasEdit[i][k] = k === 'corte' ? (parseInt(String(e.target.value).replace(/\D/g, ''), 10) || 0) : e.target.value; });
+  aduanasLista.addEventListener('click', (e) => {
+    const m = e.target.closest('[data-mover]'), q = e.target.closest('[data-quitar]');
+    if (m) { const i = +m.getAttribute('data-i'), j = i + (+m.getAttribute('data-mover')); if (j < 0 || j >= aduanasEdit.length) return; [aduanasEdit[i], aduanasEdit[j]] = [aduanasEdit[j], aduanasEdit[i]]; pintarAduanasEdit(); }
+    if (q) { const i = +q.getAttribute('data-quitar'), a = aduanasEdit[i]; const usan = a.nombre ? tasks.filter(x => x.aduana === a.nombre && x.status !== 'Eliminado').length + catalogo.filter(x => x.aduana === a.nombre).length : 0;
+      if (usan && !confirm(`${usan} pendiente(s) o pedimento(s) del catálogo usan "${a.nombre}". Se quedan como están, pero ya no aparecerá en las listas. ¿La quito?`)) return;
+      aduanasEdit.splice(i, 1); pintarAduanasEdit(); }
   });
-  document.getElementById('setCorteLrdBtn').addEventListener('click', () => {
-    const nuevo = prompt('¿Corte libres Nuevo Laredo?', corteLibresPorAduana.Laredo);
-    if (nuevo !== null && !isNaN(parseInt(nuevo.replace(/\D/g, ''), 10))) update(configRef, { corteLaredo: parseInt(nuevo.replace(/\D/g, ''), 10) });
+  document.getElementById('aduanasGuardarBtn').addEventListener('click', async () => {
+    const lista = aduanasEdit.map(a => ({ ...a, nombre: String(a.nombre || '').trim(), etiqueta: String(a.etiqueta || '').trim(), alias: String(a.alias || '').trim() })).filter(a => a.nombre || a.etiqueta);
+    if (lista.some(a => !a.nombre)) { aduanasMsg.style.color = 'var(--red)'; aduanasMsg.textContent = 'Cada aduana necesita su nombre.'; return; }
+    const vistos = new Set(); for (const a of lista) { const k = normKey(a.nombre); if (vistos.has(k)) { aduanasMsg.style.color = 'var(--red)'; aduanasMsg.textContent = `"${a.nombre}" está dos veces.`; return; } vistos.add(k); }
+    const obj = {}; lista.forEach((a, i) => { const id = a.id || push(ref(db, P('config/aduanas'))).key; obj[id] = { nombre: a.nombre, etiqueta: a.etiqueta || a.nombre, corte: Number(a.corte) || 0, alias: a.alias, orden: i }; });
+    try { await set(ref(db, P('config/aduanas')), obj); aduanasMsg.style.color = 'var(--green)'; aduanasMsg.textContent = '✔ Guardado. Ya se usan en el formulario, libres, vista general y Gelo.'; generalAduanaFilter = null; aduanasEdit = aduanasEdit.map(a => ({ ...a, nueva: false })); setTimeout(() => document.getElementById('aduanasOverlay').classList.remove('open'), 900); }
+    catch (err) { aduanasMsg.style.color = 'var(--red)'; aduanasMsg.textContent = 'No se pudo guardar: ' + (err.code || err.message); }
   });
-
   document.getElementById('uploadLayoutBtn').addEventListener('click', () => document.getElementById('layoutFileInput').click());
   document.getElementById('layoutFileInput').addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -2863,7 +2926,7 @@
             if (row['FORMA DE PAGO']) notasExtra.push(`Pago: ${row['FORMA DE PAGO']}`);
             if (row['FACTURACIÓN']) notasExtra.push(`Fact: ${row['FACTURACIÓN']}`);
             set(push(catalogoRef), {
-              ref: refFinal, cliente: (row['CLIENTE'] || '').toString().trim(), aduana: sheetName.toUpperCase() === 'NUEVO LAREDO' ? 'Laredo' : 'Monterrey', depto: 'Aéreo',
+              ref: refFinal, cliente: (row['CLIENTE'] || '').toString().trim(), aduana: aduanaPorTexto(sheetName) || aduanaPrincipal(), depto: 'Aéreo',
               tipo: tipoOp, ejecutivoAsignado: (row['EJECUTIVO '] || row['EJECUTIVO'] || '').toString().trim(), notas: notasExtra.join(' | '), importadoPor: currentUser, importadoEn: new Date().toISOString()
             });
             count++;
@@ -2892,7 +2955,7 @@
   fCorresponsal.addEventListener('change', () => { document.getElementById('wrap-corresponsalia').style.display = fCorresponsal.checked ? 'block' : 'none'; });
 
   window.openModal = function(id) {
-    editingId = id || null;
+    editingId = id || null; llenarSugerencias();
     document.getElementById('modalTitle').textContent = id ? 'Editar Pedimento' : 'Nuevo Pendiente';
     document.querySelectorAll('#modalOverlay input[type="text"], #modalOverlay input[type="date"], #modalOverlay input[type="datetime-local"], #modalOverlay input[type="number"], #modalOverlay input[type="hidden"]').forEach(el => el.value = '');
     
@@ -2905,7 +2968,7 @@
       document.getElementById('f-patente').value = t.patente || '';
       document.getElementById('f-cliente').value = t.cliente || '';
       document.getElementById('f-cliente-id').value = t.cliente_id || '';
-      document.getElementById('f-aduana').value = t.aduana || 'Laredo';
+      setAduanaSelect(t.aduana || aduanaPrincipal());
       fDepto.value = t.depto || 'Terrestre';
       document.getElementById('f-tipo').value = t.tipo || 'Importación';
       document.getElementById('f-prioridad').value = t.prioridad || 'Media';
@@ -2951,7 +3014,7 @@
       document.getElementById('d-aduanaCorr').value = t.aduanaCorr || '';
       document.getElementById('d-claveC').value = t.claveC || '';
     } else {
-      document.getElementById('f-aduana').value = 'Monterrey';
+      setAduanaSelect(aduanaPrincipal());
       fDepto.value = 'Aéreo';
       document.getElementById('f-prioridad').value = 'Media';
       document.getElementById('f-status').value = 'Pendiente';
@@ -3005,6 +3068,10 @@
       eta: etaValue, lastModifiedBy: currentUser
     };
     
+    if (puedeAgregarCatalogo() && data.cliente && !clientesCatalogo.some(c => normKey(c.nombre) === normKey(data.cliente)) && confirm(`«${data.cliente}» no está en tu catálogo de clientes. ¿Lo agrego para que salga en la lista la próxima vez?`)) {
+      const nc = push(clientesRef); set(nc, { nombre: data.cliente, razonSocial: '', rfc: '', fechaRegistro: Date.now(), registradoPor: currentUser }); data.cliente_id = nc.key; }
+    if (puedeAgregarCatalogo() && data.isCorresponsal && data.corresponsal && !corresponsalesCatalogo.some(c => normKey(c.nombre) === normKey(data.corresponsal)) && confirm(`«${data.corresponsal}» no está en tu catálogo de corresponsales. ¿Lo agrego?`))
+      set(push(corresponsalesRef), { nombre: data.corresponsal, ciudad: '', fechaRegistro: Date.now(), registradoPor: currentUser });
     if (editingId) update(ref(db, P('pendientes/') + editingId), data);
     else set(push(ref(db, P('pendientes'))), data);
     
@@ -3016,55 +3083,92 @@
   const fClienteIdInput = document.getElementById('f-cliente-id');
   const autoList = document.getElementById('cliente-autocomplete-list');
 
-  fClienteInput.addEventListener('input', function() {
-      const val = this.value;
-      autoList.innerHTML = '';
-      fClienteIdInput.value = '';
-      if (!val) { autoList.style.display = 'none'; return; }
-      const valLower = val.toLowerCase();
-      const matches = clientesCatalogo.filter(c => (c.nombre || '').toLowerCase().includes(valLower) || (c.rfc || '').toLowerCase().includes(valLower));
-      if (matches.length > 0) {
-          autoList.style.display = 'block';
-          matches.forEach(c => {
-              const div = document.createElement('div');
-              div.className = 'autocomplete-item';
-              div.innerHTML = `<div><strong>${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.rfc || 'Sin RFC')}</span></div>`;
-              div.addEventListener('click', () => {
-                  fClienteInput.value = c.nombre;
-                  fClienteIdInput.value = c.id;
-                  autoList.style.display = 'none';
-              });
-              autoList.appendChild(div);
-          });
-      } else { autoList.style.display = 'none'; }
-  });
+  // ===== Agregar sin salir del formulario: clientes, corresponsales, ejecutivos y aduanas nuevos =====
+  function puedeAgregarCatalogo() { return !!(currentUserProfile && !['cliente', 'corresponsal'].includes(currentUserProfile.rol)); }
+  function itemNuevo(texto, alClic) { const d = document.createElement('div'); d.className = 'autocomplete-item autocomplete-nuevo'; d.innerHTML = `<div><strong>➕ ${texto}</strong></div>`; d.addEventListener('click', alClic); return d; }
+  function mostrarClientes() {
+    const val = fClienteInput.value, q = val.trim().toLowerCase(); autoList.innerHTML = '';
+    clientesCatalogo.filter(c => !q || (c.nombre || '').toLowerCase().includes(q) || (c.rfc || '').toLowerCase().includes(q))
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')).slice(0, 40).forEach(c => {
+        const div = document.createElement('div'); div.className = 'autocomplete-item';
+        div.innerHTML = `<div><strong>${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.rfc || 'Sin RFC')}</span></div>`;
+        div.addEventListener('click', () => { fClienteInput.value = c.nombre; fClienteIdInput.value = c.id; autoList.style.display = 'none'; });
+        autoList.appendChild(div);
+      });
+    if (q && puedeAgregarCatalogo() && !clientesCatalogo.some(c => normKey(c.nombre) === normKey(val))) autoList.appendChild(itemNuevo(`Agregar «${geloEsc(val.trim())}» como cliente nuevo`, () => agregarClienteRapido(val.trim())));
+    autoList.style.display = autoList.children.length ? 'block' : 'none';
+  }
+  async function agregarClienteRapido(nombre) {
+    autoList.style.display = 'none';
+    const rfc = prompt(`RFC de ${nombre} (opcional, puedes dejarlo vacío):`, '');
+    if (rfc === null) return;
+    const nuevo = push(clientesRef);
+    try { await set(nuevo, { nombre, razonSocial: '', rfc: rfc.trim().toUpperCase(), fechaRegistro: Date.now(), registradoPor: currentUser }); fClienteInput.value = nombre; fClienteIdInput.value = nuevo.key; }
+    catch (err) { alert('No se pudo agregar el cliente: ' + (err.code || err.message)); }
+  }
+  fClienteInput.addEventListener('input', () => { fClienteIdInput.value = ''; mostrarClientes(); });
+  fClienteInput.addEventListener('focus', mostrarClientes);
 
   const dCorresponsalInput = document.getElementById('d-corresponsal');
   const correspAutoList = document.getElementById('corresp-autocomplete-list');
-
-  if (dCorresponsalInput && correspAutoList) {
-      dCorresponsalInput.addEventListener('input', function() {
-          const val = this.value;
-          correspAutoList.innerHTML = '';
-          if (!val) { correspAutoList.style.display = 'none'; return; }
-          const valLower = val.toLowerCase();
-          const matches = corresponsalesCatalogo.filter(c => (c.nombre || '').toLowerCase().includes(valLower) || (c.ciudad || '').toLowerCase().includes(valLower));
-          if (matches.length > 0) {
-              correspAutoList.style.display = 'block';
-              matches.forEach(c => {
-                  const div = document.createElement('div');
-                  div.className = 'autocomplete-item';
-                  div.innerHTML = `<div><strong style="color:var(--amber);">${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.ciudad || 'Genérico')}</span></div>`;
-                  div.addEventListener('click', () => {
-                      dCorresponsalInput.value = c.nombre;
-                      correspAutoList.style.display = 'none';
-                  });
-                  correspAutoList.appendChild(div);
-              });
-          } else { correspAutoList.style.display = 'none'; }
+  function mostrarCorresponsales() {
+    const val = dCorresponsalInput.value, q = val.trim().toLowerCase(); correspAutoList.innerHTML = '';
+    corresponsalesCatalogo.filter(c => !q || (c.nombre || '').toLowerCase().includes(q) || (c.ciudad || '').toLowerCase().includes(q))
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')).slice(0, 40).forEach(c => {
+        const div = document.createElement('div'); div.className = 'autocomplete-item';
+        div.innerHTML = `<div><strong style="color:var(--amber);">${geloEsc(c.nombre)}</strong><br><span style="font-size:10px; color:var(--text-sub);">${geloEsc(c.ciudad || 'Genérico')}</span></div>`;
+        div.addEventListener('click', () => { dCorresponsalInput.value = c.nombre; correspAutoList.style.display = 'none'; });
+        correspAutoList.appendChild(div);
       });
+    if (q && puedeAgregarCatalogo() && !corresponsalesCatalogo.some(c => normKey(c.nombre) === normKey(val))) correspAutoList.appendChild(itemNuevo(`Agregar «${geloEsc(val.trim())}» como corresponsal nuevo`, () => agregarCorresponsalRapido(val.trim())));
+    correspAutoList.style.display = correspAutoList.children.length ? 'block' : 'none';
   }
+  async function agregarCorresponsalRapido(nombre) {
+    correspAutoList.style.display = 'none';
+    const ciudad = prompt(`Ciudad de ${nombre} (opcional):`, '');
+    if (ciudad === null) return;
+    try { await set(push(corresponsalesRef), { nombre, ciudad: ciudad.trim(), fechaRegistro: Date.now(), registradoPor: currentUser }); dCorresponsalInput.value = nombre; }
+    catch (err) { alert('No se pudo agregar el corresponsal: ' + (err.code || err.message)); }
+  }
+  if (dCorresponsalInput && correspAutoList) { dCorresponsalInput.addEventListener('input', mostrarCorresponsales); dCorresponsalInput.addEventListener('focus', mostrarCorresponsales); }
 
+  // ejecutivo nuevo desde la lista del formulario
+  document.getElementById('f-ejecutivo').addEventListener('change', async (e) => {
+    const sel = e.target; if (sel.value !== '__nuevo__') return;
+    const n = (prompt('Nombre del ejecutivo nuevo:') || '').trim();
+    if (!n) { sel.value = ''; return; }
+    const ya = executives.find(x => normKey(x.nombre) === normKey(n)); const nombre = ya ? ya.nombre : n;
+    if (!ya) { try { await push(execRef, n); } catch (err) { alert('No se pudo agregar: ' + (err.code || err.message)); sel.value = ''; return; } }
+    if (![...sel.options].some(o => o.value === nombre)) { const o = document.createElement('option'); o.value = nombre; o.textContent = nombre; sel.insertBefore(o, sel.querySelector('option[value="__nuevo__"]')); }
+    sel.value = nombre;
+  });
+  // aduana nueva desde la lista del formulario (si A&C aún usa Monterrey/Laredo de respaldo, se guardan también)
+  document.getElementById('f-aduana').addEventListener('change', async (e) => {
+    if (e.target.value !== '__nueva__') return;
+    const n = (prompt('Nombre de la aduana nueva (p. ej. Manzanillo):') || '').trim();
+    if (!n) { setAduanaSelect(aduanaPrincipal()); return; }
+    const ya = ADUANAS.find(a => normKey(a.nombre) === normKey(n) || normKey(a.etiqueta) === normKey(n));
+    if (!ya) {
+      const id = push(ref(db, P('config/aduanas'))).key, nueva = { nombre: n, etiqueta: n, corte: 0, alias: '', orden: ADUANAS.length };
+      try {
+        if (aduanasGuardadas) await set(ref(db, P('config/aduanas/') + id), nueva);
+        else { const obj = {}; ADUANAS.forEach((a, i) => { obj[a.id] = { nombre: a.nombre, etiqueta: a.etiqueta, corte: a.corte, alias: a.alias, orden: i }; }); obj[id] = nueva; await set(ref(db, P('config/aduanas')), obj); }
+      } catch (err) { alert('No se pudo agregar la aduana: ' + (err.code || err.message)); setAduanaSelect(aduanaPrincipal()); return; }
+    }
+    setAduanaSelect(ya ? ya.nombre : n);
+  });
+
+  // sugerencias con lo que ya se escribió en otros pendientes (aerolínea, almacén, naviera…)
+  const CAMPOS_SUGERIDOS = { 'd-aerolinea': 'aerolinea', 'd-almacen': 'almacen', 'd-naviera': 'naviera', 'd-terminal': 'terminal', 'd-linea': 'lineaTransportista', 'd-transfer': 'transfer', 'd-transfiere': 'empresaTransfiere', 'd-aduanaCorr': 'aduanaCorr', 'f-patente': 'patente' };
+  function llenarSugerencias() {
+    for (const [idCampo, campo] of Object.entries(CAMPOS_SUGERIDOS)) {
+      const inp = document.getElementById(idCampo); if (!inp) continue;
+      const idLista = 'dl-' + campo; let dl = document.getElementById(idLista);
+      if (!dl) { dl = document.createElement('datalist'); dl.id = idLista; document.body.appendChild(dl); inp.setAttribute('list', idLista); inp.setAttribute('autocomplete', 'off'); }
+      const vistos = new Map(); tasks.forEach(x => { const v = String(x[campo] || '').trim(); if (v && !vistos.has(normKey(v))) vistos.set(normKey(v), v); });
+      dl.innerHTML = [...vistos.values()].sort((a, b) => a.localeCompare(b)).slice(0, 300).map(v => `<option value="${geloEsc(v)}">`).join('');
+    }
+  }
   document.addEventListener('click', (e) => {
       if (e.target !== fClienteInput) autoList.style.display = 'none';
       if (dCorresponsalInput && e.target !== dCorresponsalInput && correspAutoList) correspAutoList.style.display = 'none';
@@ -3570,8 +3674,8 @@
     if (!m) return null;
     const palabras = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, diez: 10 };
     const cantidad = m[1] ? (palabras[m[1]] || parseInt(m[1], 10)) : 1;
-    const aduana = /laredo|nuevo laredo|nld/.test(m[2]) ? 'Laredo' : /monterrey|mty/.test(m[2]) ? 'Monterrey' : null;
-    if (!aduana) return `¿De qué aduana? Escribe "dame ${cantidad} libre${cantidad > 1 ? 's' : ''} de Monterrey" o "… de Laredo".`;
+    const aduana = aduanaPorTexto(m[2]);
+    if (!aduana) return ADUANAS.length ? `¿De qué aduana? Escribe "dame ${cantidad} libre${cantidad > 1 ? 's' : ''} de ${geloEsc(ADUANAS[0].etiqueta)}"${ADUANAS[1] ? ' o "… de ' + geloEsc(ADUANAS[1].etiqueta) + '"' : ''}.` : 'Primero hay que dar de alta las aduanas (🏢 Aduanas y cortes).';
     if (cantidad < 1 || cantidad > 50) return 'Puedo tomar de 1 a 50 libres a la vez 🙂';
     const libres = catalogo.filter(c => isLibreCat(c) && extractConsecutivo(c.ref) >= corteLibres(aduana) && c.aduana === aduana)
       .sort((a, b) => extractConsecutivo(a.ref) - extractConsecutivo(b.ref));
@@ -3928,7 +4032,7 @@
     if (/^(hola|buen[oa]s|hey|que onda|qué onda|saludos)/.test(q)) return `¡Hola, ${geloEsc((currentUser || '').split(' ')[0])}! 🍮 ` + geloResumenCorto();
     if (/(gracias|thank)/.test(q)) return '¡De nada! Aquí sigo tambaleándome por si me necesitas 💛';
     if (/(ayuda|que puedes|qué puedes|help|comandos)/.test(q)) {
-      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de Monterrey"\n• "Ponle pendiente previo a la guía 877546120242" / "guías sin estatus"\n• "¿Qué tiene Laura?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
+      return 'Puedo ayudarte con:\n• "¿Qué tengo pendiente?"\n• "¿Qué está retrasado?"\n• "¿Qué vence hoy?" / "mañana"\n• "Mis tareas"\n• "Busca 3001234" (ref, guía, BL, cliente…)\n• "Marca AYC26-7929 como completado"\n• "Pasa 3001234 a en proceso" / "archiva 3001234"\n• "Completa la tarea llamar agente"\n• "Recuérdame llamar a DECKAMMEX a las 4" / "en 30 min" / "mañana a las 9"\n• "Anota en AYC26-7929: falta factura"\n• "Activa notificaciones de Windows"\n• "Deshaz" (revierte lo último que hice)\n• "Dame 3 libres de (tu aduana)"\n• "Ponle pendiente previo a la guía 877546120242" / "guías sin estatus"\n• "¿Qué tiene Laura?" / "¿Quién tiene más retrasados?" / "¿Quién tiene el MNZ2814?"\n• 🎤 para dictarme y 🔈 para que te conteste en voz alta\n• "Cambia la voz" / "voz más aguda" / "habla más lento"\n• Te aviso 1 hora antes de que se venza un pedimento tuyo\n• "Cliente ACME"\n• "Resumen"\n• "Recuérdame cada 15 min" / "silencio" / "activa recordatorios"' + (geloIsAdmin() ? '\n• Agrega "del equipo" para ver de todos (admin).' : '');
     }
     if ((m = q.match(/cada\s+(\d+)\s*(min|minutos|h|hora|horas)?/))) {
       let n = parseInt(m[1], 10); if (m[2] && m[2].startsWith('h')) n *= 60;
