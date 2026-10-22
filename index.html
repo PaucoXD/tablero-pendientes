@@ -1023,7 +1023,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue as onValueFb, set, push, remove, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue as onValueFb, set, push, remove, update, query, orderByChild, equalTo, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -1164,6 +1164,7 @@
   }
   if (EXPEDITO) EXPEDITO.addEventListener('message', (ev) => {
     const m = ev.data || {};
+    if (m.tipo === 'previoRes') { previoRespuesta(m); return; }
     if (m.tipo === 'rechazo') { (m.ids || []).forEach(i => delete expeditoEstado[i]); render(); alert(m.motivo); return; }
     if (!m.id) return;
     const e = expeditoEstado[m.id] || (expeditoEstado[m.id] = {});
@@ -1177,6 +1178,49 @@
     update(ref(db, P('pendientes/') + m.id), datos);
     push(ref(db, P(`pendientes/${m.id}/chat`)), { texto: `⚙️ Expedito (${m.pc || 'PC'}): ${m.estado}${m.falta ? ' · falta ' + m.falta : ''}${m.resultado ? ' · ' + m.resultado : ''}`, usuario: 'Expedito', timestamp: Date.now() });
   });
+  // ---------- previos de la tablet (previo.html) ----------
+  // Solo el Expedito de la PC que los recibe (?previos=1, con su sesión): toma cada previo 'enviado' (transacción: si
+  // hay dos PCs, solo una lo toma), le pasa las fotos a Expedito una por una como texto y luego los datos. Expedito los
+  // guarda en la carpeta del pedimento y contesta previoRes; aquí se marca 'guardado' y se borran las fotos de Firebase.
+  // Sin carpeta todavía, sin pedimento o fotos incompletas: se vuelve a intentar cada 10 min; 'tomado' viejo (la PC se
+  // cerró a la mitad) a los 15 min.
+  const PREVIOS_PC = (EXPEDITO && empParams.get('previos') === '1') ? (empParams.get('pc') || 'PC') : null;
+  let previosCache = {}, previoEnCurso = null;
+  function previoListo(p) {
+    if (!p || !p.datos) return false;
+    const hace = (x) => Date.now() - (Date.parse(x || 0) || 0);
+    return p.estado === 'enviado' || (['sincarpeta', 'fotos'].includes(p.estado) && hace(p.intento) > 10 * 60000) || (p.estado === 'tomado' && hace(p.tomado) > 15 * 60000);
+  }
+  async function revisarPrevios() {
+    if (!PREVIOS_PC || previoEnCurso || !currentUserProfile || ['cliente', 'corresponsal'].includes(currentUserProfile.rol)) return;
+    const sig = Object.keys(previosCache).find(id => previoListo(previosCache[id])); if (!sig) return;
+    previoEnCurso = sig;
+    try {
+      const tr = await runTransaction(ref(db, P('previos/') + sig), (cur) => { if (!cur || !previoListo(cur)) return; cur.estado = 'tomado'; cur.tomado = new Date().toISOString(); cur.pc = PREVIOS_PC; return cur; });
+      if (!tr.committed) { previoEnCurso = null; return; }
+      const p = tr.snapshot.val();
+      const fotos = (await get(ref(db, P('previos_fotos/') + sig))).val() || {};
+      const claves = Object.keys(fotos).sort((a, b) => Number(a) - Number(b));
+      claves.forEach((k, i) => EXPEDITO.postMessage(`PREVIOFOTO|${sig}|${i + 1}|${fotos[k]}`));
+      EXPEDITO.postMessage({ tipo: 'previo', id: sig, datos: p.datos, fotos: claves.length });
+      setTimeout(() => { if (previoEnCurso === sig) previoEnCurso = null; }, 5 * 60000);   // sin respuesta: lo suelta (lo retoma a los 15 min)
+    } catch (e) { console.warn('previo', e); previoEnCurso = null; }
+  }
+  function previoRespuesta(m) {
+    const ahora = new Date().toISOString(), p = previosCache[m.id] || {};
+    if (m.ok) {
+      update(ref(db, P('previos/') + m.id), { estado: 'guardado', guardado: ahora, carpeta: m.carpeta || '', archivos: m.archivos || [], motivo: null });
+      remove(ref(db, P('previos_fotos/') + m.id));
+      if (p.pendienteId) {
+        update(ref(db, P('pendientes/') + p.pendienteId), { previo: { estado: 'guardado', en: ahora, por: (p.datos && p.datos.realizo) || '', fotos: Math.max(0, (m.archivos || []).length - 1) } });
+        push(ref(db, P(`pendientes/${p.pendienteId}/chat`)), { texto: `📷 Previo guardado en ${m.carpeta} (${(m.archivos || []).length - 1} foto(s)) · ${PREVIOS_PC}`, usuario: 'Expedito', timestamp: Date.now() });
+      }
+    } else {
+      update(ref(db, P('previos/') + m.id), { estado: m.codigo === 'error' ? 'error' : (m.codigo === 'fotos' ? 'fotos' : 'sincarpeta'), motivo: m.motivo || '', intento: ahora });
+    }
+    previoEnCurso = null; setTimeout(revisarPrevios, 1500);
+  }
+  if (PREVIOS_PC) { onValue(ref(db, P('previos')), (snap) => { previosCache = snap.val() || {}; revisarPrevios(); }); setInterval(revisarPrevios, 60000); }
   function isGirlyTheme() { return (document.documentElement.getAttribute('data-theme') || '').includes('girly'); }
   function playSparkle(anchorEl) {
     if (!isGirlyTheme()) return;

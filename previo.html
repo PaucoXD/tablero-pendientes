@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e3a8a">
+<title>Previo · Tablero</title>
+<!-- Expedito — © 2026 Paulo Castañeda. Previo desde la tablet o el celular (formato FAYC-0012).
+     Los datos y las fotos (achicadas) van a Firebase; el Expedito de la PC que recibe los previos los guarda en la
+     carpeta del pedimento (PREV_<ref>.pdf y PREV_<ref>_NN.jpg) y borra las fotos de Firebase. -->
+<style>
+  :root { --azul: #1e3a8a; --azul2: #2563eb; --fondo: #eef2f7; --texto: #1f2937; --gris: #6b7280; --linea: #d7dee8; --verde: #16a34a; --rojo: #dc2626; --amar: #b45309 }
+  * { box-sizing: border-box }
+  body { margin: 0; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; background: var(--fondo); color: var(--texto); font-size: 16px; -webkit-text-size-adjust: 100% }
+  header { background: var(--azul); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5 }
+  header h1 { font-size: 18px; margin: 0; flex: 1 } header button { background: transparent; color: #c7d2fe; border: 1px solid #4f6bc2; border-radius: 8px; padding: 6px 10px; font-size: 14px }
+  main { max-width: 760px; margin: 0 auto; padding: 14px 14px 120px }
+  .card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(15, 23, 42, .08) }
+  .card h2 { font-size: 16px; margin: 0 0 12px; color: var(--azul) }
+  label.f { display: block; font-size: 13px; color: var(--gris); margin: 10px 0 4px }
+  input, textarea, select { width: 100%; font: inherit; padding: 12px; border: 1px solid var(--linea); border-radius: 10px; background: #fff; color: var(--texto) }
+  input:focus, textarea:focus { outline: 2px solid #93c5fd; border-color: var(--azul2) }
+  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px } .fila3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px }
+  @media (max-width: 520px) { .fila, .fila3 { grid-template-columns: 1fr } }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 14px 18px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none }
+  .btn.p { background: var(--azul2); color: #fff } .btn.s { background: #e0e7ff; color: var(--azul) } .btn.g { background: var(--verde); color: #fff } .btn.l { background: transparent; color: var(--azul2); padding: 8px }
+  .btn:disabled { opacity: .55 } .ancho { width: 100% }
+  .err { color: var(--rojo); font-size: 14px; margin-top: 8px; display: none }
+  .busca { margin-bottom: 12px }
+  .pend { display: block; width: 100%; text-align: left; background: #fff; border: 1px solid var(--linea); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font: inherit; color: inherit; cursor: pointer }
+  .pend b { font-size: 16px } .pend .sub { color: var(--gris); font-size: 14px; margin-top: 3px } .pend .est { font-size: 12px; margin-top: 6px; display: inline-block; padding: 2px 8px; border-radius: 99px; background: #fef3c7; color: var(--amar) }
+  .pend .ok { background: #dcfce7; color: #166534 }
+  .st { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px } .st button { padding: 14px 4px; border-radius: 10px; border: 2px solid var(--linea); background: #fff; font: inherit; font-weight: 600; font-size: 14px; color: var(--texto) }
+  .st button.on { border-color: var(--azul2); background: #dbeafe; color: var(--azul) }
+  .merc { border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px 12px; margin-bottom: 10px; position: relative }
+  .merc .n { font-size: 13px; font-weight: 700; color: var(--azul) } .merc .x { position: absolute; top: 6px; right: 6px }
+  .fotosBtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px } .fotosBtns input { display: none }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 12px }
+  .thumbs div { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #e5e7eb } .thumbs img { width: 100%; height: 100%; object-fit: cover }
+  .thumbs button { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .65); color: #fff; font-size: 16px }
+  .barra { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--linea); padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; z-index: 6 }
+  .barra .btn { flex: 1 } .prog { font-size: 14px; color: var(--azul); text-align: center; margin-top: 6px }
+  .mios div { padding: 10px 0; border-bottom: 1px solid var(--linea); font-size: 14px } .mios div:last-child { border: 0 }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 99px; margin-left: 6px } .c-env { background: #e0e7ff; color: var(--azul) } .c-ok { background: #dcfce7; color: #166534 } .c-esp { background: #fef3c7; color: var(--amar) } .c-err { background: #fee2e2; color: #991b1b }
+  .oculto { display: none !important } .nota { font-size: 13px; color: var(--gris) }
+  .sug { display: inline-block; margin-top: 6px; border: 1px dashed #93c5fd; background: #eff6ff; color: var(--azul); border-radius: 99px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+</style>
+</head>
+<body>
+<header><h1 id="titulo">📷 Previo</h1><button id="btnSalir" class="oculto">Salir</button></header>
+<main>
+  <!-- inicio de sesión (mismo usuario y contraseña del tablero) -->
+  <section id="vLogin" class="card">
+    <h2>Entra con tu usuario del tablero</h2>
+    <label class="f">Usuario</label><input id="lUser" autocomplete="username" autocapitalize="none" placeholder="p. ej. javier">
+    <label class="f">Contraseña</label><input id="lPass" type="password" autocomplete="current-password">
+    <button id="lBtn" class="btn p ancho" style="margin-top:14px">Entrar</button>
+    <div id="lErr" class="err"></div>
+  </section>
+
+  <!-- lista de pendientes con guía -->
+  <section id="vLista" class="oculto">
+    <input id="busca" class="busca" placeholder="🔎 Buscar cliente, guía, almacén o pedimento">
+    <div id="lista"></div>
+    <button id="btnSinPend" class="btn s ancho">+ Previo sin pendiente</button>
+    <div class="card mios" style="margin-top:14px"><h2>Mis previos de los últimos días</h2><div id="mios"><span class="nota">Todavía no mandas ninguno.</span></div></div>
+  </section>
+
+  <!-- formato FAYC-0012 -->
+  <section id="vForm" class="oculto">
+    <div class="card">
+      <h2>Datos del previo</h2>
+      <label class="f">Cliente</label><input id="fCliente" list="dlCli" autocomplete="off"><datalist id="dlCli"></datalist>
+      <div class="fila"><div><label class="f">Pedimento (7 dígitos)</label><input id="fPed" inputmode="numeric" placeholder="7 dígitos"></div>
+        <div><label class="f">Referencia</label><input id="fRef"></div></div>
+      <label class="f">Guía aérea</label><input id="fGuia">
+      <div class="fila3"><div><label class="f">Fecha de entrada</label><input id="fFecha" type="date"></div>
+        <div><label class="f">Bultos</label><input id="fBultos" inputmode="numeric"></div>
+        <div><label class="f">Peso</label><input id="fPeso" inputmode="decimal" placeholder="kg"></div></div>
+      <div class="fila"><div><label class="f">Realizado por</label><input id="fRealizo"></div>
+        <div><label class="f">Almacén</label><input id="fAlmacen" list="dlAlm" autocomplete="off"><datalist id="dlAlm"></datalist></div></div>
+      <label class="f">Status de la guía</label>
+      <div class="st" id="fStatus"><button type="button" data-v="COMPLETO">Completo</button><button type="button" data-v="INCOMPLETO">Incompleto</button><button type="button" data-v="COMPLEMENTO">Complemento</button></div>
+    </div>
+    <div class="card">
+      <h2>Mercancías</h2>
+      <div id="mercs"></div>
+      <button type="button" id="btnMerc" class="btn s ancho">+ Agregar mercancía</button>
+    </div>
+    <div class="card">
+      <h2>Observaciones</h2>
+      <textarea id="fObs" rows="3"></textarea>
+    </div>
+    <div class="card">
+      <h2>Fotos</h2>
+      <div class="fotosBtns">
+        <label class="btn p">📷 Tomar foto<input id="inCam" type="file" accept="image/*" capture="environment" multiple></label>
+        <label class="btn s">🖼️ Galería<input id="inGal" type="file" accept="image/*" multiple></label>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="nota" id="fotosNota" style="margin-top:8px"></div>
+    </div>
+  </section>
+</main>
+<div class="barra oculto" id="barra">
+  <button class="btn s" id="btnVolver">← Lista</button>
+  <button class="btn g" id="btnEnviar">Enviar previo</button>
+</div>
+<div class="prog oculto" id="prog"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue, get, set, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyDiBnMqEli5YXRqZmYXLJ2SK1a93Tvkoag", authDomain: "pendientes-ayc.firebaseapp.com", projectId: "pendientes-ayc",
+    storageBucket: "pendientes-ayc.firebasestorage.app", messagingSenderId: "139916620764", appId: "1:139916620764:web:a386fc3c35a15d89675519" };
+  const app = initializeApp(firebaseConfig), db = getDatabase(app), auth = getAuth(app);
+  // misma empresa y rutas que el tablero: A&C (GitHub Pages) usa pendientes_ayc…; las demás, empresas/<id>/…
+  const qs = new URLSearchParams(location.search);
+  const EMPRESA = (qs.get('empresa') || (location.hostname.endsWith('github.io') ? 'ayc' : 'demo')).toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'demo';
+  const P = (p) => EMPRESA === 'ayc' ? p.replace(/^([a-z_]+)/, '$1_ayc') : `empresas/${EMPRESA}/${p}`;
+  const DOMINIO = EMPRESA === 'ayc' ? '@ayc.local' : '@' + EMPRESA + '.expedito';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const pedDe = (s) => { const d = String(s || '').replace(/\D/g, ''); return d.length >= 7 ? d.slice(-7) : ''; };
+
+  let perfil = null, pendientes = {}, previos = {}, actual = null, fotos = [], status = '', enviando = false;
+  const ver = (v) => { ['vLogin', 'vLista', 'vForm'].forEach(x => $(x).classList.toggle('oculto', x !== v)); $('barra').classList.toggle('oculto', v !== 'vForm'); window.scrollTo(0, 0); };
+
+  // ---------- sesión ----------
+  $('lBtn').onclick = async () => {
+    const u = $('lUser').value.trim().toLowerCase(), p = $('lPass').value; $('lErr').style.display = 'none';
+    if (!u || !p) return;
+    $('lBtn').disabled = true; $('lBtn').textContent = 'Entrando…';
+    try { await signInWithEmailAndPassword(auth, u.includes('@') ? u : u + DOMINIO, p); }
+    catch (e) { $('lErr').textContent = 'Usuario o contraseña incorrectos.'; $('lErr').style.display = 'block'; }
+    finally { $('lBtn').disabled = false; $('lBtn').textContent = 'Entrar'; }
+  };
+  $('lPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('lBtn').click(); });
+  $('btnSalir').onclick = () => { if (fotos.length && !confirm('Hay fotos sin enviar. ¿Salir de todos modos?')) return; signOut(auth); };
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { perfil = null; $('btnSalir').classList.add('oculto'); ver('vLogin'); return; }
+    try { perfil = (await get(ref(db, P('usuarios/') + user.uid))).val(); } catch (e) { perfil = null; }
+    if (!perfil || ['cliente', 'corresponsal'].includes(perfil.rol)) { $('lErr').textContent = 'Tu usuario no tiene acceso a los previos. Pídele a tu administrador que te dé de alta.'; $('lErr').style.display = 'block'; signOut(auth); return; }
+    perfil.uid = user.uid; $('btnSalir').classList.remove('oculto'); $('titulo').textContent = `📷 Previo · ${perfil.nombre || ''}`;
+    onValue(ref(db, P('pendientes')), s => { pendientes = s.val() || {}; pintarLista(); });
+    onValue(ref(db, P('previos')), s => { previos = s.val() || {}; pintarMios(); pintarLista(); });
+    ver('vLista');
+  });
+
+  // ---------- lista: pendientes con guía que siguen abiertos (primero los que dicen "previo") ----------
+  function pintarLista() {
+    if (!perfil) return;
+    const q = norm($('busca').value);
+    let arr = Object.entries(pendientes).map(([id, t]) => ({ id, ...t })).filter(t => !t.isTask && !['Completado', 'Expediente', 'Eliminado'].includes(t.status) && String(t.guia || '').trim());
+    if (q) arr = arr.filter(t => [t.cliente, t.guia, t.almacen, t.ref, t.estatusTramite].some(v => norm(v).includes(q)));
+    arr.sort((a, b) => (/previo/i.test(b.estatusTramite || '') - /previo/i.test(a.estatusTramite || '')) || String(a.cliente || '').localeCompare(String(b.cliente || '')));
+    $('lista').innerHTML = arr.length ? arr.slice(0, 80).map(t => {
+      const pv = t.previo && t.previo.estado ? `<span class="est ${t.previo.estado === 'guardado' ? 'ok' : ''}">📷 Previo ${t.previo.estado === 'guardado' ? 'guardado' : 'enviado'}</span>` : (t.estatusTramite ? `<span class="est">${esc(t.estatusTramite)}</span>` : '');
+      return `<button class="pend" data-id="${esc(t.id)}"><b>${esc(t.cliente || 'Sin cliente')}</b><div class="sub">Guía ${esc(t.guia)}${t.almacen ? ' · ' + esc(t.almacen) : ''}${t.ref ? ' · ' + esc(t.ref) : ''}</div>${pv}</button>`;
+    }).join('') : '<div class="card nota">No hay pendientes con guía' + (q ? ' que coincidan con la búsqueda' : '') + '.</div>';
+    $('lista').querySelectorAll('.pend').forEach(b => b.onclick = () => abrir(b.dataset.id));
+  }
+  $('busca').oninput = pintarLista;
+  $('btnSinPend').onclick = () => abrir(null);
+
+  function pintarMios() {
+    const hace = Date.now() - 5 * 864e5;
+    const mios = Object.entries(previos).map(([id, p]) => ({ id, ...p })).filter(p => p.uid === perfil.uid && Date.parse(p.enviado || 0) > hace).sort((a, b) => String(b.enviado).localeCompare(String(a.enviado)));
+    const chip = (p) => p.estado === 'guardado' ? `<span class="chip c-ok">✔ Guardado${p.carpeta ? ' en ' + esc(p.carpeta) : ''}</span>`
+      : p.estado === 'error' ? `<span class="chip c-err">✖ ${esc(p.motivo || 'Error')}</span>`
+      : ['sincarpeta', 'fotos'].includes(p.estado) ? `<span class="chip c-esp">⏳ ${esc(p.motivo || 'Esperando')}</span>`
+      : `<span class="chip c-env">${p.estado === 'tomado' ? '⚙️ Guardándose' : '📤 Enviado'}</span>`;
+    $('mios').innerHTML = mios.length ? mios.map(p => `<div><b>${esc(p.datos?.pedimento || p.datos?.referencia || '—')}</b> · ${esc(p.datos?.cliente || '')} · ${p.fotos || 0} foto(s)${chip(p)}<br><span class="nota">${new Date(p.enviado).toLocaleString('es-MX')}</span></div>`).join('') : '<span class="nota">Todavía no mandas ninguno.</span>';
+  }
+
+  // ---------- formato ----------
+  // Los campos los llena el tramitador: vienen vacíos. Del pendiente elegido solo se SUGIERE (un botón "↳ valor"
+  // debajo del campo; al tocarlo se llena) y cliente y almacén traen la lista de los que ya hay en el tablero.
+  const CAMPOS = { fCliente: 'cliente', fPed: 'pedimento', fRef: 'referencia', fGuia: 'guia', fFecha: 'fechaEntrada', fBultos: 'bultos', fPeso: 'peso', fRealizo: 'realizo', fAlmacen: 'almacen', fObs: 'obs' };
+  const claveBorrador = () => 'previo-borrador-' + EMPRESA + '-' + (actual || 'nuevo');
+  let sug = {};
+  function pintarSug() {
+    for (const [el, k] of Object.entries(CAMPOS)) {
+      const inp = $(el); let b = document.getElementById('s-' + el);
+      const v = sug[k] || '';
+      if (!v || inp.value.trim() === v) { if (b) b.remove(); continue; }
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'sug'; b.id = 's-' + el; inp.insertAdjacentElement('afterend', b);
+        b.onclick = () => { inp.value = sug[k]; pintarSug(); guardarBorrador(); } }
+      b.textContent = '↳ ' + (k === 'fechaEntrada' ? v.split('-').reverse().join('/') : v);
+    }
+  }
+  function listas() {   // clientes y almacenes que ya existen (para que el teclado los sugiera al escribir)
+    const uniq = (k) => [...new Set(Object.values(pendientes).map(t => String(t[k] || '').trim()).filter(Boolean))].sort();
+    $('dlCli').innerHTML = uniq('cliente').map(v => `<option value="${esc(v)}">`).join('');
+    $('dlAlm').innerHTML = uniq('almacen').map(v => `<option value="${esc(v)}">`).join('');
+  }
+  function abrir(id) {
+    if (fotos.length && actual !== id && !confirm('Hay fotos sin enviar del otro previo. ¿Descartarlas?')) return;
+    actual = id; fotos = []; pintarFotos(); listas();
+    const t = id ? (pendientes[id] || {}) : {};
+    sug = { cliente: t.cliente || '', pedimento: pedDe(t.ref), referencia: pedDe(t.ref) ? '' : (t.ref || ''), guia: t.guia || '', fechaEntrada: /^\d{4}-\d{2}-\d{2}$/.test(t.eta || '') ? t.eta : '',
+      almacen: t.almacen || '', realizo: perfil.nombre || '' };
+    let b = null; try { b = JSON.parse(localStorage.getItem(claveBorrador()) || 'null'); } catch (e) {}
+    const d = b || { statusGuia: '', mercancias: [] };
+    for (const [el, k] of Object.entries(CAMPOS)) $(el).value = d[k] || '';
+    pintarSug();
+    status = d.statusGuia || ''; pintarStatus();
+    $('mercs').innerHTML = ''; (d.mercancias && d.mercancias.length ? d.mercancias : [{}]).forEach(agregarMerc);
+    $('fotosNota').textContent = b ? 'Se recuperó lo que habías escrito (las fotos no se guardan en el borrador).' : '';
+    ver('vForm');
+  }
+  function pintarStatus() { $('fStatus').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === status)); }
+  $('fStatus').querySelectorAll('button').forEach(b => b.onclick = () => { status = status === b.dataset.v ? '' : b.dataset.v; pintarStatus(); guardarBorrador(); });
+  function agregarMerc(m) {
+    m = m || {}; const div = document.createElement('div'); div.className = 'merc';
+    div.innerHTML = `<div class="n"></div><button type="button" class="btn l x" title="Quitar">✕</button>
+      <label class="f">Descripción</label><input data-k="desc">
+      <div class="fila"><div><label class="f">Cantidad</label><input data-k="cant" inputmode="decimal"></div><div><label class="f">Peso</label><input data-k="peso" inputmode="decimal"></div></div>
+      <div class="fila"><div><label class="f">NS-NP (serie / parte)</label><input data-k="nsnp"></div><div><label class="f">Marca-modelo</label><input data-k="marca"></div></div>
+      <label class="f">Origen</label><input data-k="origen">`;
+    div.querySelectorAll('input').forEach(i => { i.value = m[i.dataset.k] || ''; i.oninput = guardarBorrador; });
+    div.querySelector('.x').onclick = () => { div.remove(); numerar(); guardarBorrador(); };
+    $('mercs').appendChild(div); numerar();
+  }
+  function numerar() { [...$('mercs').children].forEach((d, i) => d.querySelector('.n').textContent = `Mercancía ${i + 1}`); }
+  $('btnMerc').onclick = () => { agregarMerc({}); guardarBorrador(); };
+  function leer() {
+    const d = {}; for (const [el, k] of Object.entries(CAMPOS)) d[k] = $(el).value.trim();
+    d.statusGuia = status;
+    d.mercancias = [...$('mercs').children].map(div => { const m = {}; div.querySelectorAll('input').forEach(i => m[i.dataset.k] = i.value.trim()); return m; }).filter(m => Object.values(m).some(v => v));
+    return d;
+  }
+  function guardarBorrador() { try { localStorage.setItem(claveBorrador(), JSON.stringify(leer())); } catch (e) {} }
+  Object.keys(CAMPOS).forEach(el => $(el).addEventListener('input', () => { guardarBorrador(); pintarSug(); }));
+  $('btnVolver').onclick = () => { if (fotos.length && !confirm('Las fotos no se guardan en el borrador. ¿Volver a la lista y descartarlas?')) return; fotos = []; pintarFotos(); actual = null; ver('vLista'); };
+
+  // ---------- fotos: cámara o galería; se achican (lado mayor 1600 px, JPEG) para mandarlas ----------
+  async function achicar(file) {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src);
+    return c.toDataURL('image/jpeg', 0.72);
+  }
+  async function agregarFotos(lista) {
+    $('fotosNota').textContent = 'Preparando fotos…';
+    for (const f of lista) { if (!f.type.startsWith('image/')) continue; try { fotos.push(await achicar(f)); } catch (e) { $('fotosNota').textContent = 'Una foto no se pudo leer (formato no compatible).'; } }
+    pintarFotos();
+  }
+  $('inCam').onchange = (e) => { agregarFotos([...e.target.files]); e.target.value = ''; };
+  $('inGal').onchange = (e) => { agregarFotos([...e.target.files]); e.target.value = ''; };
+  function pintarFotos() {
+    $('thumbs').innerHTML = fotos.map((u, i) => `<div><img src="${u}" alt="foto ${i + 1}"><button type="button" data-i="${i}" title="Quitar">✕</button></div>`).join('');
+    $('thumbs').querySelectorAll('button').forEach(b => b.onclick = () => { fotos.splice(Number(b.dataset.i), 1); pintarFotos(); });
+    const kb = fotos.reduce((s, u) => s + u.length * 0.75 / 1024, 0);
+    $('fotosNota').textContent = fotos.length ? `${fotos.length} foto(s) · ${kb < 1024 ? Math.round(kb) + ' KB' : (kb / 1024).toFixed(1) + ' MB'}` : '';
+  }
+  window.addEventListener('beforeunload', (e) => { if (fotos.length || enviando) { e.preventDefault(); e.returnValue = ''; } });
+
+  // solo para revisar el diseño en esta PC (servidor local), nunca en la página publicada
+  if (location.hostname === '127.0.0.1') window.__prueba = { abrir, datos: (pend, per) => { pendientes = pend; perfil = per; } };
+
+  // ---------- enviar: primero las fotos (una por una), al final los datos (así Expedito no lo toma incompleto) ----------
+  let idEnvio = null;
+  $('btnEnviar').onclick = async () => {
+    const d = leer();
+    if (!/^\d{7}$/.test(pedDe(d.pedimento))) { alert('Escribe el pedimento (7 dígitos): con él Expedito sabe en qué carpeta guardarlo.'); $('fPed').focus(); return; }
+    if (!d.cliente) { alert('Escribe el cliente.'); $('fCliente').focus(); return; }
+    if (!fotos.length && !confirm('El previo no lleva fotos. ¿Enviarlo así?')) return;
+    if (!idEnvio || idEnvio.de !== claveBorrador()) idEnvio = { de: claveBorrador(), id: push(ref(db, P('previos'))).key };
+    const id = idEnvio.id; enviando = true; $('btnEnviar').disabled = $('btnVolver').disabled = true; $('prog').classList.remove('oculto');
+    try {
+      for (let i = 0; i < fotos.length; i++) { $('prog').textContent = `Subiendo foto ${i + 1} de ${fotos.length}…`; await set(ref(db, P('previos_fotos/') + id + '/' + (i + 1)), fotos[i].split(',')[1]); }
+      $('prog').textContent = 'Guardando el previo…';
+      const ahora = new Date().toISOString();
+      await set(ref(db, P('previos/') + id), { datos: d, fotos: fotos.length, estado: 'enviado', enviado: ahora, enviadoPor: perfil.nombre || '', uid: perfil.uid, pendienteId: actual || '' });
+      if (actual) await update(ref(db, P('pendientes/') + actual), { previo: { estado: 'enviado', en: ahora, por: d.realizo || perfil.nombre || '' } });
+      try { localStorage.removeItem(claveBorrador()); } catch (e) {}
+      fotos = []; pintarFotos(); idEnvio = null; actual = null;
+      alert('✔ Previo enviado. Expedito lo guardará en la carpeta del pedimento; su estado aparece en "Mis previos".');
+      ver('vLista');
+    } catch (e) {
+      alert('No se pudo enviar (¿sin señal?). Lo que escribiste y las fotos siguen aquí: vuelve a dar "Enviar previo" cuando tengas internet.\n\n' + (e.message || e));
+    } finally { enviando = false; $('btnEnviar').disabled = $('btnVolver').disabled = false; $('prog').classList.add('oculto'); }
+  };
+</script>
+</body>
+</html>
