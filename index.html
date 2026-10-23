@@ -1023,7 +1023,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue as onValueFb, set, push, remove, update, query, orderByChild, equalTo, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue as onValueFb, set, push, remove, update, query, orderByChild, equalTo, get, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -1165,6 +1165,7 @@
   if (EXPEDITO) EXPEDITO.addEventListener('message', (ev) => {
     const m = ev.data || {};
     if (m.tipo === 'previoRes') { previoRespuesta(m); return; }
+    if (/^remoto/.test(m.tipo || '')) { remotoMensaje(m); return; }
     if (m.tipo === 'rechazo') { (m.ids || []).forEach(i => delete expeditoEstado[i]); render(); alert(m.motivo); return; }
     if (!m.id) return;
     const e = expeditoEstado[m.id] || (expeditoEstado[m.id] = {});
@@ -1178,6 +1179,42 @@
     update(ref(db, P('pendientes/') + m.id), datos);
     push(ref(db, P(`pendientes/${m.id}/chat`)), { texto: `⚙️ Expedito (${m.pc || 'PC'}): ${m.estado}${m.falta ? ' · falta ' + m.falta : ''}${m.resultado ? ' · ' + m.resultado : ''}`, usuario: 'Expedito', timestamp: Date.now() });
   });
+  // ---------- avance del remoto (Varios pedimentos → El remoto) ----------
+  // La cola va por OneDrive, que puede tardar minutos; el avance va además por aquí para verse en segundos.
+  // El Expedito del remoto manda {tipo:'remotoEstado', ped, datos} y {tipo:'remotoLatido', datos}; el de las PCs que
+  // mandan pide {tipo:'remotoVer'} y recibe {tipo:'remoto', latido (con hace = segundos), estado} en cada cambio.
+  // FAYC: la PC que la llena manda {tipo:'remotoFaycPide', id, datos}; el remoto ({tipo:'remotoSoy'}) recibe
+  // {tipo:'remotoFayc', pedidos} y al generarla contesta {tipo:'remotoFaycHecho', id}, que la quita.
+  let remotoOff = null, remotoFaycOff = null, remotoAviso = false, remotoLimpio = 0, fbOffset = 0, expeditoListo = false;
+  onValue(ref(db, '.info/serverTimeOffset'), (s) => { fbOffset = s.val() || 0; });
+  function remotoFallo(e) {
+    if (remotoAviso) return; remotoAviso = true;
+    EXPEDITO.postMessage({ tipo: 'remotoRes', ok: false, motivo: currentUser ? (e && e.message || 'sin permiso') : 'el tablero no tiene sesión en esta PC' });
+  }
+  function remotoMensaje(m) {
+    if (m.tipo === 'remotoEstado' && /^\d{7}$/.test(m.ped || '')) {
+      set(ref(db, P('remoto/estado/') + m.ped), Object.assign({}, m.datos, { t: serverTimestamp() })).catch(remotoFallo);
+    } else if (m.tipo === 'remotoLatido') {
+      set(ref(db, P('remoto/latido')), Object.assign({}, m.datos, { t: serverTimestamp() })).then(() => { remotoAviso = false; }).catch(remotoFallo);
+      if (Date.now() - remotoLimpio > 3600000) {   // una vez por hora: fuera los estados de hace más de 3 días
+        remotoLimpio = Date.now();
+        get(ref(db, P('remoto/estado'))).then((s) => { const v = s.val() || {}, viejo = Date.now() + fbOffset - 3 * 86400000;
+          Object.keys(v).forEach((k) => { if ((v[k].t || 0) < viejo) remove(ref(db, P('remoto/estado/') + k)); }); }).catch(() => {});
+      }
+    } else if (m.tipo === 'remotoFaycPide' && /^\d{7}-[\w-]+$/.test(m.id || '')) {   // FAYC llenada en otra PC para que la genere el remoto
+      set(ref(db, P('remoto/fayc/') + m.id), Object.assign({}, m.datos, { t: serverTimestamp() })).catch(remotoFallo);
+    } else if (m.tipo === 'remotoFaycHecho' && /^\d{7}-[\w-]+$/.test(m.id || '')) {
+      remove(ref(db, P('remoto/fayc/') + m.id)).catch(() => {});
+    } else if (m.tipo === 'remotoSoy' && !remotoFaycOff) {   // el remoto: recibe las FAYC que le mandan
+      remotoFaycOff = onValue(ref(db, P('remoto/fayc')), (s) => { const v = s.val(); if (v) EXPEDITO.postMessage({ tipo: 'remotoFayc', pedidos: v }); }, remotoFallo);
+    } else if (m.tipo === 'remotoVer' && !remotoOff) {
+      remotoOff = onValue(ref(db, P('remoto')), (s) => {
+        const v = s.val() || {}, lat = v.latido || null;
+        if (lat) lat.hace = Math.max(0, Math.round((Date.now() + fbOffset - (lat.t || 0)) / 1000));
+        EXPEDITO.postMessage({ tipo: 'remoto', latido: lat, estado: v.estado || {} });
+      }, remotoFallo);
+    }
+  }
   // ---------- previos de la tablet (previo.html) ----------
   // Solo el Expedito de la PC que los recibe (?previos=1, con su sesión): toma cada previo 'enviado' (transacción: si
   // hay dos PCs, solo una lo toma), le pasa las fotos a Expedito una por una como texto y luego los datos. Expedito los
@@ -1369,6 +1406,7 @@
     const isAdmin = currentUserProfile.rol === 'admin';
     const isClient = currentUserProfile.rol === 'cliente' || currentUserProfile.rol === 'corresponsal';
     const isCorresp = currentUserProfile.rol === 'corresponsal';
+    if (EXPEDITO && !isClient && !expeditoListo) { expeditoListo = true; EXPEDITO.postMessage({ tipo: 'listo' }); }   // ya con sesión: Expedito puede mandar y pedir el avance del remoto
 
     if (isClient) iniciarPendientesCliente(currentUserProfile);   // clientes y corresponsales (también de A&C): solo sus pendientes
     applyPersonalizacion(currentUserProfile.personalizacion);
